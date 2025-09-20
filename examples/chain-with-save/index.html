@@ -9,6 +9,23 @@
 </head>
 
 <body>
+  <noscript>
+    <div style="padding:12px;background:#fee2e2;color:#7f1d1d;text-align:center">
+      This demo requires JavaScript to run.
+    </div>
+  </noscript>
+
+  <!-- Global loading overlay controlled by main.js -->
+  <div id="loadingOverlay" class="overlay hidden" role="status" aria-live="polite">
+    <div class="overlay-box">
+      <div class="spinner" aria-hidden="true"></div>
+      <div class="overlay-text">
+        <strong>Preparing pipeline…</strong>
+        <div id="stageNote" class="subtext">Warming up…</div>
+      </div>
+    </div>
+  </div>
+
   <header class="app-header">
     <div class="brand">
       <div class="logo">ELM</div>
@@ -26,36 +43,62 @@
   </header>
 
   <main class="grid">
+    <!-- Try it -->
     <section class="card">
       <h2>Try it</h2>
+
       <div class="input-row">
-        <input id="userInput" placeholder="Type a greeting… e.g., bonj" />
-        <div id="autoGhost" class="ghost"></div>
+        <input id="userInput" placeholder="Loading models…" disabled />
+        <div id="autoGhost" class="ghost" aria-hidden="true"></div>
       </div>
 
       <div class="predictions">
-        <div class="gauge">
+        <div class="gauge" aria-label="Final confidence">
           <div class="gauge-fill" id="langFill"></div>
         </div>
-        <div class="tags" id="predTags"></div>
+        <div class="tags" id="predTags" aria-live="polite"></div>
       </div>
-      <p class="hint">Autocomplete is suggestive; the classifier ensemble decides language with a confidence-aware
-        blend.</p>
+
+      <p id="helperText" class="hint">
+        Autocomplete is suggestive; the classifier ensemble decides language with a confidence-aware blend.
+      </p>
     </section>
 
+    <!-- Pipeline status -->
     <section class="card">
       <h2>Pipeline Status</h2>
       <div id="pipeline" class="pipeline">
-        <!-- badges injected by JS -->
+        <!-- stage cards injected by JS -->
       </div>
     </section>
 
+    <!-- Model Inspector (per-model top-k visualizations) -->
+    <section class="card">
+      <h2>Model Inspector</h2>
+      <div class="inspector">
+        <div class="viz-col">
+          <h3>LanguageClassifier</h3>
+          <div id="viz-lang" class="viz-bars" aria-label="LanguageClassifier top-k"></div>
+        </div>
+        <div class="viz-col">
+          <h3>FeatureCombiner</h3>
+          <div id="viz-comb" class="viz-bars" aria-label="FeatureCombiner top-k"></div>
+        </div>
+        <div class="viz-col">
+          <h3>Confidence (low/high)</h3>
+          <div id="viz-conf" class="viz-bars" aria-label="Confidence top-k"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Metrics -->
     <section class="card">
       <h2>Metrics</h2>
-      <div class="metrics" id="metrics"></div>
+      <div class="metrics" id="metrics" aria-live="polite"></div>
       <canvas id="chart" width="600" height="160" aria-label="Confidence chart"></canvas>
     </section>
 
+    <!-- Logs -->
     <section class="card">
       <h2>Logs</h2>
       <pre id="log"></pre>
@@ -63,8 +106,10 @@
   </main>
 
   <footer class="foot">
-    <small>Models will be loaded from <code>/models/*.json</code> if available. Otherwise, the worker will train them on
-      the fly.</small>
+    <small>
+      Models will be loaded from <code>/models/*.json</code> if available. Otherwise, the worker will train them on the
+      fly.
+    </small>
   </footer>
 
   <script src="./main.js" type="module"></script>

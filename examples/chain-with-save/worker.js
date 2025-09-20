@@ -4,17 +4,14 @@
 */
 /* global self, window */
 
-/* worker.js — classic worker header */
-
-// 1) Load the UMD build INSIDE the worker
-//    Change path if needed (e.g., '/vendor/astermind.umd.js')
+// ---------- Load AsterMind UMD inside the worker ----------
 const ASTERMINd_URL = '/astermind.umd.js';
 try { importScripts(ASTERMINd_URL); }
 catch (e) {
     self.postMessage({ type: 'LOG', payload: { line: `Failed to importScripts(${ASTERMINd_URL}): ${e.message}`, kind: 'error' } });
 }
 
-// 2) Pull classes off the worker global (self), not window
+// Grab classes from worker global
 const ast = self.astermind || {};
 const {
     EncoderELM,
@@ -26,13 +23,12 @@ const {
 } = ast;
 
 /* ------------------------------------------------------------------ */
-/* The rest of your worker file continues below…                      */
-/* ------------------------------------------------------------------ */
 
 if (!ast) {
     postLog('AsterMind not found on worker global. Make sure astermind.umd.js is loaded before main.js.', 'error');
 }
 
+// ------------------- Instance creation (text heads) -------------------
 function createInstances() {
     if (!SETTINGS || !CATEGORIES) return;
 
@@ -62,68 +58,42 @@ function createInstances() {
         });
         disableDownloadsFor(CHENC);
     }
-
-    // ⛔️ Do NOT create COMB / CONF / REF here. We’ll size them later once we know vecLen.
 }
 
+// --------------- Size/create numeric heads once we know width ---------
 function ensureVectorHeads(vecLen, metaLen = 4) {
     const inputSize = (vecLen | 0) + (metaLen | 0);
     if (!inputSize) return;
 
     if (!COMB && FeatureCombinerELM) {
         COMB = new FeatureCombinerELM({
-            useTokenizer: false,
-            inputSize,
-            hiddenUnits: 128,
-            activation: 'gelu',
+            useTokenizer: false, inputSize, hiddenUnits: 128, activation: 'gelu',
             log: { verbose: false, name: 'Combiner' }
         });
         disableDownloadsFor(COMB);
+        status.combiner = { status: 'created', ok: null };
     }
-
     if (!CONF && ConfidenceClassifierELM) {
         CONF = new ConfidenceClassifierELM({
-            useTokenizer: false,
-            inputSize,
-            hiddenUnits: 64,
-            activation: 'gelu',
+            useTokenizer: false, inputSize, hiddenUnits: 64, activation: 'gelu',
             log: { verbose: false, name: 'Confidence' }
         });
         disableDownloadsFor(CONF);
+        status.confidence = { status: 'created', ok: null };
     }
-
     if (!REF && RefinerELM) {
         REF = new RefinerELM({
-            useTokenizer: false,
-            inputSize,
-            hiddenUnits: 64,
-            activation: 'gelu',
+            useTokenizer: false, inputSize, hiddenUnits: 64, activation: 'gelu',
             log: { verbose: false, name: 'Refiner' }
         });
         disableDownloadsFor(REF);
+        status.refiner = { status: 'created', ok: null };
     }
-}
-
-function ensureRefinerByLengths(vecLen, metaLen = 4) {
-    const inputSize = (vecLen | 0) + (metaLen | 0);
-    if (!RefinerELM) return;
-    if (!inputSize) return;     // wait until we know sizes
-    if (self.REF) return;       // already created
-
-    self.REF = new RefinerELM({
-        charSet: SETTINGS.charSet,
-        maxLen: SETTINGS.maxLen,
-        hiddenUnits: 64,
-        activation: 'gelu',
-        useTokenizer: false,
-        inputSize,
-        log: { verbose: false, name: 'Refiner' }
-    });
-    disableDownloadsFor(self.REF); // <- important in worker context
+    postPipe(); // reflect “created” immediately
 }
 
 function modelsReadyForPredict() {
-    // minimally need encoder + char encoder + combiner + classifier to make a good prediction
+    // minimally need encoder + char encoder + combiner + classifier
     const encOK = !!ENC && typeof ENC.encode === 'function' && status.encoder.ok;
     const chOK = !!CHENC && typeof CHENC.encode === 'function' && status.langEnc.ok;
     const combOK = !!COMB && typeof COMB.predict === 'function' && status.combiner.ok;
@@ -131,6 +101,7 @@ function modelsReadyForPredict() {
     return encOK && chOK && combOK && clsOK;
 }
 
+// ----------------------------- Messaging ------------------------------
 const Msg = {
     INIT: 'INIT',
     LOAD: 'LOAD',
@@ -164,38 +135,43 @@ const status = {
 // Helpers
 function post(type, payload) { self.postMessage({ type, payload }); }
 function postLog(line, kind = 'info') { post('LOG', { line, kind }); }
+function postStage(note) { post('STAGE', { note }); } // lightweight stage note for overlay
 function disableDownloadsFor(m) {
     if (!m) return;
-    // No-op top-level saver
     if (typeof m.saveModelAsJSONFile === 'function') {
         m.saveModelAsJSONFile = () => postLog('saveModelAsJSONFile() skipped in worker');
     }
-    // No-op nested ELM saver (many classes hang methods on .elm)
     if (m.elm && typeof m.elm.saveModelAsJSONFile === 'function') {
         m.elm.saveModelAsJSONFile = () => postLog('elm.saveModelAsJSONFile() skipped in worker');
     }
 }
-function postPipe() { post('PIPELINE', status); }
+function postPipe() { post('PIPELINE', status); postReady(); }
 function postMetrics(m) { post('METRICS', m); }
+function isReady() {
+    // minimal set for good predictions
+    return !!(ENC && CHENC && COMB && LANG && CONF &&
+        status.encoder.ok && status.langEnc.ok &&
+        status.combiner.ok && status.classifier.ok &&
+        status.confidence.ok);
+}
+function postReady() { post('READY', { ready: isReady() }); }
 
-// ---- v2-safe migration: ensure top-level { config } exists -------------
+// ----------------------- JSON migration / loading ----------------------
 function normalizeSerializedJSON(raw, hint = { useTokenizer: true }) {
     let obj;
     try { obj = JSON.parse(raw); } catch { return raw; }
 
     // Already v2+ with config?
     if (obj && obj.config && typeof obj.config.useTokenizer === 'boolean') {
-        // normalize delimiter to a string & attach inputSize if provided
         if (obj.config.tokenizerDelimiter && typeof obj.config.tokenizerDelimiter !== 'string') {
             obj.config.tokenizerDelimiter = '\\s+';
         }
         if (typeof hint.inputSize === 'number' && hint.inputSize > 0) {
-            obj.config.inputSize = hint.inputSize; // 🔧 critical for numeric heads
+            obj.config.inputSize = hint.inputSize; // critical for numeric heads
         }
         return JSON.stringify(obj);
     }
 
-    // Build a minimal v2 config
     const cfg = {
         useTokenizer: !!hint.useTokenizer,
         maxLen: (SETTINGS && SETTINGS.maxLen) || 48,
@@ -240,13 +216,13 @@ function tryLoadModel(model, raw, hint) {
         }
     };
 
-    // Pre-normalize (adds {config: {useTokenizer, maxLen, charSet, …}})
+    // Pre-normalize (adds top-level config)
     let j = normalizeSerializedJSON(raw, hint);
 
     try {
         load(j);
     } catch (e1) {
-        // One extra normalization pass, then rethrow
+        // One more normalization pass, then rethrow
         try {
             const forced = normalizeSerializedJSON(j, hint);
             if (forced !== j) {
@@ -258,10 +234,10 @@ function tryLoadModel(model, raw, hint) {
     }
 }
 
+// ------------------------------ Load all -------------------------------
 async function loadAll() {
-    createInstances();           // ENC, LANG, CHENC only for now
+    createInstances(); // ENC, LANG, CHENC
 
-    // Helper to load with migration + hinting
     const loadWithHint = async (name, model, hint) => {
         const raw = await loadJSON(name);
         tryLoadModel(model, raw, hint);
@@ -269,34 +245,38 @@ async function loadAll() {
     };
 
     // 1) EncoderELM
+    postStage('Loading encoder…');
     try {
         await loadWithHint('encoder_model', ENC, {
             useTokenizer: true, hiddenUnits: 96, activation: 'gelu', ridgeLambda: 1e-2, weightInit: 'xavier'
         });
         status.encoder = { status: 'loaded', ok: true };
     } catch (e) { status.encoder = { status: 'missing', ok: null }; postLog(e.message, 'warn'); }
+    postPipe();
 
-    // 2) Language classifier (text/vector tolerant)
+    // 2) Language classifier
+    postStage('Loading language classifier…');
     try {
         await loadWithHint('lang_model', LANG, {
             useTokenizer: true, hiddenUnits: 128, activation: 'gelu', categories: CATEGORIES, ridgeLambda: 1e-2, weightInit: 'xavier'
         });
         status.classifier = { status: 'loaded', ok: true };
     } catch (e) { status.classifier = { status: 'missing', ok: null }; postLog(e.message, 'warn'); }
+    postPipe();
 
     // 3) Char encoder
+    postStage('Loading character encoder…');
     let vecLen = 0;
     try {
         await loadWithHint('langEncoder_model', CHENC, {
             useTokenizer: true, hiddenUnits: 192, activation: 'gelu', categories: CATEGORIES, ridgeLambda: 1e-2, weightInit: 'xavier'
         });
         status.langEnc = { status: 'loaded', ok: true };
-
-        // Probe dimensionality
         const probe = (greetings && greetings[0]) || 'bonjour';
         const v = CHENC.encode(probe);
         if (Array.isArray(v)) vecLen = v.length;
     } catch (e) { status.langEnc = { status: 'missing', ok: null }; postLog(e.message, 'warn'); }
+    postPipe();
 
     // 4) Now that we know vecLen, size numeric heads and load them
     const metaLen = 4;
@@ -304,37 +284,44 @@ async function loadAll() {
 
     // Combiner
     if (COMB) {
+        postStage('Loading combiner…');
         try {
             await loadWithHint('combiner_model', COMB, {
                 useTokenizer: false, inputSize: (vecLen + metaLen), hiddenUnits: 128, activation: 'gelu'
             });
             status.combiner = { status: 'loaded', ok: true };
         } catch (e) { status.combiner = { status: 'missing', ok: null }; postLog(e.message, 'warn'); }
+        postPipe();
     }
 
     // Confidence
     if (CONF) {
+        postStage('Loading confidence head…');
         try {
             await loadWithHint('conf_model', CONF, {
                 useTokenizer: false, inputSize: (vecLen + metaLen), hiddenUnits: 64, activation: 'gelu'
             });
             status.confidence = { status: 'loaded', ok: true };
         } catch (e) { status.confidence = { status: 'missing', ok: null }; postLog(e.message, 'warn'); }
+        postPipe();
     }
 
-    // Refiner (same input size)
+    // Refiner
     if (REF) {
+        postStage('Loading refiner…');
         try {
             await loadWithHint('refiner_model', REF, {
                 useTokenizer: false, inputSize: (vecLen + metaLen), hiddenUnits: 64, activation: 'gelu'
             });
             status.refiner = { status: 'loaded', ok: true };
         } catch (e) { status.refiner = { status: 'missing', ok: null }; postLog(e.message, 'warn'); }
+        postPipe();
     }
 
-    postPipe();
+    postStage('Models loaded.');
 }
 
+// ------------------------------ Dataset -------------------------------
 async function fetchCSV() {
     const res = await fetch('/language_greetings_1500.csv', { cache: 'no-cache' });
     const text = await res.text();
@@ -349,7 +336,7 @@ async function fetchCSV() {
     }
     greetings = pairs.map(p => p[0]); labels = pairs.map(p => p[1]);
     buildAutocompleteIndex(greetings);
-    status.ac = { status: 'ready', ok: true };  // mark AC badge as ready (index built)
+    status.ac = { status: 'ready', ok: true };  // AC index built
     postPipe();
 }
 
@@ -358,17 +345,14 @@ function normVec(v) {
     return v.map(x => x / s);
 }
 
-// --- Simple worker-side autocomplete (DOM-free) ---
+// Worker-side autocomplete
 let AC_INDEX = null;
 function buildAutocompleteIndex(gs) {
-    // unique + sorted (optional)
     const seen = new Set();
     AC_INDEX = [];
     for (const g of gs) if (!seen.has(g)) { seen.add(g); AC_INDEX.push(g); }
-    AC_INDEX.sort(); // lexicographic
+    AC_INDEX.sort();
 }
-
-// returns the first greeting that starts with the prefix; else best "contains"; else ''
 function autocomplete(prefix) {
     if (!prefix || !AC_INDEX) return '';
     const p = prefix.toLowerCase();
@@ -378,6 +362,7 @@ function autocomplete(prefix) {
     return contains || '';
 }
 
+// Feature helpers
 function combineFeatures(vec, meta) { return FeatureCombinerELM.combineFeatures(vec, meta); }
 function metaFor(text) {
     const len = text.length || 1;
@@ -389,16 +374,19 @@ function metaFor(text) {
     ];
 }
 
+// ------------------------------- Train --------------------------------
 async function trainIfNeeded() {
     try {
         createInstances();
         if (!greetings?.length || !labels?.length) {
+            postStage('Loading dataset…');
             await fetchCSV();
             postPipe();
         }
 
         // 1) Encoder
         if (!status.encoder?.ok) {
+            postStage('Training encoder…');
             const dim = 16;
             const idxBy = new Map();
             const targets = greetings.map((_, i) => {
@@ -415,6 +403,7 @@ async function trainIfNeeded() {
 
         // 2) Language classifier
         if (!status.classifier?.ok) {
+            postStage('Training language classifier…');
             const data = greetings.map((g, i) => ({ vector: ENC.encode(g), label: labels[i] }));
             if (typeof LANG.trainVectors === 'function') {
                 await LANG.trainVectors(data);
@@ -431,6 +420,7 @@ async function trainIfNeeded() {
 
         // 3) Character encoder
         if (!status.langEnc?.ok) {
+            postStage('Training character encoder…');
             await CHENC.train(greetings, labels, { epochs: 4, batchSize: 128 });
             status.langEnc = { status: 'trained', ok: true };
             postLog('CharacterLangEncoder trained.');
@@ -444,6 +434,7 @@ async function trainIfNeeded() {
 
         // 4) Combiner
         if (!status.combiner?.ok) {
+            postStage('Training combiner…');
             await COMB.train(vecs, metas, labels);
             status.combiner = { status: 'trained', ok: true };
             postLog('FeatureCombiner trained.');
@@ -452,6 +443,7 @@ async function trainIfNeeded() {
 
         // 5) Confidence classifier
         if (!status.confidence?.ok) {
+            postStage('Training confidence head…');
             const comb = vecs.map((v, i) => COMB.predict(v, metas[i])[0]);
             const confY = comb.map((r, i) => (r.label !== labels[i] || r.prob < 0.8) ? 'low' : 'high');
             await CONF.train(vecs, metas, confY);
@@ -462,6 +454,7 @@ async function trainIfNeeded() {
 
         // 6) Refiner (low-confidence subset)
         if (REF) {
+            postStage('Training refiner…');
             const comb = vecs.map((v, i) => COMB.predict(v, metas[i])[0]);
             const combined = vecs.map((v, i) => FeatureCombinerELM.combineFeatures(v, metas[i]));
             const lowSet = comb.map((r, i) => ({ vec: combined[i], y: labels[i], bad: r.label !== labels[i], p: r.prob }))
@@ -482,6 +475,7 @@ async function trainIfNeeded() {
         }
 
         await evaluateAll();
+        postStage('Ready!');
         postLog('Training finished.');
     } catch (err) {
         postLog(`trainIfNeeded() failed: ${err?.message || err}`, 'error');
@@ -489,6 +483,7 @@ async function trainIfNeeded() {
     }
 }
 
+// ------------------------------ Metrics -------------------------------
 async function evaluateAll() {
     // Language accuracy (sparse)
     let correct = 0, total = 0;
@@ -520,134 +515,163 @@ async function evaluateAll() {
     const langSep = Math.min(sep(cE, cF), sep(cE, cS), sep(cF, cS));
     const langSepF = Number.isFinite(langSep) ? +langSep.toFixed(3) : null;
 
-    // F1 for low confidence
-    const vecs = greetings.map(g => normVec(CHENC.encode(g)));
-    const metas = greetings.map(g => metaFor(g));
-    let tp = 0, fp = 0, fn = 0;
-    for (let i = 0; i < vecs.length; i += 17) {
-        const [pred] = CONF.predict(vecs[i], metas[i]);
-        const comb = COMB.predict(vecs[i], metas[i])[0];
-        const truth = (comb.label !== labels[i]) || (comb.prob < 0.8);
-        const guess = pred?.label === 'low';
-        if (guess && truth) tp++;
-        else if (guess && !truth) fp++;
-        else if (!guess && truth) fn++;
+    // F1 for low confidence (only if head ready)
+    let confF1 = null;
+    if (CONF && status.confidence.ok && COMB && status.combiner.ok) {
+        const vecs = greetings.map(g => normVec(CHENC.encode(g)));
+        const metas = greetings.map(g => metaFor(g));
+        let tp = 0, fp = 0, fn = 0;
+        for (let i = 0; i < vecs.length; i += 17) {
+            const [pred] = CONF.predict(vecs[i], metas[i]);
+            const comb = COMB.predict(vecs[i], metas[i])[0];
+            const truth = (comb.label !== labels[i]) || (comb.prob < 0.8);
+            const guess = pred?.label === 'low';
+            if (guess && truth) tp++;
+            else if (guess && !truth) fp++;
+            else if (!guess && truth) fn++;
+        }
+        const prec = tp ? tp / (tp + fp) : 0;
+        const rec = tp ? tp / (tp + fn) : 0;
+        const f1 = (prec + rec) ? (2 * prec * rec) / (prec + rec) : 0;
+        confF1 = +f1.toFixed(3);
     }
-    const prec = tp ? tp / (tp + fp) : 0;
-    const rec = tp ? tp / (tp + fn) : 0;
-    const f1 = (prec + rec) ? (2 * prec * rec) / (prec + rec) : 0;
-    const confF1 = +f1.toFixed(3);
 
-    // No AutoComplete in worker → acCE = null
     postMetrics({ langAcc, acCE: null, langSep: langSepF, confF1 });
 }
 
+// ------------------------------ Inference ------------------------------
 function blendFinal(lang, comb, refined, uncertain) {
-    // Strategy:
-    // - If refined exists and (uncertain || comb.prob < 0.6) → use refined
-    // - Else, if lang.label == comb.label → average probs
-    // - Else default to comb
+    // If refined exists and (uncertain || comb.prob < 0.6) → use refined
     if (refined && (uncertain || (comb?.prob ?? 0) < 0.6)) return refined;
+    // Else, if lang.label == comb.label → average probs
     if (lang && comb && lang.label === comb.label) {
         return { label: lang.label, prob: Math.min(1, (lang.prob + comb.prob) / 2) };
     }
+    // Else prefer comb, fallback to lang
     return comb || lang || { label: 'Unknown', prob: 0 };
 }
 
 function predict(text) {
     try {
-        // Ensure instances exist even if user types early
         createInstances();
 
         const raw = (text || '').trim().toLowerCase();
-
-        // Empty input → clear UI
         if (!raw) {
             post('PREDICTION', {
                 autocomplete: '',
                 final: { label: '—', prob: 0 },
-                topComb: null,
+                origin: 'none',
                 topLang: null,
+                topComb: null,
+                langTopK: [],
+                combTopK: [],
+                confTopK: [],
                 uncertain: false,
                 confidence: 0
             });
             return;
         }
 
-        // Fast, DOM-free autocomplete built from the CSV index
-        const autocompleteText = autocomplete(raw); // may be ''
+        const autocompleteText = autocomplete(raw);
         const target = autocompleteText || raw;
 
-        // If core models aren’t ready yet, return a harmless placeholder
-        if (!modelsReadyForPredict()) {
+        if (!isReady()) {
             post('PREDICTION', {
                 autocomplete: autocompleteText,
                 final: { label: '—', prob: 0 },
-                topComb: null,
+                origin: 'loading',
                 topLang: null,
+                topComb: null,
+                langTopK: [],
+                combTopK: [],
+                confTopK: [],
                 uncertain: true,
                 confidence: 0
             });
             return;
         }
 
-        // --- 1) Language from encoder → classifier
-        let topLang = null;
+        // --- 1) Language (top-3)
+        let topLang = null, langTopK = [];
         try {
             const encV = ENC.encode(target);
-            topLang = (typeof LANG.predictFromVector === 'function')
-                ? (LANG.predictFromVector(encV)[0] || null)
-                : (LANG.predict(target, 1)[0] || null);
-        } catch (_) {
-            topLang = null;
-        }
+            const preds = (typeof LANG.predictFromVector === 'function')
+                ? LANG.predictFromVector(encV, 3)
+                : LANG.predict(target, 3);
+            langTopK = Array.isArray(preds) ? preds.slice(0, 3) : [];
+            topLang = langTopK[0] || null;
+        } catch (_) { }
 
-        // --- 2) Char encoder + meta → combiner
-        let topComb = null, chV = null, meta = null;
+        // --- 2) Char encoder + meta → combiner (top-3)
+        let topComb = null, combTopK = [], chV = null, meta = null;
         try {
             chV = normVec(CHENC.encode(target));
             meta = metaFor(raw);
-            topComb = (COMB.predict(chV, meta)[0] || null);
-        } catch (_) {
-            topComb = null;
-        }
 
-        // --- 3) Confidence and optional refiner
-        let isUncertain = true;
-        try {
-            const confPred = CONF.predict(chV, meta)[0];
-            isUncertain = confPred ? (confPred.label === 'low') : true;
-        } catch (_) {
-            isUncertain = true;
-        }
-
-        let refined = null;
-        try {
-            if (self.REF) {
-                const combined = combineFeatures(chV, meta);
-                refined = REF.predict(combined)[0] || null;
+            // Guard: if either is missing, return placeholder
+            if (!chV || !meta) {
+                post('PREDICTION', {
+                    autocomplete: autocompleteText,
+                    final: { label: '—', prob: 0 },
+                    origin: 'loading',
+                    topLang: topLang || null,
+                    topComb: null, langTopK, combTopK: [], confTopK: [],
+                    uncertain: true, confidence: 0
+                });
+                return;
             }
-        } catch { }
 
-        // --- 4) Blend & publish
+            const preds = COMB.predict(chV, meta, 3);
+            combTopK = Array.isArray(preds) ? preds.slice(0, 3) : [];
+            topComb = combTopK[0] || null;
+        } catch (_) { }
+
+        // --- 3) Confidence (top-2)
+        let isUncertain = true, confTopK = [];
+        try {
+            const preds = CONF.predict(chV, meta, 2);
+            confTopK = Array.isArray(preds) ? preds.slice(0, 2) : [];
+            const head = confTopK[0];
+            isUncertain = head ? (head.label === 'low') : true;
+        } catch (_) { }
+
+        // --- 4) Optional refiner
+        let refined = null, origin = 'combiner';
+        try {
+            if (self.REF && (isUncertain || (topComb?.prob ?? 0) < 0.6)) {
+                const combined = FeatureCombinerELM.combineFeatures(chV, meta);
+                const preds = REF.predict(combined, 1);
+                refined = Array.isArray(preds) ? preds[0] : null;
+                origin = refined ? 'refiner' : 'combiner';
+            }
+        } catch { origin = 'combiner'; }
+
+        // --- 5) Blend and publish
         const final = blendFinal(topLang, topComb, refined, isUncertain);
         const confidence = Math.max(0, Math.min(1, final?.prob ?? 0));
 
         post('PREDICTION', {
             autocomplete: autocompleteText,
             final,
-            topComb,
+            origin,
             topLang,
+            topComb,
+            langTopK,
+            combTopK,
+            confTopK,
             uncertain: isUncertain,
             confidence
         });
     } catch (err) {
-        // Absolute last-resort safety: never crash the worker
         post('PREDICTION', {
             autocomplete: '',
             final: { label: '—', prob: 0 },
-            topComb: null,
+            origin: 'error',
             topLang: null,
+            topComb: null,
+            langTopK: [],
+            combTopK: [],
+            confTopK: [],
             uncertain: true,
             confidence: 0
         });
@@ -655,6 +679,7 @@ function predict(text) {
     }
 }
 
+// ------------------------------ Export --------------------------------
 async function exportAll() {
     const items = [
         ['encoder_model', ENC],
@@ -674,9 +699,7 @@ async function exportAll() {
     post('BULK_EXPORT', out);
 }
 
-
-/* ---------------------------- Message loop --------------------------- */
-
+// --------------------------- Message loop -----------------------------
 self.onmessage = async (ev) => {
     const { type, payload } = ev.data || {};
     if (type === Msg.INIT) {
@@ -686,15 +709,21 @@ self.onmessage = async (ev) => {
         postLog('Worker init.');
         postPipe();
 
-        await fetchCSV();          // builds autocomplete index & marks ac=ready
-        await loadAll();           // try to load from /models
-        await trainIfNeeded();     // then train anything missing
+        postStage('Loading dataset…');
+        await fetchCSV();
+
+        postStage('Loading saved models…');
+        await loadAll();
+
+        postStage('Training missing models…');
+        await trainIfNeeded();
+
         postLog('Bootstrap finished.');
     } else if (type === Msg.LOAD) {
-        postLog('Loading models from /models …');
+        postStage('Loading saved models…');
         await loadAll();
     } else if (type === Msg.TRAIN) {
-        postLog('Training / updating pipeline …');
+        postStage('Training / updating pipeline…');
         await trainIfNeeded();
         postLog('Training finished.');
     } else if (type === Msg.PREDICT) {
@@ -703,8 +732,9 @@ self.onmessage = async (ev) => {
         await exportAll();
     } else if (type === Msg.RESET) {
         Object.keys(status).forEach(k => status[k] = { status: '—', ok: null });
-        AC = ENC = LANG = CHENC = COMB = CONF = REF = null;   // make sure REF is nulled
+        AC = ENC = LANG = CHENC = COMB = CONF = REF = null;
         greetings = []; labels = [];
+        postStage('Resetting… loading dataset…');
         await fetchCSV();
         postPipe();
         postMetrics({});
