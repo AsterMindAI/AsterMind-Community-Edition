@@ -27,12 +27,12 @@
     "watch": "rollup -c -w",
     "clean": "rm -rf dist",
     "dev": "vite",
-    "dev:autocomplete": "DEMO=autocomplete-chain vite",
-    "dev:lang": "DEMO=language-awareness-demo vite",
-    "dev:chain": "DEMO=chain-with-save vite",
     "dev:news": "DEMO=ag-news-demo vite",
-    "dev:elm": "DEMO=elm-explination vite",
+    "dev:autocomplete": "DEMO=autocomplete-chain vite",
+    "dev:chain": "DEMO=chain-with-save vite",
     "dev:music": "DEMO=elm-drum-demo-mainthread vite",
+    "dev:elm": "DEMO=elm-explination vite",
+    "dev:lang": "DEMO=language-awareness-demo vite",
     "test": "vitest"
   },
   "publishConfig": {
