@@ -1,4 +1,4 @@
-/* global window, document, Worker, Blob, URL */
+/* global window, document, Worker, Blob, URL, FileReader */
 
 const DATA_URL = '/ag-news-classification-dataset/train.csv';
 const WORKER_URL = '/agnews-worker.js';
@@ -14,56 +14,50 @@ function logLine(s) {
     if (atBottom) el.scrollTop = el.scrollHeight;
 }
 function setProbs(probMap) {
-    const grid = $('probGrid');
-    grid.innerHTML = '';
+    const grid = $('probGrid'); grid.innerHTML = '';
     CATEGORIES.forEach(cat => {
         const label = document.createElement('div'); label.textContent = cat;
         const bar = document.createElement('div'); bar.className = 'probbar';
         const fill = document.createElement('div'); fill.className = 'probfill';
-        const pct = Math.round((probMap[cat] || 0) * 100);
-        fill.style.width = pct + '%';
+        const pct = Math.round((probMap[cat] || 0) * 100); fill.style.width = pct + '%';
         fill.style.background = ({
             World: 'linear-gradient(to right, teal, cyan)',
             Sports: 'linear-gradient(to right, green, lime)',
             Business: 'linear-gradient(to right, goldenrod, yellow)',
             'Sci/Tech': 'linear-gradient(to right, purple, magenta)'
-        })[cat] || 'linear-gradient(to right,#5a7,#9df)';
-        bar.appendChild(fill);
-        grid.appendChild(label); grid.appendChild(bar);
+        })[cat];
+        bar.appendChild(fill); grid.appendChild(label); grid.appendChild(bar);
     });
 }
+const fmtMB = (mb) => `${(mb || 0).toFixed(1)} MB`;
 
 window.addEventListener('DOMContentLoaded', () => {
-    const mode = $('mode');
-    const activation = $('activation');
-    const encHidden = $('encHidden');
-    const clsHidden = $('clsHidden');
-    const batch = $('batch');
-    const kernel = $('kernel');
-    const landmarks = $('landmarks');
-    const gamma = $('gamma');
+    const mode = $('mode'), activation = $('activation'), encHidden = $('encHidden'), clsHidden = $('clsHidden'), batch = $('batch'),
+        kernel = $('kernel'), landmarks = $('landmarks'), gamma = $('gamma');
 
-    const btnStart = $('btnStart');
-    const btnPause = $('btnPause');
-    const btnResume = $('btnResume');
-    const btnCancel = $('btnCancel');
-    const btnExportEnc = $('btnExportEnc');
-    const btnExportCls = $('btnExportCls');
+    const btnStart = $('btnStart'), btnPause = $('btnPause'), btnResume = $('btnResume'), btnCancel = $('btnCancel'),
+        btnExportEnc = $('btnExportEnc'), btnExportCls = $('btnExportCls'), btnPredict = $('btnPredict'),
+        fileImport = $('fileImport'), btnRecover = $('btnRecover');
 
-    const phase = $('phase');
-    const rps = $('rps');
-    const eta = $('eta');
-    const dl = $('dl');
-    const rows = $('rows');
-    const batchChip = $('batchChip');
-    const acc = $('acc');
-    const input = $('headlineInput');
+    const phase = $('phase'), rps = $('rps'), eta = $('eta'), dl = $('dl'), rows = $('rows'),
+        batchChip = $('batchChip'), acc = $('acc'), earlyStop = $('earlyStop'), predictChip = $('predictChip'),
+        input = $('headlineInput');
 
     batchChip.textContent = `batch: ${batch.value}`;
 
-    let worker = null;
-    let modelsReady = false;     // true after final model ready
-    let trainingActive = false;  // true between Start and Ready
+    let worker = null, predictReady = false, trainingActive = false, paused = false;
+
+    function setPredictReady(ready, warm = null, target = null) {
+        predictReady = !!ready;
+        btnPredict.disabled = !predictReady;
+        input.disabled = !predictReady && trainingActive && !paused;
+        if (ready) { predictChip.textContent = 'predict: ready'; input.placeholder = 'Type a headline…'; }
+        else {
+            predictChip.textContent = (warm != null && target != null) ? `predict: warming ${Math.min(warm, target)} / ${target}` : 'predict: —';
+            if (trainingActive && !paused) input.placeholder = 'Training…';
+        }
+    }
+    function setPauseUI() { btnPause.disabled = paused; btnResume.disabled = !paused; input.disabled = !predictReady && trainingActive && !paused; }
 
     function ensureWorker() {
         if (worker) return;
@@ -71,126 +65,110 @@ window.addEventListener('DOMContentLoaded', () => {
         worker.onmessage = (e) => {
             const msg = e.data || {};
             switch (msg.type) {
-                case 'log':
-                    logLine(msg.text);
-                    if (msg.text === 'Paused.') {
-                        btnPause.disabled = true; btnResume.disabled = false;
-                        // allow predictions while paused
-                        input.disabled = false;
-                        if (!modelsReady) input.placeholder = 'Paused — try a headline…';
-                    }
-                    if (msg.text === 'Resumed.') {
-                        btnPause.disabled = false; btnResume.disabled = true;
-                        // disable input again if training not finished
-                        if (trainingActive && !modelsReady) {
-                            input.disabled = true;
-                            input.placeholder = 'Training…';
-                        }
-                    }
-                    break;
+                case 'log': logLine(msg.text); break;
                 case 'progress':
                     setFill(msg.pct || 0);
                     if (msg.phase) phase.textContent = msg.phase;
-                    if (msg.rps != null) rps.textContent = msg.rps.toFixed(1);
+                    if (msg.rps != null) rps.textContent = (msg.rps || 0).toFixed(1);
                     if (msg.eta) eta.textContent = msg.eta;
-                    if (msg.mb != null) dl.textContent = `${msg.mb.toFixed(1)} MB`;
+                    if (msg.mb != null) dl.textContent = fmtMB(msg.mb);
                     if (msg.rowsProcessed != null) {
                         const total = msg.totalRows && msg.totalRows > 0 ? ` / ~${msg.totalRows} rows` : ' / 0 rows';
                         rows.textContent = `${msg.rowsProcessed}${total}`;
                     }
-                    if (msg.valAcc != null) {
-                        acc.textContent = `val acc: ${(msg.valAcc * 100).toFixed(1)}%`;
-                    }
+                    if (msg.valAcc != null) acc.textContent = `val acc: ${(msg.valAcc * 100).toFixed(1)}%`;
                     break;
+
+                case 'state':
+                    paused = !!msg.paused;
+                    setPredictReady(!!msg.predictReady, msg.warmSeen ?? null, msg.warmTarget ?? null);
+                    setPauseUI();
+                    break;
+
+                case 'predict-warm':
+                    setPredictReady(predictReady, msg.warmSeen, msg.warmTarget);
+                    break;
+
+                case 'predict-ready':
+                    setPredictReady(true);
+                    break;
+
+                case 'predict-ack':
+                    logLine('↪︎ predicting…');
+                    break;
+
+                case 'early-stop':
+                    earlyStop.textContent = `early stop: ${msg.reason || '—'}`;
+                    logLine(`⏹️ Early stop — ${msg.reason || ''}`);
+                    break;
+
                 case 'ready':
-                    modelsReady = true;
-                    trainingActive = false;
-                    input.disabled = false;
-                    input.placeholder = 'Type a headline…';
-                    btnPause.disabled = false;
-                    btnResume.disabled = true;
-                    logLine('✅ Models ready.');
-                    break;
+                    trainingActive = false; setPredictReady(true); setPauseUI(); logLine('✅ Models ready.'); break;
+
                 case 'probabilities':
-                    setProbs(msg.map || {});
-                    break;
+                    setProbs(msg.map || {}); break;
+
                 case 'model-json': {
-                    const { name, json } = msg;
-                    const blob = new Blob([json], { type: 'application/json' });
-                    const a = document.createElement('a');
-                    a.href = URL.createObjectURL(blob);
-                    a.download = name;
-                    a.click();
-                    URL.revokeObjectURL(a.href);
-                    break;
+                    const { name, json } = msg; const blob = new Blob([json], { type: 'application/json' });
+                    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); URL.revokeObjectURL(a.href);
+                    logLine(`⬇️ Exported ${name}`); break;
                 }
-                case 'error':
-                    logLine('❌ ' + msg.error);
-                    break;
+
+                case 'error': logLine('❌ ' + msg.error); break;
             }
         };
     }
 
+    // Start / Pause / Resume / Cancel
     btnStart.onclick = () => {
         ensureWorker();
-        modelsReady = false;
-        trainingActive = true;
-        input.disabled = true;
-        input.placeholder = 'Training…';
+        trainingActive = true; paused = false;
+        setProbs({}); setFill(0);
+        earlyStop.textContent = 'early stop: —';
         acc.textContent = 'val acc: —';
-        $('probGrid').innerHTML = '';
-        setFill(0);
-        btnResume.disabled = true;
-        btnPause.disabled = false;
+        predictChip.textContent = 'predict: —';
+        setPredictReady(false); setPauseUI();
         logLine('▶️ Start requested.');
+
         const kelmMode = mode.value === 'kelm';
         worker.postMessage({
             type: 'init',
             payload: {
-                dataUrl: DATA_URL,
-                categories: CATEGORIES,
-                batch: Number(batch.value),
-                encoderHidden: Number(encHidden.value),
-                classifierHidden: Number(clsHidden.value),
-                activation: activation.value,
-                mode: mode.value, // 'kelm' | 'online'
-                kelm: {
-                    kernel: kernel.value,
-                    landmarks: Number(landmarks.value),
-                    gamma: Number(gamma.value),
-                    whiten: true,
-                    ridgeLambda: 1e-2
-                },
-                files: {
-                    encoder: 'agnews_encoder.json',
-                    classifier: kelmMode ? 'agnews_kelm.json' : 'agnews_classifier.json'
-                },
-                maxRowsForKELM: 25000
+                dataUrl: DATA_URL, categories: CATEGORIES, batch: Number(batch.value),
+                encoderHidden: Number(encHidden.value), classifierHidden: Number(clsHidden.value), activation: activation.value,
+                mode: kelmMode ? 'kelm' : 'online',
+                kelm: { kernel: kernel.value, landmarks: Number(landmarks.value), gamma: Number(gamma.value), whiten: true, ridgeLambda: 1e-2 },
+                files: { encoder: 'agnews_encoder.json', classifier: kelmMode ? 'agnews_kelm.json' : 'agnews_classifier.json' },
+                earlyStop: { window: 2000, threshold: 0.985 }
             }
         });
     };
+    btnPause.onclick = () => { if (worker) { worker.postMessage({ type: 'pause' }); paused = true; setPauseUI(); } };
+    btnResume.onclick = () => { if (worker) { worker.postMessage({ type: 'resume' }); paused = false; setPauseUI(); } };
+    btnCancel.onclick = () => { if (worker) { worker.postMessage({ type: 'cancel' }); trainingActive = false; } };
 
-    btnPause.onclick = () => worker && worker.postMessage({ type: 'pause' });
-    btnResume.onclick = () => worker && worker.postMessage({ type: 'resume' });
-    btnCancel.onclick = () => worker && worker.postMessage({ type: 'cancel' });
-
+    // Export/Import/Recover
     btnExportEnc.onclick = () => worker && worker.postMessage({ type: 'export', which: 'encoder' });
     btnExportCls.onclick = () => worker && worker.postMessage({ type: 'export', which: 'classifier' });
+    btnRecover.onclick = () => worker && worker.postMessage({ type: 'export-cached', which: 'classifier' });
+    fileImport.addEventListener('change', () => {
+        const f = fileImport.files && fileImport.files[0]; if (!f) return;
+        const r = new FileReader(); r.onload = () => {
+            const txt = String(r.result || ''); worker && worker.postMessage({ type: 'import-model-json', json: txt, filename: f.name });
+            logLine(`📤 Import requested: ${f.name}`);
+        }; r.readAsText(f);
+    });
 
-    // Debounced predict
-    let t = 0;
-    const debouncedPredict = (txt) => {
-        clearTimeout(t);
-        t = setTimeout(() => {
-            if (!txt.trim()) return;
-            // allow predictions either when fully ready OR paused with interim model
-            if (modelsReady || !trainingActive) {
-                worker.postMessage({ type: 'predict', text: txt });
-            } else {
-                // paused interim predictions are handled too; just send
-                worker.postMessage({ type: 'predict', text: txt });
-            }
-        }, 150);
-    };
-    $('headlineInput').addEventListener('input', () => debouncedPredict($('headlineInput').value.toLowerCase()));
+    // Prediction
+    function sendPredict(txt) {
+        const t = String(txt || '').trim(); if (!t) return;
+        if (!predictReady) { logLine('ℹ️ Predict ignored — not ready yet.'); return; }
+        logLine('→ predict: "' + t.slice(0, 120) + '"');
+        worker && worker.postMessage({ type: 'predict', text: t });
+    }
+    $('headlineInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); sendPredict($('headlineInput').value); } });
+    let tDeb = 0; $('headlineInput').addEventListener('input', () => { clearTimeout(tDeb); const val = $('headlineInput').value; tDeb = setTimeout(() => sendPredict(val), 180); });
+    btnPredict.onclick = () => sendPredict($('headlineInput').value);
+
+    batch.addEventListener('input', () => (batchChip.textContent = `batch: ${batch.value}`));
 });

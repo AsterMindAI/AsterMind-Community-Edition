@@ -12,9 +12,6 @@
       --ink: #e6eeff;
       --muted: #9db0e6;
       --acc: #57ccff;
-      --good: #6ee7a2;
-      --warn: #facc15;
-      --bad: #fb7185;
       --chip: #0f1b36;
       --chipb: #21407d;
     }
@@ -25,13 +22,13 @@
       padding: 0;
       background: var(--bg);
       color: var(--ink);
-      font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif;
+      font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif
     }
 
     .wrap {
-      max-width: 1000px;
+      max-width: 1040px;
       margin: 0 auto;
-      padding: 24px;
+      padding: 24px
     }
 
     h1 {
@@ -61,7 +58,7 @@
       background: var(--panel);
       border-radius: 14px;
       padding: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, .06);
       box-shadow: 0 10px 30px rgba(0, 0, 0, .25)
     }
 
@@ -112,6 +109,16 @@
       cursor: not-allowed
     }
 
+    .rowline {
+      display: flex;
+      gap: 8px;
+      align-items: center
+    }
+
+    .grow {
+      flex: 1
+    }
+
     .bar {
       height: 12px;
       background: #132143;
@@ -143,12 +150,6 @@
 
     .kpi .v {
       font-weight: 700
-    }
-
-    .stack {
-      display: flex;
-      flex-direction: column;
-      gap: 8px
     }
 
     .chips {
@@ -186,7 +187,7 @@
     }
 
     .log {
-      height: 160px;
+      height: 180px;
       overflow: auto;
       background: #0b1326;
       border: 1px solid rgba(255, 255, 255, .08);
@@ -197,14 +198,9 @@
       white-space: pre-wrap
     }
 
-    .rowline {
-      display: flex;
-      gap: 8px;
-      align-items: center
-    }
-
-    .grow {
-      flex: 1
+    .hint {
+      font-size: .85rem;
+      color: var(--muted)
     }
   </style>
 </head>
@@ -212,112 +208,115 @@
 <body>
   <div class="wrap">
     <h1>📰 AsterMind ELM — AG News</h1>
-    <p>Showcasing <b>Kernel ELM (Nyström)</b> scale + <b>Online ELM</b> streaming on the AG News dataset — with live
-      metrics, partial predictions, and pause/resume.</p>
+    <p>Showcasing <b>Kernel ELM (Nyström)</b> + <b>Online ELM</b> — live metrics, early predictions, pause/resume,
+      autosave & recovery.</p>
 
     <div class="grid">
       <div class="card">
-        <div class="stack">
-          <div class="controls">
-            <div class="row">
-              <label>Mode</label>
-              <select id="mode">
-                <option value="kelm">Kernel ELM (Nyström)</option>
-                <option value="online">Online ELM (Streaming)</option>
-              </select>
-            </div>
-            <div class="row">
-              <label>Activation</label>
-              <select id="activation">
-                <option value="relu">relu</option>
-                <option value="gelu">gelu</option>
-                <option value="linear">linear</option>
-                <option value="leakyrelu">leakyrelu</option>
-              </select>
-            </div>
-            <div class="row">
-              <label>Encoder hidden</label>
-              <input id="encHidden" type="number" min="16" step="16" value="64" />
-            </div>
-            <div class="row">
-              <label>Classifier hidden</label>
-              <input id="clsHidden" type="number" min="64" step="64" value="1024" />
-            </div>
-            <div class="row">
-              <label>Batch (rows)</label>
-              <input id="batch" type="number" min="32" step="32" value="256" />
-            </div>
-            <div class="row">
-              <label>Kernel</label>
-              <select id="kernel">
-                <option value="rbf">rbf</option>
-                <option value="linear">linear</option>
-                <option value="poly">poly</option>
-                <option value="laplacian">laplacian</option>
-              </select>
-            </div>
-            <div class="row">
-              <label>Landmarks (M)</label>
-              <input id="landmarks" type="number" min="64" step="64" value="512" />
-            </div>
-            <div class="row">
-              <label>Gamma / Degree</label>
-              <input id="gamma" type="number" min="0" step="0.1" value="0.5" />
-            </div>
+        <div class="controls">
+          <div class="row"><label>Mode</label>
+            <select id="mode">
+              <option value="kelm">Kernel ELM (Nyström)</option>
+              <option value="online">Online ELM (Streaming)</option>
+            </select>
           </div>
-
-          <div class="rowline">
-            <div class="grow">
-              <div class="bar">
-                <div class="fill" id="fill"></div>
-              </div>
-            </div>
-            <button id="btnStart" class="primary">Start</button>
-            <button id="btnPause">Pause</button>
-            <button id="btnResume" disabled>Resume</button>
-            <button id="btnCancel">Cancel</button>
+          <div class="row"><label>Activation</label>
+            <select id="activation">
+              <option value="relu">relu</option>
+              <option value="gelu">gelu</option>
+              <option value="linear">linear</option>
+              <option value="leakyrelu">leakyrelu</option>
+            </select>
           </div>
-
-          <div class="telemetry">
-            <div class="kpi">Phase<br><span class="v" id="phase">—</span></div>
-            <div class="kpi">Rows/sec<br><span class="v" id="rps">0</span></div>
-            <div class="kpi">ETA<br><span class="v" id="eta">—</span></div>
+          <div class="row"><label>Encoder hidden</label><input id="encHidden" type="number" min="16" step="16"
+              value="64" /></div>
+          <div class="row"><label>Classifier hidden</label><input id="clsHidden" type="number" min="64" step="64"
+              value="1024" /></div>
+          <div class="row"><label>Batch (rows)</label><input id="batch" type="number" min="32" step="32" value="256" />
           </div>
-
-          <div class="chips">
-            <span class="chip" id="dl">0.0 MB</span>
-            <span class="chip" id="rows">0 / 0 rows</span>
-            <span class="chip" id="batchChip">batch: 256</span>
-            <span class="chip" id="acc">val acc: —</span>
+          <div class="row"><label>Kernel</label>
+            <select id="kernel">
+              <option value="rbf">rbf</option>
+              <option value="linear">linear</option>
+              <option value="poly">poly</option>
+              <option value="laplacian">laplacian</option>
+            </select>
           </div>
-
-          <input type="text" id="headlineInput" placeholder="Type a headline…" disabled />
-          <div class="probs" id="probGrid"></div>
-
-          <div class="rowline">
-            <button id="btnExportEnc">Export Encoder</button>
-            <button id="btnExportCls">Export Classifier</button>
-            <span style="opacity:.7">Models auto-load from <code>/models/*.json</code> if present</span>
-          </div>
-
-          <div class="log" id="log"></div>
+          <div class="row"><label>Landmarks (M)</label><input id="landmarks" type="number" min="64" step="64"
+              value="512" /></div>
+          <div class="row"><label>Gamma / Degree</label><input id="gamma" type="number" min="0" step="0.1"
+              value="0.5" /></div>
         </div>
+
+        <div class="rowline">
+          <div class="grow">
+            <div class="bar">
+              <div class="fill" id="fill"></div>
+            </div>
+          </div>
+          <button id="btnStart" class="primary" type="button">Start</button>
+          <button id="btnPause" type="button">Pause</button>
+          <button id="btnResume" type="button" disabled>Resume</button>
+          <button id="btnCancel" type="button">Cancel</button>
+        </div>
+
+        <div class="telemetry">
+          <div class="kpi">Phase<br><span class="v" id="phase">—</span></div>
+          <div class="kpi">Rows/sec<br><span class="v" id="rps">0</span></div>
+          <div class="kpi">ETA<br><span class="v" id="eta">—</span></div>
+        </div>
+
+        <div class="chips">
+          <span class="chip" id="dl">0.0 MB</span>
+          <span class="chip" id="rows">0 / 0 rows</span>
+          <span class="chip" id="batchChip">batch: 256</span>
+          <span class="chip" id="acc">val acc: —</span>
+          <span class="chip" id="earlyStop">early stop: —</span>
+          <span class="chip" id="predictChip">predict: —</span>
+        </div>
+
+        <div class="rowline">
+          <input id="headlineInput" class="grow" type="text" placeholder="Type a headline…" disabled />
+          <button id="btnPredict" type="button" disabled>Predict</button>
+        </div>
+        <div class="probs" id="probGrid"></div>
+
+        <div class="rowline">
+          <button id="btnExportEnc" type="button">Export Encoder</button>
+          <button id="btnExportCls" type="button">Export Classifier</button>
+          <button id="btnRecover" type="button">Recover autosave</button>
+        </div>
+        <div class="rowline">
+          <span class="hint">Import:</span>
+          <input id="fileImport" type="file" accept=".json,application/json" />
+          <span class="hint">Auto-loads from <code>/models/*.json</code> if present</span>
+        </div>
+
+        <div class="log" id="log"></div>
       </div>
 
       <div class="card">
-        <h3 style="margin:0 0 8px">How this demo proves scale</h3>
-        <ul>
-          <li><b>Kernel ELM (Nyström):</b> landmark subspace lets you fit massive text quickly with high accuracy.</li>
-          <li><b>Online ELM:</b> stream rows, update weights incrementally, get usable predictions early.</li>
-          <li><b>Live metrics:</b> you’ll see throughput, ETA, and validation accuracy while it trains.</li>
-          <li><b>Pause/Resume:</b> experiment interactively without reloading the page.</li>
-        </ul>
-        <p style="margin-top:12px;opacity:.8">Dataset path used: <code>/ag-news-classification-dataset/train.csv</code>
-        </p>
+        <h3 style="margin:0 0 8px">How this demo works</h3>
+        <ol class="hint" style="padding-left:18px">
+          <li><b>Choose mode</b> (Kernel ELM = Nyström; Online = streaming).</li>
+          <li><b>Click Start</b> — watch throughput, ETA, rows.</li>
+          <li>When chip shows <b>predict: ready</b>, type a headline and click <b>Predict</b> (or press Enter). You can
+            also <b>Pause</b>; predictions keep working.</li>
+        </ol>
+        <p class="hint" style="margin-top:12px">Dataset: <code>/ag-news-classification-dataset/train.csv</code></p>
       </div>
     </div>
   </div>
 
+  <script>
+    // surface silent errors to the on-page log
+    window.addEventListener('error', e => {
+      const el = document.getElementById('log'); if (el) { el.textContent += (el.textContent ? '\n' : '') + '❌ ' + (e.message || e.error); }
+    });
+    window.addEventListener('unhandledrejection', e => {
+      const el = document.getElementById('log'); if (el) { el.textContent += (el.textContent ? '\n' : '') + '❌ (promise) ' + (e.reason && e.reason.message || e.reason); }
+    });
+  </script>
   <script src="/agnews-demo.js" defer></script>
 </body>
 
