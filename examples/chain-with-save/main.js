@@ -1,249 +1,300 @@
-// ✅ main.js patched to load all ELM models from /models instead of localStorage
-const {
-    AutoComplete,
-    EncoderELM,
-    CharacterLangEncoderELM,
-    FeatureCombinerELM,
-    RefinerELM,
-    ConfidenceClassifierELM,
-    LanguageClassifier
-} = window.astermind;
+/* ELM Showcase 2.0 — main thread
+   - Orchestrates UI and a Web Worker that trains/evaluates
+   - Requires window.astermind to be available globally
+*/
 
-async function tryLoadOrTrain(model, key, trainFn, evalFn = () => ({ passed: true, metrics: {} })) {
-    let trained = false;
-    try {
-        const res = await fetch(`/models/${key}.json`);
-        if (!res.ok) throw new Error(`Fetch failed for ${key}.json`);
-        const json = await res.text();
-        if (json.trim().startsWith('<!DOCTYPE')) throw new Error(`Received HTML instead of JSON`);
-        model.loadModelFromJSON(json);
-        console.log(`✅ Loaded ${key} from /models/${key}.json`);
-        trained = true;
-    } catch (e) {
-        console.warn(`⚠️ Could not load trained model for ${key}. Will train from scratch.\nReason: ${e.message}`);
-    }
+/* ----------------------- DOM references ----------------------- */
+const logEl = document.getElementById('log');
+const pipelineEl = document.getElementById('pipeline');
+const metricsEl = document.getElementById('metrics');
+const chartEl = document.getElementById('chart');
 
-    if (!trained) {
-        trainFn();
+const input = document.getElementById('userInput');
+const ghost = document.getElementById('autoGhost');
+const fill = document.getElementById('langFill');
+const predTags = document.getElementById('predTags');
 
-        const result = evalFn();
-        const passed = result.passed;
-        const metrics = result.metrics || {};
+const btnLoad = document.getElementById('btn-load');
+const btnTrain = document.getElementById('btn-train');
+const btnExport = document.getElementById('btn-export');
+const btnReset = document.getElementById('btn-reset');
 
-        // Report metrics
-        console.log(`📊 Evaluation for ${key}:`);
-        for (const [metric, { value, threshold, passed }] of Object.entries(metrics)) {
-            console.log(` - ${metric}: ${value} (threshold: ${threshold}) ${passed ? '✅' : '❌'}`);
-        }
+// Optional UI bits (overlay + stage note + viz panes)
+const helperEl = document.getElementById('helperText');
+const stageNoteEl = document.getElementById('stageNote');
+const overlayEl = document.getElementById('loadingOverlay');
 
-        if (passed) {
-            const json = model.elm?.savedModelJSON || model.savedModelJSON;
-            if (json) {
-                model.saveModelAsJSONFile(`${key}.json`);
-                console.log(`📦 Model saved locally as ${key}.json — please deploy to /models/ manually`);
-            }
-        } else {
-            console.warn(`❌ Model not saved: one or more thresholds not met for ${key}`);
-        }
+const langViz = document.getElementById('viz-lang');
+const combViz = document.getElementById('viz-comb');
+const confViz = document.getElementById('viz-conf');
+
+/* -------------------------- Config ---------------------------- */
+const CATEGORIES = ['English', 'French', 'Spanish'];
+const COLORS = {
+    English: 'linear-gradient(90deg,#22c55e,#a3e635)',
+    French: 'linear-gradient(90deg,#3b82f6,#22d3ee)',
+    Spanish: 'linear-gradient(90deg,#ef4444,#f97316)'
+};
+
+const SETTINGS = {
+    charSet:
+        'abcdefghijklmnopqrstuvwxyzçàâêëéèîïôœùûüñáíóúü¿¡ ’-.,!?;:()[]{}"\'\t ',
+    maxLen: 48,
+    saveAfterTrain: false,      // gate exports to explicit click
+    modelBasePath: '/models',   // where to load from if present
+};
+
+const WorkerMsg = {
+    INIT: 'INIT',
+    LOAD: 'LOAD',
+    TRAIN: 'TRAIN',
+    PREDICT: 'PREDICT',
+    EXPORT_ALL: 'EXPORT_ALL',
+    RESET: 'RESET'
+};
+
+/* ------------------------- Worker boot ------------------------ */
+const worker = new Worker('./worker.js');
+
+/* ----------------------- Small utilities ---------------------- */
+function log(line, kind = 'info') {
+    const prefix = kind === 'error' ? '❌' : kind === 'warn' ? '⚠️' : '•';
+    logEl.textContent += `${prefix} ${line}\n`;
+    logEl.scrollTop = logEl.scrollHeight;
+}
+
+function setInputEnabled(enabled, reason = '') {
+    input.disabled = !enabled;
+    if (!enabled) {
+        input.placeholder = 'Loading models…';
+        overlayEl && overlayEl.classList.remove('hidden');
+        if (stageNoteEl) stageNoteEl.textContent = reason || 'Preparing pipeline…';
+    } else {
+        input.placeholder = 'Type a greeting… e.g., bonjour';
+        overlayEl && overlayEl.classList.add('hidden');
+        if (stageNoteEl) stageNoteEl.textContent = '';
     }
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-    const input = document.getElementById('userInput');
-    const output = document.getElementById('autoOutput');
-    const fill = document.getElementById('langFill');
-
-    const charSet = 'abcdefghijklmnopqrstuvwxyzçàéèñáéíóúü¿¡ ';
-    const maxLen = 30;
-
-    const baseConfig = (hiddenUnits, exportFileName, useTokenizer = true, name = "Unnamed", metrics = { accuracy: 0.85 }) => ({
-        charSet,
-        maxLen,
-        hiddenUnits,
-        activation: 'relu',
-        useTokenizer,
-        tokenizerDelimiter: /\s+/,
-        exportFileName,
-        log: {
-            verbose: true,
-            name: name
-        },
-        metrics: metrics
+function bars(container, items) {
+    if (!container) return;
+    container.innerHTML = '';
+    (items || []).forEach(({ label, prob }) => {
+        const row = document.createElement('div');
+        row.className = 'barrow';
+        row.innerHTML = `
+      <span class="barlabel">${label}</span>
+      <div class="bartrack"><div class="barfill" style="width:${Math.round((prob || 0) * 100)}%"></div></div>
+      <span class="barpct">${Math.round((prob || 0) * 100)}%</span>`;
+        container.appendChild(row);
     });
+}
 
-    fetch('/language_greetings_1500.csv')
-        .then(r => r.text())
-        .then(async csv => {
-            const rows = csv.split('\n').map(l => l.trim()).filter(Boolean).slice(1);
-            const allData = rows.map(line => {
-                const [text = '', label = ''] = line.split(',');
-                return { text: text.trim().toLowerCase(), label: label.trim() };
-            }).filter(d => d.text && d.label);
+/* ---------------------- Pipeline badges ----------------------- */
+const HUMAN = {
+    '—': 'pending',
+    pending: 'pending',
+    unloaded: 'unloaded',
+    missing: 'missing',
+    loading: 'loading',
+    loaded: 'loaded',
+    trained: 'trained',
+    ready: 'ready',
+    skipped: 'skipped',
+};
 
-            const greetings = allData.map(d => d.text);
-            const labels = allData.map(d => d.label);
+function ensurePipelineScaffold() {
+    if (pipelineEl.dataset.init === '1') return;
+    pipelineEl.dataset.init = '1';
 
-            const acTrainPairs = greetings.flatMap(g => {
-                const cuts = [0.3, 0.6, 0.9];
-                return cuts.map(p => ({
-                    input: g.slice(0, Math.floor(g.length * p)).trim(),
-                    label: g.trim()
-                }));
-            });
+    const mk = (id, title) => {
+        const div = document.createElement('div');
+        div.className = 'stage-card';
+        div.id = id;
+        div.innerHTML = `<div class="title">${title}</div><div class="stage">pending</div>`;
+        return div;
+    };
 
-            const acTestPairs = greetings.map(g => ({
-                input: g.slice(0, Math.floor(g.length * 0.6)).trim(),
-                label: g.trim()
-            }));
+    pipelineEl.innerHTML = '';
+    pipelineEl.append(
+        mk('stage-ac', 'AutoComplete'),
+        mk('stage-encoder', 'EncoderELM'),
+        mk('stage-lang', 'LanguageClassifier'),
+        mk('stage-charenc', 'CharLangEncoder'),
+        mk('stage-combiner', 'FeatureCombiner'),
+        mk('stage-conf', 'ConfidenceClassifier'),
+        mk('stage-refiner', 'Refiner'),
+    );
+}
 
-            const ac = new AutoComplete(acTrainPairs, {
-                ...baseConfig(128, 'ac_model.json', false, "AutoCompleteELM", {
-                    crossEntropy: 2.04,
-                    top1Accuracy: 0.85
-                }),
-                inputElement: input,
-                outputElement: output,
-                activation: 'relu'
-            });
+function renderStage(cardId, state) {
+    const el = document.getElementById(cardId);
+    if (!el) return;
+    const s = HUMAN[state?.status] || 'pending';
+    el.setAttribute('data-stage', s);
+    el.querySelector('.stage').textContent = s;
+    el.classList.toggle('ok', !!state?.ok);
+    el.classList.toggle('warn', s === 'missing' || s === 'skipped');
+}
 
-            await tryLoadOrTrain(ac, 'ac_model', () => ac.train(), () => {
-                const acc = ac.top1Accuracy(acTestPairs);
-                const xent = ac.crossEntropy(acTestPairs);
-                const internalCE = ac.internalCrossEntropy(true);
-                console.log(`📊 AutoComplete — Accuracy: ${acc.toFixed(4)}, External CE: ${xent.toFixed(4)}, Internal CE: ${internalCE.toFixed(4)}`);
-                return acc >= 0.85 || internalCE <= 2.04;
-            });
+function setPipelineStatus(state) {
+    ensurePipelineScaffold();
+    renderStage('stage-ac', state.ac || { status: 'pending', ok: null });
+    renderStage('stage-encoder', state.encoder || { status: 'pending', ok: null });
+    renderStage('stage-lang', state.classifier || { status: 'pending', ok: null });
+    renderStage('stage-charenc', state.langEnc || { status: 'pending', ok: null });
+    renderStage('stage-combiner', state.combiner || { status: 'pending', ok: null });
+    renderStage('stage-conf', state.confidence || { status: 'pending', ok: null });
+    renderStage('stage-refiner', state.refiner || { status: 'pending', ok: null });
 
-            const encoder = new EncoderELM(baseConfig(32, 'encoder_model.json', true, "EncoderELM"));
-            const inputVectors = greetings.map(g => encoder.elm.encoder.normalize(encoder.elm.encoder.encode(g)));
-            await tryLoadOrTrain(encoder, 'encoder_model', () => encoder.train(greetings, inputVectors));
+    // Friendly stage note
+    if (stageNoteEl) {
+        const ordered = [
+            ['Encoder', state.encoder],
+            ['Language', state.classifier],
+            ['CharEnc', state.langEnc],
+            ['Combiner', state.combiner],
+            ['Confidence', state.confidence],
+            ['Refiner', state.refiner],
+        ];
+        const next = ordered.find(([, s]) => !s?.ok)?.[0];
+        stageNoteEl.textContent = next ? `Warming up: ${next}…` : '';
+    }
+}
 
-            const dim = 16;
-            const labelMap = new Map();
-            const encodedTargets = greetings.map((_, i) => {
-                const label = labels[i];
-                if (!labelMap.has(label)) {
-                    const vec = new Array(dim).fill(0);
-                    vec[labelMap.size] = 1;
-                    labelMap.set(label, vec);
-                }
-                return labelMap.get(label);
-            });
-            encoder.train(greetings, encodedTargets);
+/* ------------------------- Metrics/Chart ----------------------- */
+function renderMetrics(m) {
+    metricsEl.innerHTML = '';
+    const items = [
+        ['Top-1 Acc (Lang)', m?.langAcc],
+        ['Cross-Entropy (AC)', m?.acCE],
+        ['Centroid Sep (Enc)', m?.langSep],
+        ['F1(low) (Conf)', m?.confF1],
+    ];
+    for (const [k, v] of items) {
+        const card = document.createElement('div');
+        card.className = 'metric';
+        card.innerHTML = `<div class="k">${k}</div><div class="v">${v == null ? '—' : v}</div>`;
+        metricsEl.append(card);
+    }
+}
 
-            const classifier = new LanguageClassifier({
-                ...baseConfig(50, 'lang_model.json', true, "LanguageClassifier"),
-                categories: ['English', 'French', 'Spanish']
-            });
-            const classifierData = greetings.map((g, i) => ({ vector: encoder.encode(g), label: labels[i] }));
-            await tryLoadOrTrain(classifier, 'lang_model', () => classifier.trainVectors(classifierData));
+function drawConfidenceHistory(series) {
+    const ctx = chartEl.getContext('2d');
+    const W = chartEl.width, H = chartEl.height;
+    ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = '#2a325b'; ctx.lineWidth = 1;
+    ctx.strokeRect(0.5, 0.5, W - 1, H - 1);
+    if (!series?.length) return;
+    const maxN = Math.min(series.length, 120);
+    const windowed = series.slice(-maxN);
+    const step = (W - 20) / Math.max(1, windowed.length - 1);
+    ctx.beginPath();
+    ctx.moveTo(10, H - 10 - windowed[0] * (H - 20));
+    for (let i = 1; i < windowed.length; i++) {
+        const x = 10 + i * step;
+        const y = H - 10 - windowed[i] * (H - 20);
+        ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = '#7c9cff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+}
 
-            const langEncoder = new CharacterLangEncoderELM(baseConfig(64, 'langEncoder_model.json', true, "CharacterLangEncoderELM"));
-            await tryLoadOrTrain(langEncoder, 'langEncoder_model', () => langEncoder.train(greetings, labels));
+/* --------------------------- State ---------------------------- */
+const state = {
+    pipeline: {},
+    metrics: {},
+    confHistory: [],
+    ready: false
+};
 
-            const normalize = vec => {
-                const mag = Math.sqrt(vec.reduce((s, x) => s + x * x, 0)) || 1;
-                return vec.map(x => x / mag);
-            };
-            const normalizeMeta = ([len, diversity, vowels, punct]) => [len / maxLen, diversity, vowels, punct];
+/* ----------------------- Worker messages ---------------------- */
+worker.onmessage = (ev) => {
+    const { type, payload } = ev.data || {};
 
-            const vectors = greetings.map(g => normalize(langEncoder.encode(g)));
-            const metas = greetings.map(g => normalizeMeta([
-                g.length,
-                new Set(g).size / g.length,
-                (g.match(/[aeiou]/g) || []).length / g.length,
-                (g.match(/[.,!?]/g) || []).length / g.length
-            ]));
+    if (type === 'LOG') {
+        log(payload.line, payload.kind);
 
-            const combiner = new FeatureCombinerELM(baseConfig(128, 'combiner_model.json', false, "FeatureCombinerELM"));
-            await tryLoadOrTrain(combiner, 'combiner_model', () => combiner.train(vectors, metas, labels));
+    } else if (type === 'READY') {
+        state.ready = !!payload.ready;
+        setInputEnabled(state.ready, state.ready ? '' : 'Warming up models…');
 
-            const combinedInputs = vectors.map((vec, i) => FeatureCombinerELM.combineFeatures(vec, metas[i]));
-            const combinerResults = vectors.map((vec, i) => combiner.predict(vec, metas[i])[0]);
+    } else if (type === 'PIPELINE') {
+        state.pipeline = payload;
+        setPipelineStatus(payload);
 
-            const confidenceLabels = combinerResults.map((res, i) => {
-                const incorrect = res.label !== labels[i];
-                const lowProb = res.prob < 0.8;
-                return (lowProb || incorrect) ? 'low' : 'high';
-            });
+    } else if (type === 'METRICS') {
+        state.metrics = payload;
+        renderMetrics(payload);
 
-            const confidenceClassifier = new ConfidenceClassifierELM(baseConfig(64, 'conf_model.json', false, "ConfidenceClassifierELM"));
-            await tryLoadOrTrain(confidenceClassifier, 'conf_model', () => confidenceClassifier.train(vectors, metas, confidenceLabels));
+    } else if (type === 'PREDICTION') {
+        const {
+            autocomplete, final, topComb, topLang, langTopK, combTopK, confTopK,
+            uncertain, confidence, origin
+        } = payload;
 
-            const LOW_CONF = 0.8;
-            const lowConfidence = combinerResults
-                .map((res, i) => ({ vector: combinedInputs[i], actual: labels[i], predicted: res.label, label: labels[i], prob: res.prob }))
-                .filter(d => d.prob < LOW_CONF || d.predicted !== d.actual);
+        // ghost completion + fill bar
+        ghost.textContent = autocomplete || '';
+        const pct = Math.round((final?.prob || 0) * 100);
+        fill.style.width = `${pct}%`;
+        fill.style.background = COLORS[final?.label] || 'linear-gradient(90deg,#64748b,#94a3b8)';
 
-            const refiner = new RefinerELM(baseConfig(64, 'refiner_model.json', false, "RefinerELM"));
-            await tryLoadOrTrain(refiner, 'refiner_model', () => {
-                if (lowConfidence.length > 0) {
-                    refiner.train(
-                        lowConfidence.map(d => d.vector),
-                        lowConfidence.map(d => d.label)
-                    );
-                }
-            });
+        // tags
+        predTags.innerHTML = '';
+        const mk = (text) => { const t = document.createElement('span'); t.className = 'tag'; t.textContent = text; return t; };
+        if (topLang) predTags.append(mk(`Lang: ${topLang.label} (${Math.round(topLang.prob * 100)}%)`));
+        if (topComb) predTags.append(mk(`Comb: ${topComb.label} (${Math.round(topComb.prob * 100)}%)`));
+        if (uncertain) predTags.append(mk('Uncertain'));
+        predTags.append(mk(`Final: ${final?.label ?? '—'} (${pct}%)`));
+        if (origin) predTags.append(mk(`→ ${origin}`));
 
-            input.addEventListener('input', () => {
-                const val = input.value.trim().toLowerCase();
-                if (!val) {
-                    output.textContent = '';
-                    fill.style.width = '0%';
-                    fill.textContent = '';
-                    fill.style.background = '#ccc';
-                    return;
-                }
+        // mini visualizations (if present)
+        bars(langViz, langTopK);
+        bars(combViz, combTopK);
+        bars(confViz, (confTopK || []).map(d => ({ label: d.label, prob: d.prob })));
 
-                const [acResult] = ac.predict(val, 1);
-                const prediction = acResult.completion;
-                output.textContent = `🔮 Autocomplete: ${prediction}`;
+        // chart
+        state.confHistory.push(confidence ?? (final?.prob || 0));
+        drawConfidenceHistory(state.confHistory);
 
-                const encoded = encoder.encode(acResult.completion);
-                const [langResult] = classifier.predictFromVector(encoded);
-
-                const langVec = normalize(langEncoder.encode(prediction));
-                const meta = normalizeMeta([
-                    val.length,
-                    new Set(val).size / val.length,
-                    (val.match(/[aeiou]/g) || []).length / val.length,
-                    (val.match(/[.,!?]/g) || []).length / val.length
-                ]);
-
-                const combinedVec = FeatureCombinerELM.combineFeatures(langVec, meta);
-                const [combinerResult] = combiner.predict(langVec, meta);
-
-                const [confidenceResult] = confidenceClassifier.predict(langVec, meta);
-                const isUncertain = confidenceResult.label === 'low';
-
-                let finalResult = combinerResult;
-                let refined;
-
-                if (combinerResult.prob < 0.6 || isUncertain) {
-                    try {
-                        [refined] = refiner.predict(combinedVec);
-                        if (refined) {
-                            finalResult = langResult.label === combinerResult.label
-                                ? {
-                                    label: langResult.label,
-                                    prob: (langResult.prob + combinerResult.prob) / 2,
-                                }
-                                : refined;
-                        }
-                    } catch (err) {
-                        console.warn('⚠️ Refiner failed:', err);
-                    }
-                }
-
-                const percent = Math.round(finalResult.prob * 100);
-                fill.style.width = `${percent}%`;
-                fill.textContent = `${finalResult.label} (${percent}%)` + (finalResult === combinerResult ? ' [C]' : ' [R]');
-                fill.dataset.model = finalResult === combinerResult ? 'combiner' : 'refiner';
-                fill.style.background = {
-                    English: 'linear-gradient(to right, green, lime)',
-                    French: 'linear-gradient(to right, blue, cyan)',
-                    Spanish: 'linear-gradient(to right, red, orange)'
-                }[finalResult.label] || '#999';
-            });
+    } else if (type === 'BULK_EXPORT') {
+        // trigger downloads
+        payload.forEach(({ name, json }) => {
+            const blob = new Blob([json], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `${name}.json`;
+            a.click();
+            URL.revokeObjectURL(a.href);
         });
+    }
+};
+
+/* --------------------------- Boot ----------------------------- */
+setInputEnabled(false, 'Bootstrapping…');
+worker.postMessage({ type: WorkerMsg.INIT, payload: { SETTINGS, CATEGORIES } });
+
+/* -------------------------- Controls -------------------------- */
+btnLoad.onclick = () => worker.postMessage({ type: WorkerMsg.LOAD });
+btnTrain.onclick = () => worker.postMessage({ type: WorkerMsg.TRAIN, payload: { saveAfterTrain: SETTINGS.saveAfterTrain } });
+btnExport.onclick = () => worker.postMessage({ type: WorkerMsg.EXPORT_ALL });
+btnReset.onclick = () => {
+    log('Resetting session…');
+    worker.postMessage({ type: WorkerMsg.RESET });
+    state.confHistory = [];
+    drawConfidenceHistory(state.confHistory);
+    input.value = ''; ghost.textContent = ''; fill.style.width = '0%'; predTags.innerHTML = '';
+    setInputEnabled(false, 'Resetting…');
+};
+
+/* ------------------------- Inference -------------------------- */
+let lastSent = 0;
+input.addEventListener('input', () => {
+    if (!state.ready) return;                // hard block while loading
+    const val = (input.value || '').trim().toLowerCase();
+    const now = performance.now();
+    if (now - lastSent < 50) return;        // debounce
+    lastSent = now;
+    worker.postMessage({ type: WorkerMsg.PREDICT, payload: { text: val } });
 });

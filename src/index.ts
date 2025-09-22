@@ -1,30 +1,61 @@
-export * from './core/Activations';
-export * from './core/ELM';
-export * from './core/ELMChain';
-export * from './core/ELMConfig';
-export * from './core/EmbeddingStore';
-export * from './core/evaluateEnsembleRetrieval';
-export * from './core/Evaluation';
-export * from './core/Matrix';
-export * from './core/OnlineELM';
+/**
+ * AsterMind-ELM — Public API Surface
+ */
 
-export * from './ml/TFIDF';
-export * from './ml/KNN';
+/* ------------------------- Core / Models ------------------------- */
+export { ELM } from "./core/ELM";
+export { KernelELM } from "./core/KernelELM";
+export { OnlineELM } from "./core/OnlineELM";
+export { DeepELM } from "./core/DeepELM";
+export { ELMChain } from "./core/ELMChain";
+export { ELMAdapter, wrapELM } from "./core/ELMAdapter";
 
-export * from './preprocessing/Tokenizer';
-export * from './preprocessing/TextEncoder';
-export * from './preprocessing/UniversalEncoder';
+/* -------------------------- Config / Math ------------------------ */
+export * from "./core/Activations";
+export * from "./core/ELMConfig";
+export * from "./core/Matrix";
 
-export * from './tasks/AutoComplete';
-export * from './tasks/CharacterLangEncoderELM';
-export * from './tasks/ConfidenceClassifierELM';
-export * from './tasks/EncoderELM';
-export * from './tasks/FeatureCombinerELM';
-export * from './tasks/IntentClassifier';
-export * from './tasks/LanguageClassifier';
-export * from './tasks/RefinerELM';
-export * from './tasks/VotingClassifierELM';
+/* --------------------- Retrieval / Evaluation -------------------- */
+export { EmbeddingStore } from "./core/EmbeddingStore";
+export * from "./core/Evaluation";
+export { evaluateEnsembleRetrieval } from "./core/evaluateEnsembleRetrieval";
+export type {
+    EmbeddingRecord,
+    EnsembleEvalOptions,
+    EnsembleEvalResult,
+    PerLabelStats,
+    QueryRanking,
+    ScoreAgg,
+} from "./core/evaluateEnsembleRetrieval";
 
-export * from './utils/IO';
-export * from './utils/Augment';
-export * from './ui/components/BindUI';
+/* ----------------------- Workers (browser) ----------------------- */
+export * from "./core/ELMWorkerClient";
+
+/* ----------------------------- ML -------------------------------- */
+// Choose ONE style. I recommend explicit named exports:
+export { TFIDF, TFIDFVectorizer } from "./ml/TFIDF";
+export { KNN } from "./ml/KNN";
+// (Remove the wildcard re-exports for TFIDF/KNN to avoid duplication)
+
+/* ------------------------ Preprocessing -------------------------- */
+export * from "./preprocessing/Tokenizer";
+export * from "./preprocessing/TextEncoder";
+export { UniversalEncoder } from "./preprocessing/UniversalEncoder";
+
+/* ----------------------------- Tasks ----------------------------- */
+export * from "./tasks/AutoComplete";
+export * from "./tasks/CharacterLangEncoderELM";
+export * from "./tasks/ConfidenceClassifierELM";
+export * from "./tasks/EncoderELM";
+export * from "./tasks/FeatureCombinerELM";
+export * from "./tasks/IntentClassifier";
+export * from "./tasks/LanguageClassifier";
+export * from "./tasks/RefinerELM";
+export * from "./tasks/VotingClassifierELM";
+
+/* --------------------------- Utilities --------------------------- */
+export * from "./utils/IO";
+export * from "./utils/Augment";
+
+/* ------------------------------ UI ------------------------------- */
+export * from "./ui/components/BindUI";

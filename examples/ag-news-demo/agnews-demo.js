@@ -1,174 +1,174 @@
-/* global window, document, fetch, Worker */
+/* global window, document, Worker, Blob, URL, FileReader */
 
 const DATA_URL = '/ag-news-classification-dataset/train.csv';
-const WORKER_URL = '/agnews-worker.js';   // <-- put your path here
-const BATCH = 256;
+const WORKER_URL = '/agnews-worker.js';
 const CATEGORIES = ['World', 'Sports', 'Business', 'Sci/Tech'];
 
-// Minimal UI overlay for training/progress
-function injectProgressOverlay() {
-    const style = document.createElement('style');
-    style.textContent = `
-    #trainerOverlay {
-      position: fixed; inset: 0; background: rgba(10,10,12,0.75);
-      display: flex; align-items: center; justify-content: center; z-index: 9999;
-      color: #fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-    }
-    .trainer-card {
-      width: min(520px, 90vw); background: #111; border-radius: 14px; padding: 20px 22px;
-      box-shadow: 0 10px 35px rgba(0,0,0,0.45);
-    }
-    .trainer-title { font-size: 18px; margin: 0 0 8px; opacity: 0.95; }
-    .trainer-status { font-size: 14px; margin: 0 0 10px; opacity: 0.85; }
-    .trainer-bar {
-      height: 10px; background: #2a2a2a; border-radius: 999px; overflow: hidden;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
-    }
-    .trainer-fill {
-      height: 100%; width: 0%;
-      background: linear-gradient(90deg, #00d4ff, #7a5cff);
-      transition: width 120ms linear;
-    }
-  `;
-    document.head.appendChild(style);
+const $ = (id) => document.getElementById(id);
 
-    const overlay = document.createElement('div');
-    overlay.id = 'trainerOverlay';
-    overlay.innerHTML = `
-    <div class="trainer-card">
-      <h3 class="trainer-title">Preparing models…</h3>
-      <p class="trainer-status" id="trainerStatus">Loading…</p>
-      <div class="trainer-bar"><div class="trainer-fill" id="trainerFill"></div></div>
-    </div>
-  `;
-    document.body.appendChild(overlay);
+function setFill(pct) { $('fill').style.width = `${Math.max(0, Math.min(100, pct))}%`; }
+function logLine(s) {
+    const el = $('log');
+    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 4;
+    el.textContent += (el.textContent ? '\n' : '') + s;
+    if (atBottom) el.scrollTop = el.scrollHeight;
 }
-
-function setProgress(pct, status) {
-    const fill = document.getElementById('trainerFill');
-    const statusEl = document.getElementById('trainerStatus');
-    if (fill) fill.style.width = `${Math.max(0, Math.min(100, pct))}%`;
-    if (statusEl && status) statusEl.textContent = status;
+function setProbs(probMap) {
+    const grid = $('probGrid'); grid.innerHTML = '';
+    CATEGORIES.forEach(cat => {
+        const label = document.createElement('div'); label.textContent = cat;
+        const bar = document.createElement('div'); bar.className = 'probbar';
+        const fill = document.createElement('div'); fill.className = 'probfill';
+        const pct = Math.round((probMap[cat] || 0) * 100); fill.style.width = pct + '%';
+        fill.style.background = ({
+            World: 'linear-gradient(to right, teal, cyan)',
+            Sports: 'linear-gradient(to right, green, lime)',
+            Business: 'linear-gradient(to right, goldenrod, yellow)',
+            'Sci/Tech': 'linear-gradient(to right, purple, magenta)'
+        })[cat];
+        bar.appendChild(fill); grid.appendChild(label); grid.appendChild(bar);
+    });
 }
-
-function hideOverlay() {
-    const el = document.getElementById('trainerOverlay');
-    if (el) el.remove();
-}
-
-// Debounce helper
-function debounce(fn, delay = 180) {
-    let t;
-    return (...args) => {
-        clearTimeout(t);
-        t = setTimeout(() => fn(...args), delay);
-    };
-}
+const fmtMB = (mb) => `${(mb || 0).toFixed(1)} MB`;
 
 window.addEventListener('DOMContentLoaded', () => {
-    const input = document.getElementById('headlineInput');
-    const output = document.getElementById('predictionOutput');
-    const fill = document.getElementById('confidenceFill');
+    const mode = $('mode'), activation = $('activation'), encHidden = $('encHidden'), clsHidden = $('clsHidden'), batch = $('batch'),
+        kernel = $('kernel'), landmarks = $('landmarks'), gamma = $('gamma');
 
-    // disable input while models prepare
-    if (input) {
-        input.disabled = true;
-        input.placeholder = 'Training models… please wait';
+    const btnStart = $('btnStart'), btnPause = $('btnPause'), btnResume = $('btnResume'), btnCancel = $('btnCancel'),
+        btnExportEnc = $('btnExportEnc'), btnExportCls = $('btnExportCls'), btnPredict = $('btnPredict'),
+        fileImport = $('fileImport'), btnRecover = $('btnRecover');
+
+    const phase = $('phase'), rps = $('rps'), eta = $('eta'), dl = $('dl'), rows = $('rows'),
+        batchChip = $('batchChip'), acc = $('acc'), earlyStop = $('earlyStop'), predictChip = $('predictChip'),
+        input = $('headlineInput');
+
+    batchChip.textContent = `batch: ${batch.value}`;
+
+    let worker = null, predictReady = false, trainingActive = false, paused = false;
+
+    function setPredictReady(ready, warm = null, target = null) {
+        predictReady = !!ready;
+        btnPredict.disabled = !predictReady;
+        input.disabled = !predictReady && trainingActive && !paused;
+        if (ready) { predictChip.textContent = 'predict: ready'; input.placeholder = 'Type a headline…'; }
+        else {
+            predictChip.textContent = (warm != null && target != null) ? `predict: warming ${Math.min(warm, target)} / ${target}` : 'predict: —';
+            if (trainingActive && !paused) input.placeholder = 'Training…';
+        }
+    }
+    function setPauseUI() { btnPause.disabled = paused; btnResume.disabled = !paused; input.disabled = !predictReady && trainingActive && !paused; }
+
+    function ensureWorker() {
+        if (worker) return;
+        worker = new Worker(WORKER_URL);
+        worker.onmessage = (e) => {
+            const msg = e.data || {};
+            switch (msg.type) {
+                case 'log': logLine(msg.text); break;
+                case 'progress':
+                    setFill(msg.pct || 0);
+                    if (msg.phase) phase.textContent = msg.phase;
+                    if (msg.rps != null) rps.textContent = (msg.rps || 0).toFixed(1);
+                    if (msg.eta) eta.textContent = msg.eta;
+                    if (msg.mb != null) dl.textContent = fmtMB(msg.mb);
+                    if (msg.rowsProcessed != null) {
+                        const total = msg.totalRows && msg.totalRows > 0 ? ` / ~${msg.totalRows} rows` : ' / 0 rows';
+                        rows.textContent = `${msg.rowsProcessed}${total}`;
+                    }
+                    if (msg.valAcc != null) acc.textContent = `val acc: ${(msg.valAcc * 100).toFixed(1)}%`;
+                    break;
+
+                case 'state':
+                    paused = !!msg.paused;
+                    setPredictReady(!!msg.predictReady, msg.warmSeen ?? null, msg.warmTarget ?? null);
+                    setPauseUI();
+                    break;
+
+                case 'predict-warm':
+                    setPredictReady(predictReady, msg.warmSeen, msg.warmTarget);
+                    break;
+
+                case 'predict-ready':
+                    setPredictReady(true);
+                    break;
+
+                case 'predict-ack':
+                    logLine('↪︎ predicting…');
+                    break;
+
+                case 'early-stop':
+                    earlyStop.textContent = `early stop: ${msg.reason || '—'}`;
+                    logLine(`⏹️ Early stop — ${msg.reason || ''}`);
+                    break;
+
+                case 'ready':
+                    trainingActive = false; setPredictReady(true); setPauseUI(); logLine('✅ Models ready.'); break;
+
+                case 'probabilities':
+                    setProbs(msg.map || {}); break;
+
+                case 'model-json': {
+                    const { name, json } = msg; const blob = new Blob([json], { type: 'application/json' });
+                    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); URL.revokeObjectURL(a.href);
+                    logLine(`⬇️ Exported ${name}`); break;
+                }
+
+                case 'error': logLine('❌ ' + msg.error); break;
+            }
+        };
     }
 
-    injectProgressOverlay();
+    // Start / Pause / Resume / Cancel
+    btnStart.onclick = () => {
+        ensureWorker();
+        trainingActive = true; paused = false;
+        setProbs({}); setFill(0);
+        earlyStop.textContent = 'early stop: —';
+        acc.textContent = 'val acc: —';
+        predictChip.textContent = 'predict: —';
+        setPredictReady(false); setPauseUI();
+        logLine('▶️ Start requested.');
 
-    // Spin up worker
-    const worker = new Worker(WORKER_URL); // classic worker (uses importScripts)
-    let modelsReady = false;
-
-    worker.onmessage = (e) => {
-        const msg = e.data || {};
-        switch (msg.type) {
-            case 'progress':
-                // msg: { phase, pct, status }
-                setProgress(msg.pct ?? 0, msg.status || '');
-                break;
-
-            case 'ready':
-                modelsReady = true;
-                // enable UI
-                if (input) {
-                    input.disabled = false;
-                    input.placeholder = 'Type a headline…';
-                }
-                hideOverlay();
-                break;
-
-            case 'prediction':
-                // msg: { label, prob }
-                if (!output || !fill) return;
-                const percent = Math.round((msg.prob ?? 0) * 100);
-                output.textContent = `🔍 Predicted: ${msg.label}`;
-                fill.style.width = `${percent}%`;
-                fill.textContent = `${msg.label} (${percent}%)`;
-                fill.style.background = ({
-                    World: 'linear-gradient(to right, teal, cyan)',
-                    Sports: 'linear-gradient(to right, green, lime)',
-                    Business: 'linear-gradient(to right, goldenrod, yellow)',
-                    'Sci/Tech': 'linear-gradient(to right, purple, magenta)'
-                })[msg.label] || '#999';
-                break;
-
-            case 'model-json': {
-                const { name, json } = msg;
-                const blob = new Blob([json], { type: 'application/json' });
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = name;      // e.g., 'agnews_encoder.json'
-                a.click();
-                URL.revokeObjectURL(a.href);
-                break;
+        const kelmMode = mode.value === 'kelm';
+        worker.postMessage({
+            type: 'init',
+            payload: {
+                dataUrl: DATA_URL, categories: CATEGORIES, batch: Number(batch.value),
+                encoderHidden: Number(encHidden.value), classifierHidden: Number(clsHidden.value), activation: activation.value,
+                mode: kelmMode ? 'kelm' : 'online',
+                kelm: { kernel: kernel.value, landmarks: Number(landmarks.value), gamma: Number(gamma.value), whiten: true, ridgeLambda: 1e-2 },
+                files: { encoder: 'agnews_encoder.json', classifier: kelmMode ? 'agnews_kelm.json' : 'agnews_classifier.json' },
+                earlyStop: { window: 2000, threshold: 0.985 }
             }
-
-            case 'error':
-                console.error('[Worker error]', msg.error);
-                setProgress(0, `Error: ${msg.error}`);
-                break;
-
-            default:
-                break;
-        }
+        });
     };
+    btnPause.onclick = () => { if (worker) { worker.postMessage({ type: 'pause' }); paused = true; setPauseUI(); } };
+    btnResume.onclick = () => { if (worker) { worker.postMessage({ type: 'resume' }); paused = false; setPauseUI(); } };
+    btnCancel.onclick = () => { if (worker) { worker.postMessage({ type: 'cancel' }); trainingActive = false; } };
 
-    // Initialize worker (kick off load/train)
-    worker.postMessage({
-        type: 'init',
-        payload: {
-            dataUrl: DATA_URL,
-            batch: BATCH,
-            categories: CATEGORIES,
-            files: {
-                encoder: 'agnews_encoder.json',
-                classifier: 'agnews_classifier.json'
-            },
-            encoderHidden: 64,
-            classifierHidden: 1024,
-            activation: 'relu'
-        }
+    // Export/Import/Recover
+    btnExportEnc.onclick = () => worker && worker.postMessage({ type: 'export', which: 'encoder' });
+    btnExportCls.onclick = () => worker && worker.postMessage({ type: 'export', which: 'classifier' });
+    btnRecover.onclick = () => worker && worker.postMessage({ type: 'export-cached', which: 'classifier' });
+    fileImport.addEventListener('change', () => {
+        const f = fileImport.files && fileImport.files[0]; if (!f) return;
+        const r = new FileReader(); r.onload = () => {
+            const txt = String(r.result || ''); worker && worker.postMessage({ type: 'import-model-json', json: txt, filename: f.name });
+            logLine(`📤 Import requested: ${f.name}`);
+        }; r.readAsText(f);
     });
 
-    // Debounced input → worker prediction
-    const debouncedPredict = debounce((text) => {
-        if (!modelsReady || !text.trim()) return;
-        worker.postMessage({ type: 'predict', text });
-        // optimistic UI while waiting
-        if (output && fill) {
-            output.textContent = '…';
-            fill.style.width = '0%';
-            fill.textContent = '';
-            fill.style.background = '#ccc';
-        }
-    }, 200);
-
-    if (input) {
-        input.addEventListener('input', () => {
-            debouncedPredict(input.value.toLowerCase());
-        });
+    // Prediction
+    function sendPredict(txt) {
+        const t = String(txt || '').trim(); if (!t) return;
+        if (!predictReady) { logLine('ℹ️ Predict ignored — not ready yet.'); return; }
+        logLine('→ predict: "' + t.slice(0, 120) + '"');
+        worker && worker.postMessage({ type: 'predict', text: t });
     }
+    $('headlineInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); sendPredict($('headlineInput').value); } });
+    let tDeb = 0; $('headlineInput').addEventListener('input', () => { clearTimeout(tDeb); const val = $('headlineInput').value; tDeb = setTimeout(() => sendPredict(val), 180); });
+    btnPredict.onclick = () => sendPredict($('headlineInput').value);
+
+    batch.addEventListener('input', () => (batchChip.textContent = `batch: ${batch.value}`));
 });

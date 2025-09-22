@@ -1,27 +1,323 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <title>AG News ELM Classifier Demo</title>
+  <title>AsterMind ELM — AG News (Online & Kernel)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { font-family: system-ui, sans-serif; padding: 2rem; max-width: 800px; margin: auto; line-height: 1.6; }
-    input[type="text"] { padding: 0.5rem; width: 100%; font-size: 1.1rem; margin-bottom: 1rem; }
-    .prediction-output { font-size: 1.2rem; color: #333; margin-bottom: 1rem; }
-    .confidence-bar { height: 24px; border-radius: 12px; background: #ddd; overflow: hidden; }
-    .confidence-fill { height: 100%; text-align: center; color: white; font-weight: bold; line-height: 24px; }
+    :root {
+      --bg: #0a0f1c;
+      --panel: #101a33;
+      --ink: #e6eeff;
+      --muted: #9db0e6;
+      --acc: #57ccff;
+      --chip: #0f1b36;
+      --chipb: #21407d;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif
+    }
+
+    .wrap {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 24px
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-weight: 700;
+      letter-spacing: .2px
+    }
+
+    p {
+      color: var(--muted);
+      margin: 0 0 16px
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px
+    }
+
+    @media(min-width:960px) {
+      .grid {
+        grid-template-columns: 1.2fr .8fr
+      }
+    }
+
+    .card {
+      background: var(--panel);
+      border-radius: 14px;
+      padding: 16px;
+      border: 1px solid rgba(255, 255, 255, .06);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .25)
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px
+    }
+
+    .controls .row {
+      display: flex;
+      gap: 8px;
+      align-items: center
+    }
+
+    label {
+      font-size: .9rem;
+      color: var(--muted)
+    }
+
+    select,
+    input[type="number"],
+    input[type="text"] {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, .08);
+      background: #0c1429;
+      color: var(--ink)
+    }
+
+    button {
+      background: #122348;
+      border: 1px solid rgba(255, 255, 255, .12);
+      color: var(--ink);
+      padding: 10px 14px;
+      border-radius: 12px;
+      cursor: pointer
+    }
+
+    button.primary {
+      background: linear-gradient(90deg, #00d4ff, #7a5cff);
+      border: none
+    }
+
+    button:disabled {
+      opacity: .6;
+      cursor: not-allowed
+    }
+
+    .rowline {
+      display: flex;
+      gap: 8px;
+      align-items: center
+    }
+
+    .grow {
+      flex: 1
+    }
+
+    .bar {
+      height: 12px;
+      background: #132143;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, .08)
+    }
+
+    .fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #00d4ff, #7a5cff)
+    }
+
+    .telemetry {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 10px
+    }
+
+    .kpi {
+      background: var(--chip);
+      border: 1px solid var(--chipb);
+      border-radius: 10px;
+      padding: 8px;
+      font-size: .9rem
+    }
+
+    .kpi .v {
+      font-weight: 700
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px
+    }
+
+    .chip {
+      background: var(--chip);
+      border: 1px solid var(--chipb);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: .85rem;
+      color: var(--muted)
+    }
+
+    .probs {
+      display: grid;
+      grid-template-columns: 1fr 80px;
+      gap: 8px;
+      align-items: center
+    }
+
+    .probbar {
+      height: 10px;
+      background: #20305a;
+      border-radius: 999px;
+      overflow: hidden
+    }
+
+    .probfill {
+      height: 100%;
+      width: 0%
+    }
+
+    .log {
+      height: 180px;
+      overflow: auto;
+      background: #0b1326;
+      border: 1px solid rgba(255, 255, 255, .08);
+      border-radius: 12px;
+      padding: 8px;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: .85rem;
+      white-space: pre-wrap
+    }
+
+    .hint {
+      font-size: .85rem;
+      color: var(--muted)
+    }
   </style>
 </head>
-<body>
-  <h1>📰 AG News Classifier (ELM)</h1>
-  <p>Type a news headline below to see the predicted topic using chained ELMs trained on the AG News dataset.</p>
 
-  <input type="text" id="headlineInput" placeholder="Type a news headline..." />
-  <div class="prediction-output" id="predictionOutput"></div>
-  <div class="confidence-bar">
-    <div id="confidenceFill" class="confidence-fill" style="width:0%"></div>
+<body>
+  <div class="wrap">
+    <h1>📰 AsterMind ELM — AG News</h1>
+    <p>Showcasing <b>Kernel ELM (Nyström)</b> + <b>Online ELM</b> — live metrics, early predictions, pause/resume,
+      autosave & recovery.</p>
+
+    <div class="grid">
+      <div class="card">
+        <div class="controls">
+          <div class="row"><label>Mode</label>
+            <select id="mode">
+              <option value="kelm">Kernel ELM (Nyström)</option>
+              <option value="online">Online ELM (Streaming)</option>
+            </select>
+          </div>
+          <div class="row"><label>Activation</label>
+            <select id="activation">
+              <option value="relu">relu</option>
+              <option value="gelu">gelu</option>
+              <option value="linear">linear</option>
+              <option value="leakyrelu">leakyrelu</option>
+            </select>
+          </div>
+          <div class="row"><label>Encoder hidden</label><input id="encHidden" type="number" min="16" step="16"
+              value="64" /></div>
+          <div class="row"><label>Classifier hidden</label><input id="clsHidden" type="number" min="64" step="64"
+              value="1024" /></div>
+          <div class="row"><label>Batch (rows)</label><input id="batch" type="number" min="32" step="32" value="256" />
+          </div>
+          <div class="row"><label>Kernel</label>
+            <select id="kernel">
+              <option value="rbf">rbf</option>
+              <option value="linear">linear</option>
+              <option value="poly">poly</option>
+              <option value="laplacian">laplacian</option>
+            </select>
+          </div>
+          <div class="row"><label>Landmarks (M)</label><input id="landmarks" type="number" min="64" step="64"
+              value="512" /></div>
+          <div class="row"><label>Gamma / Degree</label><input id="gamma" type="number" min="0" step="0.1"
+              value="0.5" /></div>
+        </div>
+
+        <div class="rowline">
+          <div class="grow">
+            <div class="bar">
+              <div class="fill" id="fill"></div>
+            </div>
+          </div>
+          <button id="btnStart" class="primary" type="button">Start</button>
+          <button id="btnPause" type="button">Pause</button>
+          <button id="btnResume" type="button" disabled>Resume</button>
+          <button id="btnCancel" type="button">Cancel</button>
+        </div>
+
+        <div class="telemetry">
+          <div class="kpi">Phase<br><span class="v" id="phase">—</span></div>
+          <div class="kpi">Rows/sec<br><span class="v" id="rps">0</span></div>
+          <div class="kpi">ETA<br><span class="v" id="eta">—</span></div>
+        </div>
+
+        <div class="chips">
+          <span class="chip" id="dl">0.0 MB</span>
+          <span class="chip" id="rows">0 / 0 rows</span>
+          <span class="chip" id="batchChip">batch: 256</span>
+          <span class="chip" id="acc">val acc: —</span>
+          <span class="chip" id="earlyStop">early stop: —</span>
+          <span class="chip" id="predictChip">predict: —</span>
+        </div>
+
+        <div class="rowline">
+          <input id="headlineInput" class="grow" type="text" placeholder="Type a headline…" disabled />
+          <button id="btnPredict" type="button" disabled>Predict</button>
+        </div>
+        <div class="probs" id="probGrid"></div>
+
+        <div class="rowline">
+          <button id="btnExportEnc" type="button">Export Encoder</button>
+          <button id="btnExportCls" type="button">Export Classifier</button>
+          <button id="btnRecover" type="button">Recover autosave</button>
+        </div>
+        <div class="rowline">
+          <span class="hint">Import:</span>
+          <input id="fileImport" type="file" accept=".json,application/json" />
+          <span class="hint">Auto-loads from <code>/models/*.json</code> if present</span>
+        </div>
+
+        <div class="log" id="log"></div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 8px">How this demo works</h3>
+        <ol class="hint" style="padding-left:18px">
+          <li><b>Choose mode</b> (Kernel ELM = Nyström; Online = streaming).</li>
+          <li><b>Click Start</b> — watch throughput, ETA, rows.</li>
+          <li>When chip shows <b>predict: ready</b>, type a headline and click <b>Predict</b> (or press Enter). You can
+            also <b>Pause</b>; predictions keep working.</li>
+        </ol>
+        <p class="hint" style="margin-top:12px">Dataset: <code>/ag-news-classification-dataset/train.csv</code></p>
+      </div>
+    </div>
   </div>
 
-  <!-- Main thread controller; worker is spawned from inside this file -->
+  <script>
+    // surface silent errors to the on-page log
+    window.addEventListener('error', e => {
+      const el = document.getElementById('log'); if (el) { el.textContent += (el.textContent ? '\n' : '') + '❌ ' + (e.message || e.error); }
+    });
+    window.addEventListener('unhandledrejection', e => {
+      const el = document.getElementById('log'); if (el) { el.textContent += (el.textContent ? '\n' : '') + '❌ (promise) ' + (e.reason && e.reason.message || e.reason); }
+    });
+  </script>
   <script src="/agnews-demo.js" defer></script>
 </body>
+
 </html>

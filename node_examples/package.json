@@ -1,0 +1,21 @@
+{
+  "name": "astermind-node-examples",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Julian Wilkison-Duran",
+  "license": "MIT",
+  "description": "",
+  "private": "true",
+  "type": "module",
+  "dependencies": {
+    "@astermind/astermind-elm": "file:.."
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
+}
