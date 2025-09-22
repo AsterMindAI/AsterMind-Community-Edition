@@ -1,26 +1,63 @@
 /**
- * AG News — DeepELM Ablation (replaces “random-target ELMChain”)
- * ───────────────────────────────────────────────────────────────
- * What it does
- *  1) SBERT baseline: cosine KNN on Sentence-BERT embeddings.
- *  2) DeepELM-on-SBERT: train stacked ELM autoencoders on REFERENCE SBERT only,
- *     transform both query & ref with DeepELM, evaluate Recall@1/Recall@5/MRR.
- *  3) Ablation: sweep layer widths, per-layer activations (hybrid patterns), and dropout.
+ * AG News — DeepELM Ablation on SBERT (Reference-Only Stacked Autoencoders)
  *
- * Why this replaces the old experiment
- *  - Old: each ELM layer was trained to match a random target matrix → not a semantic objective.
- *  - New: DeepELM is an unsupervised objective (Y=X) that shapes a cosine-friendly embedding
- *    while staying aligned with SBERT semantics. Results are interpretable and comparable.
+ * What this script demonstrates
+ *  1) Build a strong baseline: Sentence-BERT (all-MiniLM-L6-v2, mean-pooled) + cosine KNN.
+ *  2) Train DeepELM (a stack of ELM autoencoders, i.e., X→X) **only on REFERENCE SBERT** to avoid leakage.
+ *  3) Transform both query and reference SBERT with the trained DeepELM and evaluate retrieval quality
+ *     (Recall@1, Recall@K, MRR).
+ *  4) Run an ablation over layer widths, per-layer activation schemes, and dropout, logging each config.
  *
- * CLI
- *   --sample=1000     rows from train.csv
- *   --split=0.2       fraction for queries (rest reference)
- *   --topK=5          evaluate up to Recall@K
- *   --repeats=3       runs per configuration
- *   --csv=...         output file (defaults to timestamp)
+ * Why this approach
+ *  - Keeps SBERT’s semantics while shaping a smoother, cosine-friendly representation.
+ *  - Reference-only fitting mirrors real-world indexer training and prevents test leakage.
+ *  - Results are interpretable (unsupervised AE objective) and comparable against the SBERT baseline.
+ *
+ * Pipeline Overview
+ *
+ *            ┌────────────┐
+ *            │   Raw Text │
+ *            └──────┬─────┘
+ *                   │ tokenize
+ *                   ▼
+ *            ┌───────────────────────┐
+ *            │ Sentence-BERT (teacher)│  mean-pool → unit-norm
+ *            └──────────┬────────────┘
+ *                       │ fit AE stack on **reference only**
+ *                       ▼
+ *                 ┌───────────┐
+ *                 │  DeepELM  │  (stacked ELM autoencoders)
+ *                 └─────┬─────┘
+ *                       │ transform queries & refs → unit-norm
+ *                       ▼
+ *           Retrieval + Metrics (cosine; R@1, R@K, MRR)
+ *
+ * Ablation grid (editable in code)
+ *  - hiddenUnitSequences:
+ *      [512,256,128], [256,128,64,32], [256,128,64,32,16], [128,64,32,16,8,4]
+ *  - activationSchemes:
+ *      all_relu, all_gelu, all_leaky, hybrid_rgL (relu→gelu→leaky), hybrid_grL (gelu→relu→leaky)
+ *  - dropouts: 0.0, 0.02, 0.05
+ *
+ * CLI flags (all optional)
+ *  --sample=1000      Number of rows from train.csv (default 1000)
+ *  --split=0.2        Fraction used as queries (default 0.2)
+ *  --topK=5           Evaluate up to Recall@K (default 5)
+ *  --repeats=3        Runs per configuration (default 3)
+ *  --csv=results.csv  Output CSV filename (default timestamped)
+ *
+ * Inputs & assumptions
+ *  - Dataset: ../../public/ag-news-classification-dataset/train.csv  (label,text CSV)
+ *  - Model:  Xenova/all-MiniLM-L6-v2 (downloaded on first run by @xenova/transformers)
+ *  - Environment: Node 18+, ts-node, no GPU required.
+ *
+ * Outputs
+ *  - Console: SBERT baseline and per-config DeepELM metrics.
+ *  - CSV: one row per config/run with recall@1, recall@K, MRR, and config metadata.
  *
  * Usage
  *   npx ts-node --esm node_examples/deepelm-ablation.ts
+ *   npx ts-node --esm node_examples/deepelm-ablation.ts --sample=5000 --repeats=2 --csv=deepelm_results.csv
  */
 
 import fs from "fs";

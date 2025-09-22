@@ -1,33 +1,59 @@
 /**
- * BEST Two-Stage Retrieval Experiment: DeepELM (Answer Space) + KELM (Query→Embedding)
+ * DeepELM (Answer Space) + Kernel ELM (Query→Answer Embedding) — Two-Stage Retrieval
+ * ──────────────────────────────────────────────────────────────────────────────────
+ * What this script demonstrates
+ *  1) **Answer-space shaping with DeepELM**: train stacked ELM autoencoders on
+ *     target texts (Y → Y) to build a smooth, cosine-friendly embedding space.
+ *  2) **Query→answer mapping with KELM**: fit a Kernel ELM regressor that maps
+ *     query encodings X into the DeepELM answer space ϕ_deep(Y).
+ *  3) **Cosine retrieval**: embed a new query via KELM, then nearest-neighbor
+ *     search over answer embeddings with an in-memory EmbeddingStore.
  *
- * This script demonstrates a stronger retrieval pipeline that leverages:
- *  1) DeepELM to learn a structured embedding space for ANSWERS (targets).
- *  2) Kernel ELM (KELM, Nyström + whitening) to regress from QUERIES into that answer space.
+ * Why this works well (especially on tiny datasets)
+ *  - Decouples representation learning (**answers only**) from query mapping,
+ *    which reduces overfitting and keeps retrieval geometry stable.
+ *  - **Nyström KELM + whitening** gives a compact, well-conditioned feature map
+ *    and is data-efficient for small Q/A sets.
+ *  - Everything is CPU-friendly and fast to iterate on.
  *
- * Steps:
- *  1. Define a small set of Q/A pairs (here: Go programming examples).
- *  2. Encode queries (X) and targets (Y) using UniversalEncoder (char-level).
- *  3. Train DeepELM as a stack of autoencoders on Y (unsupervised: Y→Y) to get E_targets = φ_deep(Y).
- *  4. Train KELM (task='regression') to map queries into that space: f_kelm(X) ≈ E_targets.
- *  5. At inference, embed a new query with KELM into the DeepELM answer space and
- *     retrieve nearest answers by cosine similarity via EmbeddingStore.
+ * Pipeline Overview
  *
- * Why this is better:
- *  - DeepELM builds a richer answer representation before we ever map queries.
- *  - KELM (with Nyström + whitening) is sample-efficient and stabilizes cosine geometry.
+ *    Q/A pairs
+ *      │
+ *      ├─► Encode answers Y (UniversalEncoder) ──► DeepELM (autoencoders Y→Y)
+ *      │                                        └─► E_targets = ϕ_deep(Y) (unit)
+ *      │
+ *      └─► Encode queries X (UniversalEncoder) ──► KELM regression: X ↦ Ê ≈ E_targets
+ *                                                     │
+ *                                                     ▼
+ *                                       cosine( Ê, E_targets[i] ) → Top-K answers
  *
- * Minimal CLI flags (no deps):
- *   --topK=3              Top-K retrieval
- *   --m=256               Nyström landmarks
- *   --whiten=true         Apply whitening to Nyström features
- *   --ridge=0.01          Ridge regularization for KELM
- *   --gamma=auto          RBF gamma (auto uses median heuristic on X)
- *   --mode=nystrom        'nystrom' | 'exact'
- *   --saveEmb=emb.json    Optional: export target embeddings (E_targets)
- *   --saveKELM=kelm.json  Optional: export trained KELM snapshot
+ * CLI flags (all optional; sensible defaults)
+ *  --topK=3            Top-K results to show (default 3)
+ *  --m=256             Nyström landmarks for KELM (ignored in exact mode)
+ *  --whiten=true       Whiten Nyström features (true|false; default true)
+ *  --ridge=0.01        Ridge λ for KELM regression head (default 0.01)
+ *  --gamma=auto        RBF γ; "auto" uses median heuristic on X (default auto)
+ *  --mode=nystrom      "nystrom" | "exact" (auto-downgrades to "exact" when N is tiny)
+ *  --maxLen=100        UniversalEncoder max length for both X and Y (default 100)
+ *  --saveEmb=emb.json  Optional: write DeepELM answer embeddings to JSON
+ *  --saveKELM=kelm.json Optional: export KELM snapshot (weights & config)
  *
- * Usage:
+ * Inputs & assumptions
+ *  - Toy Q/A set is defined inline for clarity (see `pairs`).
+ *  - Uses @astermind/astermind-elm: { UniversalEncoder, KernelELM, DeepELM, EmbeddingStore }.
+ *  - No GPU required; Node 18+ recommended.
+ *
+ * Outputs
+ *  - Console: training times, a Top-K ranking for a sample query, and tiny-set metrics (Recall@1, MRR).
+ *  - Optional artifacts via --saveEmb / --saveKELM.
+ *
+ * Tips
+ *  - For very small N, prefer `--mode=exact` (or let the script auto-switch).
+ *  - Tune DeepELM layer widths/activations to control embedding dimensionality & smoothness.
+ *  - If queries differ stylistically from answers, increase `--maxLen` a bit.
+ *
+ * Usage
  *   npx ts-node --esm node_examples/deepelm-kelm-retrieval.ts
  *   npx ts-node --esm node_examples/deepelm-kelm-retrieval.ts --topK=5 --m=512 --whiten=true --ridge=0.02
  */

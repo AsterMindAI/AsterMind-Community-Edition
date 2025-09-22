@@ -1,11 +1,88 @@
 /**
- * Multi-View Encoder → ELM (per-view) → Fusion → Indexer ELMChain → Hybrid Retrieval
- * - Fixes TF-IDF case-sensitivity (lowercases docs & query)
- * - Applies heading boost to TF-IDF query too
- * - Stage-1 shortlist = dense ∪ tfidf before hybrid rerank
+ * Multi-View Encoder → Per-View ELM → Fusion → Indexer ELMChain → TF-IDF Hybrid Retrieval
  *
- * CLI (examples)
- *   npx ts-node --esm node_examples/multiview-encoder-elm-fusion.ts --alpha=0.55 --stage1=150 --tfstage=120 --seq=512,256,128 --vocab=8000 --headBoost=3
+ * What this script demonstrates
+ *  1) Build three granular views of each section (word / sentence / paragraph) using
+ *     UniversalEncoder (token mode).
+ *  2) Train lightweight ELM autoencoders per view (X→X) and cache weights for fast reruns.
+ *  3) Zero-center + L2-normalize each view, concatenate/fuse, then pass through a small
+ *     Indexer ELMChain (X→X) to shape a cosine-friendly dense space.
+ *  4) In parallel, compute a TF-IDF baseline with:
+ *       • lowercased docs & queries (fix case-sensitivity sparsity)
+ *       • heading boost applied to BOTH documents and queries
+ *  5) Two-stage retrieval:
+ *       • Stage-1 candidates = top-N from dense ∪ top-M from TF-IDF
+ *       • Stage-2 hybrid re-rank = α·cos(dense) + (1−α)·cos(tfidf)
+ *  6) Optional quick mini-eval (rule-based checks) to sanity-check retrieval.
+ *
+ * Why this version
+ *  - **Case-normalized TF-IDF** avoids missing obvious lexical matches.
+ *  - **Heading boost** puts titles on equal footing for both docs and queries.
+ *  - **Per-view ELMs** compress/denoise each view before fusion (better geometry).
+ *  - **Indexer chain** whitens/stabilizes the fused space for cosine scoring.
+ *  - **Union shortlist** preserves recall from both lexical and dense signals, then
+ *    a simple, interpretable hybrid score does the final ordering.
+ *
+ * Pipeline Overview
+ *
+ *               Markdown Sections (heading + content)
+ *                          │
+ *         ┌────────────────┴─────────────────┐
+ *         │                                  │
+ *   UniversalEncoder (token)                 TF-IDF (lowercased + heading boost)
+ *   ┌──────────┬──────────┬──────────┐                │
+ *   │  word    │ sentence │ paragraph│                │
+ *   └────┬─────┴────┬─────┴────┬─────┘                │
+ *        ▼          ▼          ▼                      ▼
+ *     ELM(X→X)   ELM(X→X)   ELM(X→X)             TF-IDF vectors
+ *        │          │          │                      │
+ *        └── zero-center + L2 (per view) ─────────────┘
+ *                       │
+ *                 concat + L2
+ *                       │
+ *               Indexer ELMChain (X→X)
+ *                       │
+ *                 Dense embeddings ────────────────┐
+ *                       │                          │
+ *                 cosine scores                    │
+ *                       │                          │
+ *   Stage-1 shortlist: top-N(dense) ∪ top-M(tfidf) │
+ *                       └───────────────┬──────────┘
+ *                                       ▼
+ *                     Hybrid re-rank: score = α·dense + (1−α)·tfidf
+ *                                       │
+ *                                       ▼
+ *                              Top-K results (console)
+ *
+ * CLI flags (all optional; sensible defaults)
+ *  --alpha=0.55        Weight for dense score in hybrid re-rank (0–1).
+ *  --stage1=150        Dense shortlist size N.
+ *  --tfstage=120       TF-IDF shortlist size M.
+ *  --seq=512,256,128   Hidden sizes for Indexer ELMChain layers.
+ *  --dropout=0.02      Dropout for all ELMs (per-view + indexer).
+ *  --maxLen=160        UniversalEncoder max length (token mode).
+ *  --vocab=8000        TF-IDF vocabulary cap.
+ *  --headBoost=3       Times to repeat the heading when building texts.
+ *  --wordDim=64        Hidden units for word-level ELM.
+ *  --sentDim=64        Hidden units for sentence-level ELM.
+ *  --paraDim=128       Hidden units for paragraph-level ELM.
+ *  --topK=5            Number of results to print.
+ *  --eval=1            Run the mini-eval (set 0 to skip).
+ *
+ * Inputs & assumptions
+ *  - Corpus: ../../public/go_textbook.md (markdown with #/##/### headings).
+ *  - Environment: Node 18+, ts-node, no GPU required.
+ *  - Library: @astermind/astermind-elm (ELM, ELMChain, TFIDFVectorizer, UniversalEncoder).
+ *
+ * Outputs
+ *  - Console logs: training/load status, top-K demo results, optional mini-eval stats.
+ *  - JSON: embeddings_multiview.json (final dense embeddings + metadata).
+ *  - Weights: ./elm_weights/* (per-view ELMs and indexer layers, auto-cached).
+ *
+ * Usage
+ *   npx ts-node --esm node_examples/multiview-encoder-elm-fusion.ts
+ *   npx ts-node --esm node_examples/multiview-encoder-elm-fusion.ts \
+ *     --alpha=0.55 --stage1=150 --tfstage=120 --seq=512,256,128 --vocab=8000 --headBoost=3
  */
 
 import fs from "fs";

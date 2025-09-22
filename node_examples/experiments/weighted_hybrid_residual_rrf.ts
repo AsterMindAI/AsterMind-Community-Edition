@@ -1,24 +1,76 @@
 /**
- * Demo: Weighted Hybrid Multi-Level Retrieval (Residual Student + RRF)
+ * Weighted Hybrid Multi-Level Retrieval — Residual Student + RRF (Markdown Corpus)
  *
- * What’s new vs. your last version
- *  - Residual Student: trains on Δ = (target_chain − query_chain), then predicts q + Δ.
- *  - Rank Fusion (RRF): scale-free fusion of TF-IDF, student-dense, and plain-dense signals.
- *  - Dynamic α: adapt blend per query based on TF-IDF strength.
- *  - Optional Stage-1 shortlist for speed (union of TF and dense top-N).
+ * What this script demonstrates
+ *  1) Parse a markdown “textbook” into (heading, content) sections.
+ *  2) Build two families of signals:
+ *       • TF-IDF baseline (lowercased text) for strong lexical grounding.
+ *       • Dense paragraph embeddings from a stacked ELM “Paragraph Chain” (X→X).
+ *  3) Train a small **Residual Student** ELM on supervised (query, target) pairs:
+ *       student learns Δ = (target_chain − query_chain) and predicts q′ = q + Δ.
+ *  4) **Hybrid retrieval** with:
+ *       • Dynamic α for linear blend: score_lin = α·cos(student_dense) + (1−α)·cos(tfidf),
+ *         where α adapts per query based on TF-IDF strength (higher α when TF-IDF is weak).
+ *       • **RRF rank fusion** (scale-free) over TF-IDF, student-dense, and plain-dense:
+ *         RRF(i) = Σ_c 1/(k + rank_c(i)), then add a small linear tie-breaker.
+ *  5) Optional Stage-1 **shortlist** = union(top-N TF-IDF, top-N student-dense) for speed.
+ *  6) Console mini-evaluation using a small supervised sample.
  *
- * CLI (all optional)
- *  --vocab=8000            TF-IDF vocab cap (default 8000)
- *  --maxLen=120            UniversalEncoder maxLen (default 120)
- *  --seq=256,128           Paragraph chain hidden dims (default 256,128)
- *  --dropout=0.02          Dropout for ELMs (default 0.02)
- *  --alpha=0.65            Baseline linear blend weight for dense (still dynamic per query)
- *  --stage1=ALL            Stage-1 cap (e.g., 200 or ALL; default ALL)
- *  --topK=5                Retrieval K (default 5)
- *  --mini_eval=10          # of supervised pairs to sample for quick eval (default 10)
+ * Why this version
+ *  - Residual student improves dense matching by learning a *direction* toward targets.
+ *  - Dynamic α keeps lexical wins when TF is confident; leans dense when TF is weak.
+ *  - RRF fusion is robust to score scales and often boosts recall@K.
+ *  - All models are tiny ELMs; training and inference are CPU-friendly and cached.
  *
- * Run:
+ * Pipeline Overview
+ *
+ *     Markdown (heading + content)
+ *                │
+ *      ┌─────────┴─────────┐
+ *      │                   │
+ *   TF-IDF (lowercase)   UniversalEncoder(char) → Paragraph Chain (ELM X→X)
+ *      │                                     │
+ *      │                         (supervised pairs encoded through the chain)
+ *      │                                     │
+ *      │                          Residual Student ELM (q → Δ)
+ *      │                                     │
+ *      └────────────┬──────────────┬─────────┘
+ *                   │              │
+ *           TF score(q, doc)   Dense scores
+ *                                 ├─ plain: cos(q_chain, doc_chain)
+ *                                 └─ student: cos(q_chain + Δ, doc_chain)
+ *                   │              │
+ *                   └───── RRF rank fusion + dynamic α linear blend ─────► Top-K
+ *
+ * CLI flags (all optional; defaults in parentheses)
+ *  --vocab=8000         TF-IDF vocab cap (8000)
+ *  --maxLen=120         UniversalEncoder max length (120)
+ *  --seq=256,128        Paragraph chain hidden sizes, stacked (256,128)
+ *  --dropout=0.02       Dropout for ELMs (0.02)
+ *  --alpha=0.65         Baseline α for dense in linear blend (dynamic per query)
+ *  --stage1=ALL         Stage-1 cap: number or ALL (ALL)
+ *  --topK=5             Results to print (5)
+ *  --mini_eval=10       #supervised pairs to sample for mini-eval (10)
+ *
+ * Inputs & assumptions
+ *  - Corpus: ../../public/go_textbook.md (markdown with #/##/### headings).
+ *  - Supervised pairs (optional, any subset present will be used):
+ *      ../public/supervised_pairs.csv
+ *      ../public/supervised_pairs_2.csv
+ *      ../public/supervised_pairs_3.csv
+ *      ../public/supervised_pairs_4.csv
+ *  - Environment: Node 18+, ts-node, CPU (no GPU required).
+ *  - Library: @astermind/astermind-elm (ELM, ELMChain, TFIDFVectorizer, UniversalEncoder).
+ *
+ * Outputs
+ *  - Console: training/load logs, demo top-K results, mini-eval Hit@1/Hit@K.
+ *  - JSON: ./embeddings/book_paragraph_embeddings.json (final chain embeddings + metadata).
+ *  - Weights (auto-cached): ./elm_weights/paragraph_chain_L*.json, student_q2delta_*.json
+ *
+ * Usage
  *   npx ts-node --esm node_examples/train_weighted_hybrid_multilevel_pipeline.ts
+ *   npx ts-node --esm node_examples/train_weighted_hybrid_multilevel_pipeline.ts \
+ *     --vocab=8000 --seq=256,128 --alpha=0.65 --stage1=200 --topK=5
  */
 
 import fs from "fs";
