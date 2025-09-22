@@ -13,7 +13,8 @@
       "import": "./dist/astermind.esm.js",
       "require": "./dist/astermind.umd.js",
       "default": "./dist/astermind.esm.js"
-    }
+    },
+    "./workers/elm-worker.js": "./dist/workers/elm-worker.js"
   },
   "types": "dist/index.d.ts",
   "files": [

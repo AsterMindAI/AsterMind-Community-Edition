@@ -32,7 +32,6 @@ export * from "./core/evaluateEnsembleRetrieval";
 
 /* ----------------------- Workers (browser) ----------------------- */
 /* These are safe to export; consumers can tree-shake for Node. */
-export * from "./core/ELMWorker";
 export * from "./core/ELMWorkerClient";
 
 /* ----------------------------- ML -------------------------------- */

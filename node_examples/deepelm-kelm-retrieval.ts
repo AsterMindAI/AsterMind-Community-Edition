@@ -30,43 +30,6 @@
  * Usage:
  *   npx ts-node --esm node_examples/deepelm-kelm-retrieval.ts
  *   npx ts-node --esm node_examples/deepelm-kelm-retrieval.ts --topK=5 --m=512 --whiten=true --ridge=0.02
- *
- * Pipeline Overview:
- *
- *            ┌────────────┐
- *            │   Q/A Pairs│
- *            └──────┬─────┘
- *                   │
- *                   ▼
- *        ┌───────────────────────┐
- *        │ UniversalEncoder       │
- *        │ (char-level encoding) │
- *        └──────┬────────────────┘
- *                   │
- *                   │                 ┌─────────────────────────┐
- *                   │                 │   DeepELM (Autoencoders)│
- *                   │                 │   trained on ANSWERS    │
- *                   │                 └───────┬─────────────────┘
- *                   │                         │
- *                   │                         ▼
- *                   │                 E_targets = φ_deep(Y)
- *                   │
- *                   ▼
- *          ┌───────────────────┐
- *          │ KELM Regression   │  learns X → E_targets
- *          │ (Nyström+whiten)  │
- *          └─────────┬─────────┘
- *                    │
- *                    ▼
- *         Ê(q) = f_kelm(encode(q))
- *                    │
- *                    ▼
- *        ┌───────────────────────┐
- *        │  Cosine KNN Search    │  (EmbeddingStore on E_targets)
- *        └───────────────────────┘
- *                    │
- *                    ▼
- *             Retrieved Answer(s)
  */
 
 import {
@@ -91,7 +54,7 @@ function parseFlags(argv: string[]): Flags {
 const flags = parseFlags(process.argv);
 
 const TOP_K = Number(flags.topK ?? 3);
-const M = Number(flags.m ?? 256);              // Nyström landmarks
+const M = Number(flags.m ?? 256); // Nyström landmarks
 const WHITEN = String(flags.whiten ?? "true") === "true";
 const RIDGE = Number(flags.ridge ?? 1e-2);
 const MODE = String(flags.mode ?? "nystrom") as "nystrom" | "exact";
@@ -133,9 +96,9 @@ function medianGamma(X: number[][], maxPairs = 2000): number {
 
 // KernelELM forward (regression logits ≈ predicted embedding)
 function kelmPredict(model: any, X: number[][]): number[][] {
-    const emb = model.getEmbedding(X);            // (N x m)
+    const emb = model.getEmbedding(X); // (N x m)
     const snap = model.toJSON();
-    const W: number[][] = snap.W;                 // (m x D_out)
+    const W: number[][] = snap.W; // (m x D_out)
     const N = emb.length, m = emb[0].length, D = W[0].length;
     const out = Array.from({ length: N }, () => Array(D).fill(0));
     for (let i = 0; i < N; i++) {
@@ -195,7 +158,7 @@ const deep = new DeepELM({
     clfWeightInit: "xavier",
     normalizeEach: false,
     normalizeFinal: true,
-});
+} as any);
 
 // Unsupervised autoencoders produce a refined embedding space for answers
 const t0 = Date.now();
@@ -204,7 +167,7 @@ const deepMs = Date.now() - t0;
 console.log(`✅ DeepELM autoencoders trained in ${(deepMs / 1000).toFixed(3)}s`);
 
 // Last-layer features for answers
-const E_targets_raw = deep.getEmbedding(Y) as number[][];
+const E_targets_raw = deep.transform(Y) as number[][];
 const E_targets = E_targets_raw.map(l2);
 
 // Optional: export answer embeddings for inspection
@@ -230,31 +193,40 @@ const outDim = E_targets[0].length;
 const autoGamma = medianGamma(X);
 const gamma = String(flags.gamma ?? "auto") === "auto" ? autoGamma : Number(flags.gamma);
 
+const N = X.length;
+const wantNystrom = MODE === "nystrom";
+const mEff = wantNystrom ? Math.max(1, Math.min(M, N)) : 0;
+// If we barely have data, exact kernel is safer.
+const modeEff: "nystrom" | "exact" = wantNystrom && N >= 2 ? "nystrom" : "exact";
+
+if (wantNystrom && M !== mEff) {
+    console.log(`ℹ️ Clamping Nyström landmarks m from ${M} → ${mEff} (N=${N}).`);
+}
+if (modeEff !== MODE) {
+    console.log(`ℹ️ Switching mode from '${MODE}' → '${modeEff}' due to small N=${N}.`);
+}
+
 console.log(
-    `⚙️ Training KELM (task=regression, mode=${MODE}, m=${M}, whiten=${WHITEN}, ridge=${RIDGE}, gamma=${gamma.toFixed(6)}) ...`
+    `⚙️ Training KELM (task=regression, mode=${modeEff}${modeEff === "nystrom" ? `, m=${mEff}, whiten=${WHITEN}` : ""
+    }, ridge=${RIDGE}, gamma=${gamma.toFixed(6)}) ...`
 );
 
 const kelm = new KernelELM({
     outputDim: outDim,
     task: "regression",
     ridgeLambda: RIDGE,
-    mode: MODE,
-    nystrom: { m: M, whiten: WHITEN }, // strategy optional; defaults are fine
+    mode: modeEff,
+    ...(modeEff === "nystrom" ? { nystrom: { m: mEff, whiten: WHITEN } } : {}),
     kernel: { type: "rbf", gamma },
 });
 
 const t1 = Date.now();
 kelm.fit(X, E_targets);
 const kelmMs = Date.now() - t1;
-
 console.log(`✅ KELM trained in ${(kelmMs / 1000).toFixed(3)}s`);
-if (SAVE_KELM) {
-    fs.writeFileSync(SAVE_KELM, JSON.stringify(kelm.toJSON(), null, 2), "utf-8");
-    console.log(`💾 Saved KELM snapshot → ${SAVE_KELM}`);
-}
 
 // ---------- Retrieval store on E_targets ----------
-const store = new EmbeddingStore();
+const store = new EmbeddingStore(outDim, { storeUnit: true, alsoStoreRaw: false });
 pairs.forEach((p, i) =>
     store.add({ id: p.id, vec: E_targets[i], meta: { text: p.target, tag: p.tag ?? "go" } })
 );
@@ -264,12 +236,13 @@ type Hit = { id: string; score: number; text: string };
 function retrieve(query: string, topK = TOP_K, tagFilter?: string): Hit[] {
     const qv = encoder.normalize(encoder.encode(query));
     const qhat = l2(kelmPredict(kelm, [qv])[0]); // predicted embedding in DeepELM answer space
-    const hits = store.query({
-        vec: qhat,
-        topK,
-        // metric defaults to cosine in most setups; omit if not in your signature
-        filter: tagFilter ? (m: any) => m?.tag === tagFilter : undefined,
+
+    const hits = store.query(qhat, topK, {
+        metric: "cosine",
+        returnVectors: false,
+        filter: tagFilter ? (meta: any, id: any) => (meta as any)?.tag === tagFilter : undefined,
     });
+
     return hits.map((h: any) => ({
         id: h.id,
         score: h.score,
