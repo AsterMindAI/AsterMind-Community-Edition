@@ -1,15 +1,5 @@
 /**
  * AsterMind-ELM — Public API Surface
- *
- * This barrel file is the single entrypoint exported by the package.
- * It must compile to `dist/index.d.ts` so consumers (and your own demos)
- * can import types and classes from "@astermind/astermind-elm".
- *
- * Notes:
- * - Keep explicit named exports for the primary classes (ELM, KernelELM, etc.).
- * - Use star exports for secondary/helper modules where the surface is broad.
- * - If any module below has only a `default` export, mirror it as a named one:
- *     export { default as Something } from "./path/Something";
  */
 
 /* ------------------------- Core / Models ------------------------- */
@@ -28,15 +18,24 @@ export * from "./core/Matrix";
 /* --------------------- Retrieval / Evaluation -------------------- */
 export { EmbeddingStore } from "./core/EmbeddingStore";
 export * from "./core/Evaluation";
-export * from "./core/evaluateEnsembleRetrieval";
+export { evaluateEnsembleRetrieval } from "./core/evaluateEnsembleRetrieval";
+export type {
+    EmbeddingRecord,
+    EnsembleEvalOptions,
+    EnsembleEvalResult,
+    PerLabelStats,
+    QueryRanking,
+    ScoreAgg,
+} from "./core/evaluateEnsembleRetrieval";
 
 /* ----------------------- Workers (browser) ----------------------- */
-/* These are safe to export; consumers can tree-shake for Node. */
 export * from "./core/ELMWorkerClient";
 
 /* ----------------------------- ML -------------------------------- */
-export * from "./ml/TFIDF";
-export * from "./ml/KNN";
+// Choose ONE style. I recommend explicit named exports:
+export { TFIDF, TFIDFVectorizer } from "./ml/TFIDF";
+export { KNN } from "./ml/KNN";
+// (Remove the wildcard re-exports for TFIDF/KNN to avoid duplication)
 
 /* ------------------------ Preprocessing -------------------------- */
 export * from "./preprocessing/Tokenizer";
