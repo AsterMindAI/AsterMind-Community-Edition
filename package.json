@@ -22,7 +22,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "rollup -c",
+    "build": "rollup -c && npm run build:types",
+    "build:types": "tsc -p tsconfig.types.json",
     "postbuild": "cp dist/astermind.umd.js public/astermind.umd.js || true",
     "watch": "rollup -c -w",
     "clean": "rm -rf dist",

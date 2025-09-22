@@ -4,195 +4,6 @@
     (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.astermind = {}));
 })(this, (function (exports) { 'use strict';
 
-    // Activations.ts - Common activation functions (with derivatives)
-    class Activations {
-        /* ========= Forward ========= */
-        /** Rectified Linear Unit */
-        static relu(x) {
-            return x > 0 ? x : 0;
-        }
-        /** Leaky ReLU with configurable slope for x<0 (default 0.01) */
-        static leakyRelu(x, alpha = 0.01) {
-            return x >= 0 ? x : alpha * x;
-        }
-        /** Logistic sigmoid */
-        static sigmoid(x) {
-            return 1 / (1 + Math.exp(-x));
-        }
-        /** Hyperbolic tangent */
-        static tanh(x) {
-            return Math.tanh(x);
-        }
-        /** Linear / identity activation */
-        static linear(x) {
-            return x;
-        }
-        /**
-         * GELU (Gaussian Error Linear Unit), tanh approximation.
-         * 0.5 * x * (1 + tanh(√(2/π) * (x + 0.044715 x^3)))
-         */
-        static gelu(x) {
-            const k = Math.sqrt(2 / Math.PI);
-            const u = k * (x + 0.044715 * x * x * x);
-            return 0.5 * x * (1 + Math.tanh(u));
-        }
-        /**
-         * Softmax with numerical stability and optional temperature.
-         * @param arr logits
-         * @param temperature >0; higher = flatter distribution
-         */
-        static softmax(arr, temperature = 1) {
-            const t = Math.max(temperature, 1e-12);
-            let max = -Infinity;
-            for (let i = 0; i < arr.length; i++) {
-                const v = arr[i] / t;
-                if (v > max)
-                    max = v;
-            }
-            const exps = new Array(arr.length);
-            let sum = 0;
-            for (let i = 0; i < arr.length; i++) {
-                const e = Math.exp(arr[i] / t - max);
-                exps[i] = e;
-                sum += e;
-            }
-            const denom = sum || 1e-12;
-            for (let i = 0; i < exps.length; i++)
-                exps[i] = exps[i] / denom;
-            return exps;
-        }
-        /* ========= Derivatives (elementwise) ========= */
-        /** d/dx ReLU */
-        static dRelu(x) {
-            // subgradient at 0 -> 0
-            return x > 0 ? 1 : 0;
-        }
-        /** d/dx LeakyReLU */
-        static dLeakyRelu(x, alpha = 0.01) {
-            return x >= 0 ? 1 : alpha;
-        }
-        /** d/dx Sigmoid = s(x)*(1-s(x)) */
-        static dSigmoid(x) {
-            const s = Activations.sigmoid(x);
-            return s * (1 - s);
-        }
-        /** d/dx tanh = 1 - tanh(x)^2 */
-        static dTanh(x) {
-            const t = Math.tanh(x);
-            return 1 - t * t;
-        }
-        /** d/dx Linear = 1 */
-        static dLinear(_) {
-            return 1;
-        }
-        /**
-         * d/dx GELU (tanh approximation)
-         * 0.5*(1 + tanh(u)) + 0.5*x*(1 - tanh(u)^2) * du/dx
-         * where u = k*(x + 0.044715 x^3), du/dx = k*(1 + 0.134145 x^2), k = sqrt(2/pi)
-         */
-        static dGelu(x) {
-            const k = Math.sqrt(2 / Math.PI);
-            const x2 = x * x;
-            const u = k * (x + 0.044715 * x * x2);
-            const t = Math.tanh(u);
-            const sech2 = 1 - t * t;
-            const du = k * (1 + 0.134145 * x2);
-            return 0.5 * (1 + t) + 0.5 * x * sech2 * du;
-        }
-        /* ========= Apply helpers ========= */
-        /** Apply an elementwise activation across a 2D matrix, returning a new matrix. */
-        static apply(matrix, fn) {
-            const out = new Array(matrix.length);
-            for (let i = 0; i < matrix.length; i++) {
-                const row = matrix[i];
-                const r = new Array(row.length);
-                for (let j = 0; j < row.length; j++)
-                    r[j] = fn(row[j]);
-                out[i] = r;
-            }
-            return out;
-        }
-        /** Apply an elementwise derivative across a 2D matrix, returning a new matrix. */
-        static applyDerivative(matrix, dfn) {
-            const out = new Array(matrix.length);
-            for (let i = 0; i < matrix.length; i++) {
-                const row = matrix[i];
-                const r = new Array(row.length);
-                for (let j = 0; j < row.length; j++)
-                    r[j] = dfn(row[j]);
-                out[i] = r;
-            }
-            return out;
-        }
-        /* ========= Getters ========= */
-        /**
-         * Get an activation function by name. Case-insensitive.
-         * For leaky ReLU, you can pass { alpha } to override the negative slope.
-         */
-        static get(name, opts) {
-            var _a;
-            const key = name.toLowerCase();
-            switch (key) {
-                case 'relu': return this.relu;
-                case 'leakyrelu':
-                case 'leaky-relu': {
-                    const alpha = (_a = opts === null || opts === void 0 ? void 0 : opts.alpha) !== null && _a !== void 0 ? _a : 0.01;
-                    return (x) => this.leakyRelu(x, alpha);
-                }
-                case 'sigmoid': return this.sigmoid;
-                case 'tanh': return this.tanh;
-                case 'linear':
-                case 'identity':
-                case 'none': return this.linear;
-                case 'gelu': return this.gelu;
-                default:
-                    throw new Error(`Unknown activation: ${name}`);
-            }
-        }
-        /** Get derivative function by name (mirrors get). */
-        static getDerivative(name, opts) {
-            var _a;
-            const key = name.toLowerCase();
-            switch (key) {
-                case 'relu': return this.dRelu;
-                case 'leakyrelu':
-                case 'leaky-relu': {
-                    const alpha = (_a = opts === null || opts === void 0 ? void 0 : opts.alpha) !== null && _a !== void 0 ? _a : 0.01;
-                    return (x) => this.dLeakyRelu(x, alpha);
-                }
-                case 'sigmoid': return this.dSigmoid;
-                case 'tanh': return this.dTanh;
-                case 'linear':
-                case 'identity':
-                case 'none': return this.dLinear;
-                case 'gelu': return this.dGelu;
-                default:
-                    throw new Error(`Unknown activation derivative: ${name}`);
-            }
-        }
-        /** Get both forward and derivative together. */
-        static getPair(name, opts) {
-            return { f: this.get(name, opts), df: this.getDerivative(name, opts) };
-        }
-        /* ========= Optional: Softmax Jacobian (for research/tools) ========= */
-        /**
-         * Given softmax probabilities p, returns the Jacobian J = diag(p) - p p^T
-         * (Useful for analysis; not typically needed for ELM.)
-         */
-        static softmaxJacobian(p) {
-            const n = p.length;
-            const J = new Array(n);
-            for (let i = 0; i < n; i++) {
-                const row = new Array(n);
-                for (let j = 0; j < n; j++) {
-                    row[j] = (i === j ? p[i] : 0) - p[i] * p[j];
-                }
-                J[i] = row;
-            }
-            return J;
-        }
-    }
-
     // Matrix.ts — tolerant, safe helpers with dimension checks and stable ops
     class DimError extends Error {
         constructor(msg) {
@@ -615,6 +426,195 @@
             }
             const UD = Matrix.multiply(U, Dm12);
             return Matrix.multiply(UD, Matrix.transpose(U));
+        }
+    }
+
+    // Activations.ts - Common activation functions (with derivatives)
+    class Activations {
+        /* ========= Forward ========= */
+        /** Rectified Linear Unit */
+        static relu(x) {
+            return x > 0 ? x : 0;
+        }
+        /** Leaky ReLU with configurable slope for x<0 (default 0.01) */
+        static leakyRelu(x, alpha = 0.01) {
+            return x >= 0 ? x : alpha * x;
+        }
+        /** Logistic sigmoid */
+        static sigmoid(x) {
+            return 1 / (1 + Math.exp(-x));
+        }
+        /** Hyperbolic tangent */
+        static tanh(x) {
+            return Math.tanh(x);
+        }
+        /** Linear / identity activation */
+        static linear(x) {
+            return x;
+        }
+        /**
+         * GELU (Gaussian Error Linear Unit), tanh approximation.
+         * 0.5 * x * (1 + tanh(√(2/π) * (x + 0.044715 x^3)))
+         */
+        static gelu(x) {
+            const k = Math.sqrt(2 / Math.PI);
+            const u = k * (x + 0.044715 * x * x * x);
+            return 0.5 * x * (1 + Math.tanh(u));
+        }
+        /**
+         * Softmax with numerical stability and optional temperature.
+         * @param arr logits
+         * @param temperature >0; higher = flatter distribution
+         */
+        static softmax(arr, temperature = 1) {
+            const t = Math.max(temperature, 1e-12);
+            let max = -Infinity;
+            for (let i = 0; i < arr.length; i++) {
+                const v = arr[i] / t;
+                if (v > max)
+                    max = v;
+            }
+            const exps = new Array(arr.length);
+            let sum = 0;
+            for (let i = 0; i < arr.length; i++) {
+                const e = Math.exp(arr[i] / t - max);
+                exps[i] = e;
+                sum += e;
+            }
+            const denom = sum || 1e-12;
+            for (let i = 0; i < exps.length; i++)
+                exps[i] = exps[i] / denom;
+            return exps;
+        }
+        /* ========= Derivatives (elementwise) ========= */
+        /** d/dx ReLU */
+        static dRelu(x) {
+            // subgradient at 0 -> 0
+            return x > 0 ? 1 : 0;
+        }
+        /** d/dx LeakyReLU */
+        static dLeakyRelu(x, alpha = 0.01) {
+            return x >= 0 ? 1 : alpha;
+        }
+        /** d/dx Sigmoid = s(x)*(1-s(x)) */
+        static dSigmoid(x) {
+            const s = Activations.sigmoid(x);
+            return s * (1 - s);
+        }
+        /** d/dx tanh = 1 - tanh(x)^2 */
+        static dTanh(x) {
+            const t = Math.tanh(x);
+            return 1 - t * t;
+        }
+        /** d/dx Linear = 1 */
+        static dLinear(_) {
+            return 1;
+        }
+        /**
+         * d/dx GELU (tanh approximation)
+         * 0.5*(1 + tanh(u)) + 0.5*x*(1 - tanh(u)^2) * du/dx
+         * where u = k*(x + 0.044715 x^3), du/dx = k*(1 + 0.134145 x^2), k = sqrt(2/pi)
+         */
+        static dGelu(x) {
+            const k = Math.sqrt(2 / Math.PI);
+            const x2 = x * x;
+            const u = k * (x + 0.044715 * x * x2);
+            const t = Math.tanh(u);
+            const sech2 = 1 - t * t;
+            const du = k * (1 + 0.134145 * x2);
+            return 0.5 * (1 + t) + 0.5 * x * sech2 * du;
+        }
+        /* ========= Apply helpers ========= */
+        /** Apply an elementwise activation across a 2D matrix, returning a new matrix. */
+        static apply(matrix, fn) {
+            const out = new Array(matrix.length);
+            for (let i = 0; i < matrix.length; i++) {
+                const row = matrix[i];
+                const r = new Array(row.length);
+                for (let j = 0; j < row.length; j++)
+                    r[j] = fn(row[j]);
+                out[i] = r;
+            }
+            return out;
+        }
+        /** Apply an elementwise derivative across a 2D matrix, returning a new matrix. */
+        static applyDerivative(matrix, dfn) {
+            const out = new Array(matrix.length);
+            for (let i = 0; i < matrix.length; i++) {
+                const row = matrix[i];
+                const r = new Array(row.length);
+                for (let j = 0; j < row.length; j++)
+                    r[j] = dfn(row[j]);
+                out[i] = r;
+            }
+            return out;
+        }
+        /* ========= Getters ========= */
+        /**
+         * Get an activation function by name. Case-insensitive.
+         * For leaky ReLU, you can pass { alpha } to override the negative slope.
+         */
+        static get(name, opts) {
+            var _a;
+            const key = name.toLowerCase();
+            switch (key) {
+                case 'relu': return this.relu;
+                case 'leakyrelu':
+                case 'leaky-relu': {
+                    const alpha = (_a = opts === null || opts === void 0 ? void 0 : opts.alpha) !== null && _a !== void 0 ? _a : 0.01;
+                    return (x) => this.leakyRelu(x, alpha);
+                }
+                case 'sigmoid': return this.sigmoid;
+                case 'tanh': return this.tanh;
+                case 'linear':
+                case 'identity':
+                case 'none': return this.linear;
+                case 'gelu': return this.gelu;
+                default:
+                    throw new Error(`Unknown activation: ${name}`);
+            }
+        }
+        /** Get derivative function by name (mirrors get). */
+        static getDerivative(name, opts) {
+            var _a;
+            const key = name.toLowerCase();
+            switch (key) {
+                case 'relu': return this.dRelu;
+                case 'leakyrelu':
+                case 'leaky-relu': {
+                    const alpha = (_a = opts === null || opts === void 0 ? void 0 : opts.alpha) !== null && _a !== void 0 ? _a : 0.01;
+                    return (x) => this.dLeakyRelu(x, alpha);
+                }
+                case 'sigmoid': return this.dSigmoid;
+                case 'tanh': return this.dTanh;
+                case 'linear':
+                case 'identity':
+                case 'none': return this.dLinear;
+                case 'gelu': return this.dGelu;
+                default:
+                    throw new Error(`Unknown activation derivative: ${name}`);
+            }
+        }
+        /** Get both forward and derivative together. */
+        static getPair(name, opts) {
+            return { f: this.get(name, opts), df: this.getDerivative(name, opts) };
+        }
+        /* ========= Optional: Softmax Jacobian (for research/tools) ========= */
+        /**
+         * Given softmax probabilities p, returns the Jacobian J = diag(p) - p p^T
+         * (Useful for analysis; not typically needed for ELM.)
+         */
+        static softmaxJacobian(p) {
+            const n = p.length;
+            const J = new Array(n);
+            for (let i = 0; i < n; i++) {
+                const row = new Array(n);
+                for (let j = 0; j < n; j++) {
+                    row[j] = (i === j ? p[i] : 0) - p[i] * p[j];
+                }
+                J[i] = row;
+            }
+            return J;
         }
     }
 
@@ -1444,6 +1444,585 @@
         }
     }
 
+    // KernelELM.ts — Kernel Extreme Learning Machine (Exact + Nyström + Whitening)
+    // Dependencies: Matrix (multiply, transpose, addRegularization, solveCholesky, identity, zeros)
+    class KernelRegistry {
+        static register(name, fn) {
+            if (!name || typeof fn !== 'function')
+                throw new Error('KernelRegistry.register: invalid args');
+            this.map.set(name, fn);
+        }
+        static get(name) {
+            const f = this.map.get(name);
+            if (!f)
+                throw new Error(`KernelRegistry: kernel "${name}" not found`);
+            return f;
+        }
+    }
+    KernelRegistry.map = new Map();
+    function l2sq(a, b) {
+        let s = 0;
+        for (let i = 0; i < a.length; i++) {
+            const d = a[i] - b[i];
+            s += d * d;
+        }
+        return s;
+    }
+    function l1(a, b) {
+        let s = 0;
+        for (let i = 0; i < a.length; i++)
+            s += Math.abs(a[i] - b[i]);
+        return s;
+    }
+    function dot$2(a, b) {
+        let s = 0;
+        for (let i = 0; i < a.length; i++)
+            s += a[i] * b[i];
+        return s;
+    }
+    function softmaxRow(v) {
+        const m = Math.max(...v);
+        const ex = v.map(x => Math.exp(x - m));
+        const s = ex.reduce((a, b) => a + b, 0) || 1;
+        return ex.map(e => e / s);
+    }
+    function makePRNG$1(seed = 123456789) {
+        let s = seed | 0 || 1;
+        return () => { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return (s >>> 0) / 0xffffffff; };
+    }
+    function buildKernel(spec, dim) {
+        var _a, _b, _c, _d, _e;
+        switch (spec.type) {
+            case 'custom':
+                if (!spec.name)
+                    throw new Error('custom kernel requires "name"');
+                return KernelRegistry.get(spec.name);
+            case 'linear':
+                return (x, z) => dot$2(x, z);
+            case 'poly': {
+                const gamma = (_a = spec.gamma) !== null && _a !== void 0 ? _a : 1 / Math.max(1, dim);
+                const degree = (_b = spec.degree) !== null && _b !== void 0 ? _b : 2;
+                const coef0 = (_c = spec.coef0) !== null && _c !== void 0 ? _c : 1;
+                return (x, z) => Math.pow(gamma * dot$2(x, z) + coef0, degree);
+            }
+            case 'laplacian': {
+                const gamma = (_d = spec.gamma) !== null && _d !== void 0 ? _d : 1 / Math.max(1, dim);
+                return (x, z) => Math.exp(-gamma * l1(x, z));
+            }
+            case 'rbf':
+            default: {
+                const gamma = (_e = spec.gamma) !== null && _e !== void 0 ? _e : 1 / Math.max(1, dim);
+                return (x, z) => Math.exp(-gamma * l2sq(x, z));
+            }
+        }
+    }
+    /* ============== Landmark selection (Nyström) ============== */
+    function pickUniform(X, m, seed = 1337) {
+        const prng = makePRNG$1(seed);
+        const N = X.length;
+        const idx = Array.from({ length: N }, (_, i) => i);
+        // Fisher–Yates (only first m)
+        for (let i = 0; i < m; i++) {
+            const j = i + Math.floor(prng() * (N - i));
+            const t = idx[i];
+            idx[i] = idx[j];
+            idx[j] = t;
+        }
+        return idx.slice(0, m);
+    }
+    function pickKMeansPP(X, m, seed = 1337) {
+        const prng = makePRNG$1(seed);
+        const N = X.length;
+        if (m >= N)
+            return Array.from({ length: N }, (_, i) => i);
+        const centers = [];
+        centers.push(Math.floor(prng() * N));
+        const D2 = new Float64Array(N).fill(Infinity);
+        while (centers.length < m) {
+            const c = centers[centers.length - 1];
+            for (let i = 0; i < N; i++) {
+                const d2 = l2sq(X[i], X[c]);
+                if (d2 < D2[i])
+                    D2[i] = d2;
+            }
+            let sum = 0;
+            for (let i = 0; i < N; i++)
+                sum += D2[i];
+            let r = prng() * (sum || 1);
+            let next = 0;
+            for (let i = 0; i < N; i++) {
+                r -= D2[i];
+                if (r <= 0) {
+                    next = i;
+                    break;
+                }
+            }
+            centers.push(next);
+        }
+        return centers;
+    }
+    /* ====================== KernelELM ====================== */
+    class KernelELM {
+        constructor(config) {
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s;
+            // exact mode params
+            this.Xtrain = [];
+            this.alpha = [];
+            // nystrom params
+            this.Z = []; // landmarks (m x D)
+            this.W = []; // weights in feature space (m x K)
+            this.R = []; // symmetric whitener K_mm^{-1/2} (m x m) when whitening
+            const resolved = {
+                outputDim: config.outputDim,
+                kernel: config.kernel,
+                ridgeLambda: (_a = config.ridgeLambda) !== null && _a !== void 0 ? _a : 1e-2,
+                task: (_b = config.task) !== null && _b !== void 0 ? _b : 'classification',
+                mode: (_c = config.mode) !== null && _c !== void 0 ? _c : 'exact',
+                nystrom: {
+                    m: (_d = config.nystrom) === null || _d === void 0 ? void 0 : _d.m,
+                    strategy: (_f = (_e = config.nystrom) === null || _e === void 0 ? void 0 : _e.strategy) !== null && _f !== void 0 ? _f : 'uniform',
+                    seed: (_h = (_g = config.nystrom) === null || _g === void 0 ? void 0 : _g.seed) !== null && _h !== void 0 ? _h : 1337,
+                    preset: (_j = config.nystrom) === null || _j === void 0 ? void 0 : _j.preset,
+                    whiten: (_l = (_k = config.nystrom) === null || _k === void 0 ? void 0 : _k.whiten) !== null && _l !== void 0 ? _l : false,
+                    jitter: (_o = (_m = config.nystrom) === null || _m === void 0 ? void 0 : _m.jitter) !== null && _o !== void 0 ? _o : 1e-10,
+                },
+                log: {
+                    modelName: (_q = (_p = config.log) === null || _p === void 0 ? void 0 : _p.modelName) !== null && _q !== void 0 ? _q : 'KernelELM',
+                    verbose: (_s = (_r = config.log) === null || _r === void 0 ? void 0 : _r.verbose) !== null && _s !== void 0 ? _s : false,
+                },
+            };
+            this.cfg = resolved;
+            this.verbose = this.cfg.log.verbose;
+            this.name = this.cfg.log.modelName;
+        }
+        /* ------------------- Train ------------------- */
+        fit(X, Y) {
+            var _a, _b, _c, _d, _e;
+            if (!(X === null || X === void 0 ? void 0 : X.length) || !((_a = X[0]) === null || _a === void 0 ? void 0 : _a.length))
+                throw new Error('KernelELM.fit: empty X');
+            if (!(Y === null || Y === void 0 ? void 0 : Y.length) || !((_b = Y[0]) === null || _b === void 0 ? void 0 : _b.length))
+                throw new Error('KernelELM.fit: empty Y');
+            if (X.length !== Y.length)
+                throw new Error(`KernelELM.fit: X rows ${X.length} != Y rows ${Y.length}`);
+            if (Y[0].length !== this.cfg.outputDim) {
+                throw new Error(`KernelELM.fit: Y dims ${Y[0].length} != outputDim ${this.cfg.outputDim}`);
+            }
+            const N = X.length, D = X[0].length, K = Y[0].length;
+            this.kernel = buildKernel(this.cfg.kernel, D);
+            if (this.cfg.mode === 'exact') {
+                // Gram K (N x N)
+                if (this.verbose)
+                    console.log(`🔧 [${this.name}] exact Gram: N=${N}, D=${D}`);
+                const Kmat = new Array(N);
+                for (let i = 0; i < N; i++) {
+                    const row = new Array(N);
+                    Kmat[i] = row;
+                    row[i] = 1;
+                    for (let j = i + 1; j < N; j++)
+                        row[j] = this.kernel(X[i], X[j]);
+                }
+                for (let i = 1; i < N; i++)
+                    for (let j = 0; j < i; j++)
+                        Kmat[i][j] = Kmat[j][i];
+                // (K + λI) α = Y
+                const A = Matrix.addRegularization(Kmat, this.cfg.ridgeLambda + 1e-10);
+                const Alpha = Matrix.solveCholesky(A, Y, 1e-12); // (N x K)
+                this.Xtrain = X.map(r => r.slice());
+                this.alpha = Alpha;
+                this.Z = [];
+                this.W = [];
+                this.R = [];
+                if (this.verbose)
+                    console.log(`✅ [${this.name}] exact fit complete: alpha(${N}x${K})`);
+                return;
+            }
+            // ---------- Nyström ----------
+            const ny = this.cfg.nystrom;
+            let Z;
+            if (ny.strategy === 'preset' && (((_c = ny.preset) === null || _c === void 0 ? void 0 : _c.points) || ((_d = ny.preset) === null || _d === void 0 ? void 0 : _d.indices))) {
+                Z = ny.preset.points ? ny.preset.points.map(r => r.slice())
+                    : ny.preset.indices.map(i => X[i]);
+            }
+            else {
+                const m = (_e = ny.m) !== null && _e !== void 0 ? _e : Math.max(10, Math.min(300, Math.floor(Math.sqrt(N))));
+                const idx = (ny.strategy === 'kmeans++') ? pickKMeansPP(X, m, ny.seed) : pickUniform(X, m, ny.seed);
+                Z = idx.map(i => X[i]);
+            }
+            const m = Z.length;
+            if (this.verbose)
+                console.log(`🔹 [${this.name}] Nyström: m=${m}, strategy=${ny.strategy}, whiten=${ny.whiten ? 'on' : 'off'}`);
+            // K_nm (N x m)
+            const Knm = new Array(N);
+            for (let i = 0; i < N; i++) {
+                const row = new Array(m), xi = X[i];
+                for (let j = 0; j < m; j++)
+                    row[j] = this.kernel(xi, Z[j]);
+                Knm[i] = row;
+            }
+            // Optional whitening with R = K_mm^{-1/2} (symmetric via eigen)
+            let Phi = Knm;
+            let R = [];
+            if (ny.whiten) {
+                // K_mm (m x m)
+                const Kmm = new Array(m);
+                for (let i = 0; i < m; i++) {
+                    const row = new Array(m);
+                    Kmm[i] = row;
+                    row[i] = 1;
+                    for (let j = i + 1; j < m; j++)
+                        row[j] = this.kernel(Z[i], Z[j]);
+                }
+                for (let i = 1; i < m; i++)
+                    for (let j = 0; j < i; j++)
+                        Kmm[i][j] = Kmm[j][i];
+                // R = K_mm^{-1/2} with jitter
+                const KmmJ = Matrix.addRegularization(Kmm, ny.jitter);
+                R = Matrix.invSqrtSym(KmmJ, ny.jitter);
+                Phi = Matrix.multiply(Knm, R); // (N x m)
+            }
+            // Ridge in feature space: W = (Φᵀ Φ + λ I)^-1 Φᵀ Y   (m x K)
+            const PhiT = Matrix.transpose(Phi);
+            const G = Matrix.multiply(PhiT, Phi); // (m x m)
+            const Greg = Matrix.addRegularization(G, this.cfg.ridgeLambda + 1e-10);
+            const Rhs = Matrix.multiply(PhiT, Y); // (m x K)
+            const W = Matrix.solveCholesky(Greg, Rhs, 1e-12); // (m x K)
+            this.Z = Z;
+            this.W = W;
+            this.R = R; // empty when whiten=false
+            this.Xtrain = [];
+            this.alpha = [];
+            if (this.verbose)
+                console.log(`✅ [${this.name}] Nyström fit complete: Z(${m}x${D}), W(${m}x${K})`);
+        }
+        /* --------------- Features / Predict --------------- */
+        featuresFor(X) {
+            if (this.cfg.mode === 'exact') {
+                const N = this.Xtrain.length, M = X.length;
+                const Kqx = new Array(M);
+                for (let i = 0; i < M; i++) {
+                    const row = new Array(N), xi = X[i];
+                    for (let j = 0; j < N; j++)
+                        row[j] = this.kernel(xi, this.Xtrain[j]);
+                    Kqx[i] = row;
+                }
+                return Kqx;
+            }
+            // Nyström
+            if (!this.Z.length)
+                throw new Error('featuresFor: Nyström model not fitted');
+            const M = X.length, m = this.Z.length;
+            const Kxm = new Array(M);
+            for (let i = 0; i < M; i++) {
+                const row = new Array(m), xi = X[i];
+                for (let j = 0; j < m; j++)
+                    row[j] = this.kernel(xi, this.Z[j]);
+                Kxm[i] = row;
+            }
+            return this.R.length ? Matrix.multiply(Kxm, this.R) : Kxm;
+        }
+        /** Raw logits for batch (M x K) */
+        predictLogitsFromVectors(X) {
+            const Phi = this.featuresFor(X);
+            if (this.cfg.mode === 'exact') {
+                if (!this.alpha.length)
+                    throw new Error('predict: exact model not fitted');
+                return Matrix.multiply(Phi, this.alpha);
+            }
+            if (!this.W.length)
+                throw new Error('predict: Nyström model not fitted');
+            return Matrix.multiply(Phi, this.W);
+        }
+        /** Probabilities for classification; raw scores for regression */
+        predictProbaFromVectors(X) {
+            const logits = this.predictLogitsFromVectors(X);
+            return this.cfg.task === 'classification' ? logits.map(softmaxRow) : logits;
+        }
+        /** Top-K for classification */
+        predictTopKFromVectors(X, k = 5) {
+            const P = this.predictProbaFromVectors(X);
+            return P.map(row => row.map((p, i) => ({ index: i, prob: p }))
+                .sort((a, b) => b.prob - a.prob)
+                .slice(0, k));
+        }
+        /** Embedding for chaining:
+         *  - exact: Φ = K(X, X_train)  (M x N)
+         *  - nystrom: Φ = K(X, Z)      (M x m)  or K(X,Z)·R if whiten=true
+         */
+        getEmbedding(X) {
+            return this.featuresFor(X);
+        }
+        /* -------------------- JSON I/O -------------------- */
+        toJSON() {
+            const base = { config: Object.assign(Object.assign({}, this.cfg), { __version: 'kelm-2.1.0' }) };
+            if (this.cfg.mode === 'exact') {
+                return Object.assign(Object.assign({}, base), { X: this.Xtrain, alpha: this.alpha });
+            }
+            return Object.assign(Object.assign({}, base), { Z: this.Z, W: this.W, R: this.R.length ? this.R : undefined });
+        }
+        fromJSON(payload) {
+            var _a, _b, _c, _d, _e, _f, _g, _h;
+            const obj = typeof payload === 'string' ? JSON.parse(payload) : payload;
+            // Merge config (keep current defaults where missing)
+            this.cfg.kernel = Object.assign({}, obj.config.kernel);
+            this.cfg.ridgeLambda = (_a = obj.config.ridgeLambda) !== null && _a !== void 0 ? _a : this.cfg.ridgeLambda;
+            this.cfg.task = ((_b = obj.config.task) !== null && _b !== void 0 ? _b : this.cfg.task);
+            this.cfg.mode = ((_c = obj.config.mode) !== null && _c !== void 0 ? _c : this.cfg.mode);
+            this.cfg.nystrom = Object.assign(Object.assign({}, this.cfg.nystrom), ((_d = obj.config.nystrom) !== null && _d !== void 0 ? _d : {}));
+            // Restore params
+            if (obj.X && obj.alpha) {
+                this.Xtrain = obj.X.map(r => r.slice());
+                this.alpha = obj.alpha.map(r => r.slice());
+                this.Z = [];
+                this.W = [];
+                this.R = [];
+                const D = (_f = (_e = this.Xtrain[0]) === null || _e === void 0 ? void 0 : _e.length) !== null && _f !== void 0 ? _f : 1;
+                this.kernel = buildKernel(this.cfg.kernel, D);
+                return;
+            }
+            if (obj.Z && obj.W) {
+                this.Z = obj.Z.map(r => r.slice());
+                this.W = obj.W.map(r => r.slice());
+                this.R = obj.R ? obj.R.map(r => r.slice()) : [];
+                this.Xtrain = [];
+                this.alpha = [];
+                const D = (_h = (_g = this.Z[0]) === null || _g === void 0 ? void 0 : _g.length) !== null && _h !== void 0 ? _h : 1;
+                this.kernel = buildKernel(this.cfg.kernel, D);
+                return;
+            }
+            throw new Error('KernelELM.fromJSON: invalid payload');
+        }
+    }
+
+    // OnlineELM.ts — Online / OS-ELM with RLS updates
+    /* ========== utils ========== */
+    const EPS$3 = 1e-10;
+    function makePRNG(seed = 123456789) {
+        let s = seed | 0 || 1;
+        return () => {
+            s ^= s << 13;
+            s ^= s >>> 17;
+            s ^= s << 5;
+            return ((s >>> 0) / 0xffffffff);
+        };
+    }
+    /* ========== Online ELM (RLS) ========== */
+    class OnlineELM {
+        constructor(cfg) {
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+            this.inputDim = cfg.inputDim | 0;
+            this.outputDim = cfg.outputDim | 0;
+            this.hiddenUnits = cfg.hiddenUnits | 0;
+            if (this.inputDim <= 0 || this.outputDim <= 0 || this.hiddenUnits <= 0) {
+                throw new Error(`OnlineELM: invalid dims (inputDim=${this.inputDim}, outputDim=${this.outputDim}, hidden=${this.hiddenUnits})`);
+            }
+            this.activation = (_a = cfg.activation) !== null && _a !== void 0 ? _a : 'relu';
+            this.ridgeLambda = Math.max((_b = cfg.ridgeLambda) !== null && _b !== void 0 ? _b : 1e-2, EPS$3);
+            this.weightInit = (_c = cfg.weightInit) !== null && _c !== void 0 ? _c : 'xavier';
+            this.forgettingFactor = Math.max(Math.min((_d = cfg.forgettingFactor) !== null && _d !== void 0 ? _d : 1.0, 1.0), 1e-4);
+            this.verbose = (_f = (_e = cfg.log) === null || _e === void 0 ? void 0 : _e.verbose) !== null && _f !== void 0 ? _f : false;
+            this.modelName = (_h = (_g = cfg.log) === null || _g === void 0 ? void 0 : _g.modelName) !== null && _h !== void 0 ? _h : 'Online ELM';
+            const seed = (_j = cfg.seed) !== null && _j !== void 0 ? _j : 1337;
+            this.rng = makePRNG(seed);
+            this.actFn = Activations.get(this.activation);
+            // Random features
+            this.W = this.initW(this.hiddenUnits, this.inputDim);
+            this.b = this.initB(this.hiddenUnits);
+            // Not initialized yet — init() will set these
+            this.beta = null;
+            this.P = null;
+        }
+        /* ===== init helpers ===== */
+        xavierLimit(fanIn, fanOut) { return Math.sqrt(6 / (fanIn + fanOut)); }
+        heLimit(fanIn) { return Math.sqrt(6 / fanIn); }
+        initW(rows, cols) {
+            let limit = 1;
+            if (this.weightInit === 'xavier') {
+                limit = this.xavierLimit(cols, rows);
+                if (this.verbose)
+                    console.log(`✨ [${this.modelName}] Xavier W ~ U(±${limit.toFixed(4)})`);
+            }
+            else if (this.weightInit === 'he') {
+                limit = this.heLimit(cols);
+                if (this.verbose)
+                    console.log(`✨ [${this.modelName}] He W ~ U(±${limit.toFixed(4)})`);
+            }
+            else if (this.verbose) {
+                console.log(`✨ [${this.modelName}] Uniform W ~ U(±1)`);
+            }
+            const rnd = () => (this.rng() * 2 - 1) * limit;
+            return Array.from({ length: rows }, () => Array.from({ length: cols }, rnd));
+        }
+        initB(rows) {
+            const rnd = () => (this.rng() * 2 - 1) * 0.01;
+            return Array.from({ length: rows }, () => [rnd()]);
+        }
+        hidden(X) {
+            const tempH = Matrix.multiply(X, Matrix.transpose(this.W)); // (n x hidden)
+            const f = this.actFn;
+            return tempH.map(row => row.map((v, j) => f(v + this.b[j][0])));
+        }
+        /* ===== public API ===== */
+        /** Initialize β and P from a batch (ridge): P0=(HᵀH+λI)^-1, β0=P0 HᵀY */
+        init(X0, Y0) {
+            if (!(X0 === null || X0 === void 0 ? void 0 : X0.length) || !(Y0 === null || Y0 === void 0 ? void 0 : Y0.length))
+                throw new Error('init: empty X0 or Y0');
+            if (X0.length !== Y0.length)
+                throw new Error(`init: X0 rows ${X0.length} != Y0 rows ${Y0.length}`);
+            if (X0[0].length !== this.inputDim)
+                throw new Error(`init: X0 cols ${X0[0].length} != inputDim ${this.inputDim}`);
+            if (Y0[0].length !== this.outputDim)
+                throw new Error(`init: Y0 cols ${Y0[0].length} != outputDim ${this.outputDim}`);
+            const H0 = this.hidden(X0); // (n x h)
+            const Ht = Matrix.transpose(H0); // (h x n)
+            const A = Matrix.addRegularization(Matrix.multiply(Ht, H0), this.ridgeLambda + 1e-10); // (h x h)
+            const R = Matrix.multiply(Ht, Y0); // (h x k)
+            const P0 = Matrix.solveCholesky(A, Matrix.identity(this.hiddenUnits), 1e-10); // A^-1
+            const B0 = Matrix.multiply(P0, R); // (h x k)
+            this.P = P0;
+            this.beta = B0;
+            if (this.verbose)
+                console.log(`✅ [${this.modelName}] init: n=${X0.length}, hidden=${this.hiddenUnits}, out=${this.outputDim}`);
+        }
+        /** If not initialized, init(); otherwise RLS update. */
+        fit(X, Y) {
+            if (!(X === null || X === void 0 ? void 0 : X.length) || !(Y === null || Y === void 0 ? void 0 : Y.length))
+                throw new Error('fit: empty X or Y');
+            if (X.length !== Y.length)
+                throw new Error(`fit: X rows ${X.length} != Y rows ${Y.length}`);
+            if (!this.P || !this.beta)
+                this.init(X, Y);
+            else
+                this.update(X, Y);
+        }
+        /**
+         * RLS / OS-ELM update with forgetting ρ:
+         *   S = I + HPHᵀ
+         *   K = P Hᵀ S^-1
+         *   β ← β + K (Y - Hβ)
+         *   P ← (P - K H P) / ρ
+         */
+        update(X, Y) {
+            if (!(X === null || X === void 0 ? void 0 : X.length) || !(Y === null || Y === void 0 ? void 0 : Y.length))
+                throw new Error('update: empty X or Y');
+            if (X.length !== Y.length)
+                throw new Error(`update: X rows ${X.length} != Y rows ${Y.length}`);
+            if (!this.P || !this.beta)
+                throw new Error('update: model not initialized (call init() first)');
+            const n = X.length;
+            const H = this.hidden(X); // (n x h)
+            const Ht = Matrix.transpose(H); // (h x n)
+            const rho = this.forgettingFactor;
+            let P = this.P;
+            if (rho < 1.0) {
+                // Equivalent to P <- P / ρ (more responsive to new data)
+                P = P.map(row => row.map(v => v / rho));
+            }
+            // S = I + H P Hᵀ  (n x n, SPD)
+            const HP = Matrix.multiply(H, P); // (n x h)
+            const HPHt = Matrix.multiply(HP, Ht); // (n x n)
+            const S = Matrix.add(HPHt, Matrix.identity(n));
+            const S_inv = Matrix.solveCholesky(S, Matrix.identity(n), 1e-10);
+            // K = P Hᵀ S^-1  (h x n)
+            const PHt = Matrix.multiply(P, Ht); // (h x n)
+            const K = Matrix.multiply(PHt, S_inv); // (h x n)
+            // Innovation: (Y - Hβ)  (n x k)
+            const Hbeta = Matrix.multiply(H, this.beta);
+            const innov = Y.map((row, i) => row.map((yij, j) => yij - Hbeta[i][j]));
+            // β ← β + K * innov
+            const Delta = Matrix.multiply(K, innov); // (h x k)
+            this.beta = this.beta.map((row, i) => row.map((bij, j) => bij + Delta[i][j]));
+            // P ← P - K H P
+            const KH = Matrix.multiply(K, H); // (h x h)
+            const KHP = Matrix.multiply(KH, P); // (h x h)
+            this.P = P.map((row, i) => row.map((pij, j) => pij - KHP[i][j]));
+            if (this.verbose) {
+                const diagAvg = this.P.reduce((s, r, i) => s + r[i], 0) / this.P.length;
+                console.log(`🔁 [${this.modelName}] update: n=${n}, avg diag(P)≈${diagAvg.toFixed(6)}`);
+            }
+        }
+        /* ===== Prediction ===== */
+        logitsFromVectors(X) {
+            if (!this.beta)
+                throw new Error('predict: model not initialized');
+            const H = this.hidden(X);
+            return Matrix.multiply(H, this.beta);
+        }
+        predictLogitsFromVector(x) {
+            return this.logitsFromVectors([x])[0];
+        }
+        predictLogitsFromVectors(X) {
+            return this.logitsFromVectors(X);
+        }
+        predictProbaFromVector(x) {
+            return Activations.softmax(this.predictLogitsFromVector(x));
+        }
+        predictProbaFromVectors(X) {
+            return this.predictLogitsFromVectors(X).map(Activations.softmax);
+        }
+        predictTopKFromVector(x, k = 5) {
+            const p = this.predictProbaFromVector(x);
+            const kk = Math.max(1, Math.min(k, p.length));
+            return p.map((prob, index) => ({ index, prob }))
+                .sort((a, b) => b.prob - a.prob)
+                .slice(0, kk);
+        }
+        predictTopKFromVectors(X, k = 5) {
+            return this.predictProbaFromVectors(X).map(p => {
+                const kk = Math.max(1, Math.min(k, p.length));
+                return p.map((prob, index) => ({ index, prob }))
+                    .sort((a, b) => b.prob - a.prob)
+                    .slice(0, kk);
+            });
+        }
+        /* ===== Serialization ===== */
+        toJSON(includeP = false) {
+            if (!this.beta || !this.P)
+                throw new Error('toJSON: model not initialized');
+            const cfg = {
+                hiddenUnits: this.hiddenUnits,
+                inputDim: this.inputDim,
+                outputDim: this.outputDim,
+                activation: this.activation,
+                ridgeLambda: this.ridgeLambda,
+                weightInit: this.weightInit,
+                forgettingFactor: this.forgettingFactor,
+                __version: 'online-elm-1.0.0',
+            };
+            const o = { W: this.W, b: this.b, B: this.beta, config: cfg };
+            if (includeP)
+                o.P = this.P;
+            return o;
+        }
+        loadFromJSON(json) {
+            var _a;
+            const parsed = typeof json === 'string' ? JSON.parse(json) : json;
+            const { W, b, B, P, config } = parsed;
+            if (!W || !b || !B)
+                throw new Error('loadFromJSON: missing W/b/B');
+            if (W.length !== this.hiddenUnits || W[0].length !== this.inputDim) {
+                throw new Error(`loadFromJSON: mismatched W shape (${W.length}x${W[0].length})`);
+            }
+            if (b.length !== this.hiddenUnits || b[0].length !== 1) {
+                throw new Error(`loadFromJSON: mismatched b shape (${b.length}x${b[0].length})`);
+            }
+            if (B.length !== this.hiddenUnits || B[0].length !== this.outputDim) {
+                throw new Error(`loadFromJSON: mismatched B shape (${B.length}x${B[0].length})`);
+            }
+            this.W = W;
+            this.b = b;
+            this.beta = B;
+            this.P = P !== null && P !== void 0 ? P : null;
+            if (config === null || config === void 0 ? void 0 : config.activation) {
+                this.activation = config.activation;
+                this.actFn = Activations.get(this.activation); // refresh cache
+            }
+            if (config === null || config === void 0 ? void 0 : config.ridgeLambda)
+                this.ridgeLambda = config.ridgeLambda;
+            if (this.verbose)
+                console.log(`✅ [${this.modelName}] model loaded (v=${(_a = config === null || config === void 0 ? void 0 : config.__version) !== null && _a !== void 0 ? _a : 'n/a'})`);
+        }
+    }
+
     // ELMChain.ts — simple encoder pipeline with checks, normalization, and profiling
     function l2NormalizeRows$1(M) {
         return M.map(row => {
@@ -1680,9 +2259,6 @@
     function wrapELM(model, name) {
         return new ELMAdapter({ type: 'elm', model, name });
     }
-    function wrapOnlineELM(model, opts) {
-        return new ELMAdapter({ type: 'online', model, name: opts === null || opts === void 0 ? void 0 : opts.name, mode: opts === null || opts === void 0 ? void 0 : opts.mode });
-    }
 
     // DeepELM.ts — stacked ELM autoencoders + top ELM classifier
     class DeepELM {
@@ -1825,6 +2401,1038 @@
         });
     }
 
+    // EmbeddingStore.ts — Powerful in-memory vector store with fast KNN, thresholds, and JSON I/O
+    const EPS$2 = 1e-12;
+    /* ================= math utils ================= */
+    function l2Norm$1(v) {
+        let s = 0;
+        for (let i = 0; i < v.length; i++)
+            s += v[i] * v[i];
+        return Math.sqrt(s);
+    }
+    function l1Dist(a, b) {
+        let s = 0;
+        for (let i = 0; i < a.length; i++)
+            s += Math.abs(a[i] - b[i]);
+        return s;
+    }
+    function dot$1(a, b) {
+        let s = 0;
+        for (let i = 0; i < a.length; i++)
+            s += a[i] * b[i];
+        return s;
+    }
+    function normalizeToUnit(v) {
+        const out = new Float32Array(v.length);
+        const n = l2Norm$1(v);
+        if (n < EPS$2)
+            return out; // zero vector → stay zero; cosine with zero returns 0
+        const inv = 1 / n;
+        for (let i = 0; i < v.length; i++)
+            out[i] = v[i] * inv;
+        return out;
+    }
+    /** Quickselect (nth_element) on-place for top-k largest by score. Returns cutoff value index. */
+    function quickselectTopK(arr, k, scoreOf) {
+        if (k <= 0 || k >= arr.length)
+            return arr.length - 1;
+        let left = 0, right = arr.length - 1;
+        const target = k - 1; // 0-based index of kth largest after partition
+        function swap(i, j) {
+            const t = arr[i];
+            arr[i] = arr[j];
+            arr[j] = t;
+        }
+        function partition(l, r, pivotIdx) {
+            const pivotScore = scoreOf(arr[pivotIdx]);
+            swap(pivotIdx, r);
+            let store = l;
+            for (let i = l; i < r; i++) {
+                if (scoreOf(arr[i]) > pivotScore) { // ">" for largest-first
+                    swap(store, i);
+                    store++;
+                }
+            }
+            swap(store, r);
+            return store;
+        }
+        while (true) {
+            const pivotIdx = Math.floor((left + right) / 2);
+            const idx = partition(left, right, pivotIdx);
+            if (idx === target)
+                return idx;
+            if (target < idx)
+                right = idx - 1;
+            else
+                left = idx + 1;
+        }
+    }
+    /* ================= store ================= */
+    class EmbeddingStore {
+        constructor(dim, opts) {
+            var _a, _b;
+            // Data
+            this.ids = [];
+            this.metas = [];
+            this.vecs = []; // if storeUnit=true -> unit vectors; else raw vectors
+            // Index
+            this.idToIdx = new Map();
+            if (!Number.isFinite(dim) || dim <= 0)
+                throw new Error(`EmbeddingStore: invalid dim=${dim}`);
+            this.dim = dim | 0;
+            this.storeUnit = (_a = opts === null || opts === void 0 ? void 0 : opts.storeUnit) !== null && _a !== void 0 ? _a : true;
+            this.alsoStoreRaw = (_b = opts === null || opts === void 0 ? void 0 : opts.alsoStoreRaw) !== null && _b !== void 0 ? _b : this.storeUnit; // default: if normalizing, also keep raw so Euclidean is valid
+            if ((opts === null || opts === void 0 ? void 0 : opts.capacity) !== undefined) {
+                if (!Number.isFinite(opts.capacity) || opts.capacity <= 0)
+                    throw new Error(`capacity must be > 0`);
+                this.capacity = Math.floor(opts.capacity);
+            }
+            if (this.alsoStoreRaw) {
+                this.rawVecs = [];
+                this.rawNorms = new Float32Array(0);
+            }
+            if (!this.storeUnit) {
+                // storing raw in vecs → maintain norms for fast cosine
+                this.norms = new Float32Array(0);
+            }
+        }
+        /* ========== basic ops ========== */
+        size() { return this.ids.length; }
+        dimension() { return this.dim; }
+        isUnitStored() { return this.storeUnit; }
+        keepsRaw() { return !!this.rawVecs; }
+        getCapacity() { return this.capacity; }
+        setCapacity(capacity) {
+            if (capacity === undefined) {
+                this.capacity = undefined;
+                return;
+            }
+            if (!Number.isFinite(capacity) || capacity <= 0)
+                throw new Error(`capacity must be > 0`);
+            this.capacity = Math.floor(capacity);
+            this.enforceCapacity();
+        }
+        clear() {
+            this.ids = [];
+            this.vecs = [];
+            this.metas = [];
+            this.idToIdx.clear();
+            if (this.rawVecs)
+                this.rawVecs = [];
+            if (this.norms)
+                this.norms = new Float32Array(0);
+            if (this.rawNorms)
+                this.rawNorms = new Float32Array(0);
+        }
+        has(id) { return this.idToIdx.has(id); }
+        get(id) {
+            const idx = this.idToIdx.get(id);
+            if (idx === undefined)
+                return undefined;
+            return {
+                id,
+                vec: this.vecs[idx],
+                raw: this.rawVecs ? this.rawVecs[idx] : undefined,
+                meta: this.metas[idx],
+            };
+        }
+        /** Remove by id. Returns true if removed. */
+        remove(id) {
+            const idx = this.idToIdx.get(id);
+            if (idx === undefined)
+                return false;
+            // capture id, splice arrays
+            this.ids.splice(idx, 1);
+            this.vecs.splice(idx, 1);
+            this.metas.splice(idx, 1);
+            if (this.rawVecs)
+                this.rawVecs.splice(idx, 1);
+            if (this.norms)
+                this.norms = this.removeFromNorms(this.norms, idx);
+            if (this.rawNorms)
+                this.rawNorms = this.removeFromNorms(this.rawNorms, idx);
+            this.idToIdx.delete(id);
+            this.rebuildIndex(idx);
+            return true;
+        }
+        /** Add or replace an item by id. Returns true if added, false if replaced. */
+        upsert(item) {
+            var _a;
+            const { id, vec, meta } = item;
+            if (!id)
+                throw new Error('upsert: id is required');
+            if (!vec || vec.length !== this.dim) {
+                throw new Error(`upsert: vector dim ${(_a = vec === null || vec === void 0 ? void 0 : vec.length) !== null && _a !== void 0 ? _a : 'n/a'} != store dim ${this.dim}`);
+            }
+            const raw = new Float32Array(vec);
+            const unit = this.storeUnit ? normalizeToUnit(raw) : raw;
+            const idx = this.idToIdx.get(id);
+            if (idx !== undefined) {
+                // replace in place
+                this.vecs[idx] = unit;
+                this.metas[idx] = meta;
+                if (this.rawVecs)
+                    this.rawVecs[idx] = raw;
+                if (this.norms && !this.storeUnit)
+                    this.norms[idx] = l2Norm$1(raw);
+                if (this.rawNorms && this.rawVecs)
+                    this.rawNorms[idx] = l2Norm$1(raw);
+                return false;
+            }
+            else {
+                this.ids.push(id);
+                this.vecs.push(unit);
+                this.metas.push(meta);
+                if (this.rawVecs)
+                    this.rawVecs.push(raw);
+                if (this.norms && !this.storeUnit) {
+                    // append norm
+                    const n = l2Norm$1(raw);
+                    const newNorms = new Float32Array(this.ids.length);
+                    newNorms.set(this.norms, 0);
+                    newNorms[this.ids.length - 1] = n;
+                    this.norms = newNorms;
+                }
+                if (this.rawNorms && this.rawVecs) {
+                    const n = l2Norm$1(raw);
+                    const newNorms = new Float32Array(this.ids.length);
+                    newNorms.set(this.rawNorms, 0);
+                    newNorms[this.ids.length - 1] = n;
+                    this.rawNorms = newNorms;
+                }
+                this.idToIdx.set(id, this.ids.length - 1);
+                this.enforceCapacity();
+                return true;
+            }
+        }
+        add(item) {
+            const added = this.upsert(item);
+            if (!added)
+                throw new Error(`add: id "${item.id}" already exists (use upsert instead)`);
+        }
+        addAll(items, allowUpsert = true) {
+            for (const it of items) {
+                if (allowUpsert)
+                    this.upsert(it);
+                else
+                    this.add(it);
+            }
+        }
+        /** Merge another store (same dim & normalization strategy) into this one. */
+        merge(other, allowOverwrite = true) {
+            var _a;
+            if (other.dimension() !== this.dim)
+                throw new Error('merge: dimension mismatch');
+            if (other.isUnitStored() !== this.storeUnit)
+                throw new Error('merge: normalized flag mismatch');
+            if (other.keepsRaw() !== this.keepsRaw())
+                throw new Error('merge: raw retention mismatch');
+            for (let i = 0; i < other.ids.length; i++) {
+                const id = other.ids[i];
+                const vec = other.vecs[i];
+                const raw = (_a = other.rawVecs) === null || _a === void 0 ? void 0 : _a[i];
+                const meta = other.metas[i];
+                if (!allowOverwrite && this.has(id))
+                    continue;
+                // Use upsert path, but avoid double-normalizing when both stores have unit vectors:
+                this.upsert({ id, vec, meta });
+                if (this.rawVecs && raw)
+                    this.rawVecs[this.idToIdx.get(id)] = new Float32Array(raw);
+            }
+        }
+        /* ========== querying ========== */
+        /** Top-K KNN query. For L2/L1 we return NEGATIVE distance so higher is better. */
+        query(queryVec, k = 10, opts) {
+            var _a, _b, _c, _d, _e, _f;
+            if (queryVec.length !== this.dim) {
+                throw new Error(`query: vector dim ${queryVec.length} != store dim ${this.dim}`);
+            }
+            const metric = (_a = opts === null || opts === void 0 ? void 0 : opts.metric) !== null && _a !== void 0 ? _a : 'cosine';
+            const filter = opts === null || opts === void 0 ? void 0 : opts.filter;
+            const returnVectors = (_b = opts === null || opts === void 0 ? void 0 : opts.returnVectors) !== null && _b !== void 0 ? _b : false;
+            const minScore = opts === null || opts === void 0 ? void 0 : opts.minScore;
+            const maxDistance = opts === null || opts === void 0 ? void 0 : opts.maxDistance;
+            const restrictSet = (opts === null || opts === void 0 ? void 0 : opts.restrictToIds) ? new Set(opts.restrictToIds) : undefined;
+            let q;
+            let qNorm = 0;
+            if (metric === 'cosine') {
+                // cosine → normalize query; stored data either unit (fast) or raw (use cached norms)
+                q = normalizeToUnit(queryVec);
+            }
+            else if (metric === 'dot') {
+                q = new Float32Array(queryVec);
+                qNorm = l2Norm$1(q); // only used for potential future scoring transforms
+            }
+            else {
+                // L2/L1 use RAW query
+                q = new Float32Array(queryVec);
+                qNorm = l2Norm$1(q);
+            }
+            const hits = [];
+            const N = this.vecs.length;
+            // helpers
+            const pushHit = (i, score) => {
+                if (restrictSet && !restrictSet.has(this.ids[i]))
+                    return;
+                if (filter && !filter(this.metas[i], this.ids[i]))
+                    return;
+                // Apply thresholds
+                if (metric === 'euclidean' || metric === 'manhattan') {
+                    const dist = -score; // score is negative distance
+                    if (maxDistance !== undefined && dist > maxDistance)
+                        return;
+                }
+                else {
+                    if (minScore !== undefined && score < minScore)
+                        return;
+                }
+                hits.push(returnVectors
+                    ? { id: this.ids[i], score, index: i, meta: this.metas[i], vec: this.vecs[i] }
+                    : { id: this.ids[i], score, index: i, meta: this.metas[i] });
+            };
+            if (metric === 'cosine') {
+                if (this.storeUnit) {
+                    // both unit → score = dot
+                    for (let i = 0; i < N; i++) {
+                        const s = dot$1(q, this.vecs[i]);
+                        pushHit(i, s);
+                    }
+                }
+                else {
+                    // stored raw in vecs → use cached norms (if available) for cos = dot / (||q||*||v||)
+                    if (!this.norms || this.norms.length !== N) {
+                        // build norms on-demand once
+                        this.norms = new Float32Array(N);
+                        for (let i = 0; i < N; i++)
+                            this.norms[i] = l2Norm$1(this.vecs[i]);
+                    }
+                    const qn = l2Norm$1(q) || 1; // guard
+                    for (let i = 0; i < N; i++) {
+                        const dn = this.norms[i] || 1;
+                        const s = dn < EPS$2 ? 0 : dot$1(q, this.vecs[i]) / (qn * dn);
+                        pushHit(i, s);
+                    }
+                }
+            }
+            else if (metric === 'dot') {
+                for (let i = 0; i < N; i++) {
+                    const s = dot$1(q, this.storeUnit ? this.vecs[i] : this.vecs[i]); // same storage
+                    pushHit(i, s);
+                }
+            }
+            else if (metric === 'euclidean') {
+                // Need RAW vectors
+                const base = (_c = this.rawVecs) !== null && _c !== void 0 ? _c : (!this.storeUnit ? this.vecs : null);
+                if (!base)
+                    throw new Error('euclidean query requires raw vectors; create store with alsoStoreRaw=true or storeUnit=false');
+                // Use fast formula: ||q - v|| = sqrt(||q||^2 + ||v||^2 - 2 q·v)
+                const vNorms = this.rawVecs ? ((_d = this.rawNorms) !== null && _d !== void 0 ? _d : this.buildRawNorms()) :
+                    (_e = this.norms) !== null && _e !== void 0 ? _e : this.buildNorms();
+                const q2 = qNorm * qNorm;
+                for (let i = 0; i < N; i++) {
+                    const d2 = Math.max(q2 + vNorms[i] * vNorms[i] - 2 * dot$1(q, base[i]), 0);
+                    const dist = Math.sqrt(d2);
+                    pushHit(i, -dist); // NEGATIVE distance so higher is better
+                }
+            }
+            else { // 'manhattan'
+                const base = (_f = this.rawVecs) !== null && _f !== void 0 ? _f : (!this.storeUnit ? this.vecs : null);
+                if (!base)
+                    throw new Error('manhattan query requires raw vectors; create store with alsoStoreRaw=true or storeUnit=false');
+                for (let i = 0; i < N; i++) {
+                    const dist = l1Dist(q, base[i]);
+                    pushHit(i, -dist); // NEGATIVE distance
+                }
+            }
+            if (hits.length === 0)
+                return [];
+            const kk = Math.max(1, Math.min(k, hits.length));
+            // Use quickselect to avoid full O(n log n) sort
+            quickselectTopK(hits, kk, (h) => h.score);
+            // Now sort just the top-K region for stable ordering
+            hits
+                .slice(0, kk)
+                .sort((a, b) => b.score - a.score)
+                .forEach((h, i) => (hits[i] = h));
+            return hits.slice(0, kk);
+        }
+        /** Batch query helper. Returns array of results aligned to input queries. */
+        queryBatch(queries, k = 10, opts) {
+            return queries.map(q => this.query(q, k, opts));
+        }
+        /** Convenience: query by id */
+        queryById(id, k = 10, opts) {
+            var _a;
+            const rec = this.get(id);
+            if (!rec)
+                return [];
+            const use = ((opts === null || opts === void 0 ? void 0 : opts.metric) === 'euclidean' || (opts === null || opts === void 0 ? void 0 : opts.metric) === 'manhattan')
+                ? ((_a = rec.raw) !== null && _a !== void 0 ? _a : rec.vec) // prefer raw for distance
+                : rec.vec;
+            return this.query(use, k, opts);
+        }
+        /* ========== export / import ========== */
+        toJSON() {
+            const includeRaw = !!this.rawVecs;
+            return {
+                dim: this.dim,
+                normalized: this.storeUnit,
+                alsoStoredRaw: includeRaw,
+                capacity: this.capacity,
+                items: this.ids.map((id, i) => ({
+                    id,
+                    vec: Array.from(this.vecs[i]),
+                    raw: includeRaw ? Array.from(this.rawVecs[i]) : undefined,
+                    meta: this.metas[i],
+                })),
+                __version: 'embedding-store-2.0.0',
+            };
+        }
+        static fromJSON(obj) {
+            var _a, _b;
+            const parsed = typeof obj === 'string' ? JSON.parse(obj) : obj;
+            if (!parsed || !parsed.dim || !Array.isArray(parsed.items)) {
+                throw new Error('EmbeddingStore.fromJSON: invalid payload');
+            }
+            const store = new EmbeddingStore(parsed.dim, {
+                storeUnit: parsed.normalized,
+                capacity: parsed.capacity,
+                alsoStoreRaw: (_a = parsed.alsoStoredRaw) !== null && _a !== void 0 ? _a : false,
+            });
+            for (const it of parsed.items) {
+                if (!it || typeof it.id !== 'string' || !Array.isArray(it.vec))
+                    continue;
+                if (it.vec.length !== parsed.dim) {
+                    throw new Error(`fromJSON: vector dim ${it.vec.length} != dim ${parsed.dim} for id ${it.id}`);
+                }
+                // Use public API to keep norms consistent
+                store.upsert({ id: it.id, vec: (_b = it.raw) !== null && _b !== void 0 ? _b : it.vec, meta: it.meta });
+                // If payload includes both vec and raw, ensure both sides are *exactly* respected
+                if (store.storeUnit && store.rawVecs && it.raw) {
+                    const idx = store.idToIdx.get(it.id);
+                    store.rawVecs[idx] = new Float32Array(it.raw);
+                    if (store.rawNorms) {
+                        const newNorms = new Float32Array(store.size());
+                        newNorms.set(store.rawNorms, 0);
+                        newNorms[idx] = l2Norm$1(store.rawVecs[idx]);
+                        store.rawNorms = newNorms;
+                    }
+                }
+                else if (!store.storeUnit && it.vec) ;
+            }
+            return store;
+        }
+        /* ========== diagnostics / utils ========== */
+        /** Estimate memory footprint in bytes (arrays only; metadata excluded). */
+        memoryUsageBytes() {
+            const f32 = 4;
+            let bytes = 0;
+            for (const v of this.vecs)
+                bytes += v.length * f32;
+            if (this.rawVecs)
+                for (const v of this.rawVecs)
+                    bytes += v.length * f32;
+            if (this.norms)
+                bytes += this.norms.length * f32;
+            if (this.rawNorms)
+                bytes += this.rawNorms.length * f32;
+            // ids + metas are JS objects; not included
+            return bytes;
+        }
+        /** Re-normalize all vectors in-place (useful if you bulk-updated raw storage). */
+        reNormalizeAll() {
+            if (!this.storeUnit)
+                return; // nothing to do
+            for (let i = 0; i < this.vecs.length; i++) {
+                const raw = this.rawVecs ? this.rawVecs[i] : this.vecs[i];
+                this.vecs[i] = normalizeToUnit(raw);
+            }
+        }
+        /** Iterate over all items */
+        *entries() {
+            var _a;
+            for (let i = 0; i < this.ids.length; i++) {
+                yield { id: this.ids[i], vec: this.vecs[i], raw: (_a = this.rawVecs) === null || _a === void 0 ? void 0 : _a[i], meta: this.metas[i] };
+            }
+        }
+        /* ========== internals ========== */
+        removeFromNorms(src, removeIdx) {
+            const out = new Float32Array(src.length - 1);
+            if (removeIdx > 0)
+                out.set(src.subarray(0, removeIdx), 0);
+            if (removeIdx < src.length - 1)
+                out.set(src.subarray(removeIdx + 1), removeIdx);
+            return out;
+        }
+        /** After a splice at 'start', rebuild id→index for shifted tail */
+        rebuildIndex(start = 0) {
+            if (start <= 0) {
+                this.idToIdx.clear();
+                for (let i = 0; i < this.ids.length; i++)
+                    this.idToIdx.set(this.ids[i], i);
+                return;
+            }
+            for (let i = start; i < this.ids.length; i++)
+                this.idToIdx.set(this.ids[i], i);
+        }
+        /** Enforce capacity by evicting oldest items (front of arrays) */
+        enforceCapacity() {
+            if (this.capacity === undefined)
+                return;
+            while (this.ids.length > this.capacity) {
+                const removedId = this.ids[0];
+                // shift( ) is O(n); for very large stores consider a circular buffer
+                this.ids.shift();
+                this.vecs.shift();
+                this.metas.shift();
+                if (this.rawVecs)
+                    this.rawVecs.shift();
+                if (this.norms)
+                    this.norms = this.removeFromNorms(this.norms, 0);
+                if (this.rawNorms)
+                    this.rawNorms = this.removeFromNorms(this.rawNorms, 0);
+                this.idToIdx.delete(removedId);
+                // rebuild full index (ids shifted)
+                this.idToIdx.clear();
+                for (let i = 0; i < this.ids.length; i++)
+                    this.idToIdx.set(this.ids[i], i);
+            }
+        }
+        buildNorms() {
+            const out = new Float32Array(this.vecs.length);
+            for (let i = 0; i < this.vecs.length; i++)
+                out[i] = l2Norm$1(this.vecs[i]);
+            this.norms = out;
+            return out;
+        }
+        buildRawNorms() {
+            if (!this.rawVecs)
+                throw new Error('no raw vectors to build norms for');
+            const out = new Float32Array(this.rawVecs.length);
+            for (let i = 0; i < this.rawVecs.length; i++)
+                out[i] = l2Norm$1(this.rawVecs[i]);
+            this.rawNorms = out;
+            return out;
+        }
+    }
+
+    // Evaluation.ts — Classification & Regression metrics (no deps)
+    const EPS$1 = 1e-12;
+    /* =========================
+     * Helpers
+     * ========================= */
+    function isOneHot(Y) {
+        return Array.isArray(Y[0]);
+    }
+    function argmax(a) {
+        let i = 0;
+        for (let k = 1; k < a.length; k++)
+            if (a[k] > a[i])
+                i = k;
+        return i;
+    }
+    function toIndexLabels(yTrue, yPred, numClasses) {
+        let yTrueIdx;
+        let yPredIdx;
+        if (isOneHot(yTrue))
+            yTrueIdx = yTrue.map(argmax);
+        else
+            yTrueIdx = yTrue;
+        if (isOneHot(yPred))
+            yPredIdx = yPred.map(argmax);
+        else
+            yPredIdx = yPred;
+        const C = 1 + Math.max(Math.max(...yTrueIdx), Math.max(...yPredIdx));
+        return { yTrueIdx, yPredIdx, C };
+    }
+    /* =========================
+     * Confusion matrix
+     * ========================= */
+    function confusionMatrixFromIndices(yTrueIdx, yPredIdx, C) {
+        if (yTrueIdx.length !== yPredIdx.length) {
+            throw new Error(`confusionMatrix: length mismatch (${yTrueIdx.length} vs ${yPredIdx.length})`);
+        }
+        const classes = C !== null && C !== void 0 ? C : 1 + Math.max(Math.max(...yTrueIdx), Math.max(...yPredIdx));
+        const M = Array.from({ length: classes }, () => new Array(classes).fill(0));
+        for (let i = 0; i < yTrueIdx.length; i++) {
+            const r = yTrueIdx[i] | 0;
+            const c = yPredIdx[i] | 0;
+            if (r >= 0 && r < classes && c >= 0 && c < classes)
+                M[r][c]++;
+        }
+        return M;
+    }
+    /* =========================
+     * Per-class metrics
+     * ========================= */
+    function perClassFromCM(M, labels) {
+        var _a;
+        const C = M.length;
+        const totals = new Array(C).fill(0);
+        const colTotals = new Array(C).fill(0);
+        let N = 0;
+        for (let i = 0; i < C; i++) {
+            let rsum = 0;
+            for (let j = 0; j < C; j++) {
+                rsum += M[i][j];
+                colTotals[j] += M[i][j];
+                N += M[i][j];
+            }
+            totals[i] = rsum;
+        }
+        const perClass = [];
+        for (let k = 0; k < C; k++) {
+            const tp = M[k][k];
+            const fp = colTotals[k] - tp;
+            const fn = totals[k] - tp;
+            const tn = N - tp - fp - fn;
+            const precision = tp / (tp + fp + EPS$1);
+            const recall = tp / (tp + fn + EPS$1);
+            const f1 = (2 * precision * recall) / (precision + recall + EPS$1);
+            perClass.push({
+                label: (_a = labels === null || labels === void 0 ? void 0 : labels[k]) !== null && _a !== void 0 ? _a : k,
+                support: totals[k],
+                tp, fp, fn, tn,
+                precision, recall, f1
+            });
+        }
+        return perClass;
+    }
+    /* =========================
+     * Averages
+     * ========================= */
+    function averagesFromPerClass(per, accuracy) {
+        const C = per.length;
+        let sumP = 0, sumR = 0, sumF = 0;
+        let sumWP = 0, sumWR = 0, sumWF = 0, total = 0;
+        let tp = 0, fp = 0, fn = 0; // for micro
+        for (const c of per) {
+            sumP += c.precision;
+            sumR += c.recall;
+            sumF += c.f1;
+            sumWP += c.precision * c.support;
+            sumWR += c.recall * c.support;
+            sumWF += c.f1 * c.support;
+            total += c.support;
+            tp += c.tp;
+            fp += c.fp;
+            fn += c.fn;
+        }
+        const microP = tp / (tp + fp + EPS$1);
+        const microR = tp / (tp + fn + EPS$1);
+        const microF = (2 * microP * microR) / (microP + microR + EPS$1);
+        return {
+            accuracy,
+            macroPrecision: sumP / C,
+            macroRecall: sumR / C,
+            macroF1: sumF / C,
+            microPrecision: microP,
+            microRecall: microR,
+            microF1: microF,
+            weightedPrecision: sumWP / (total + EPS$1),
+            weightedRecall: sumWR / (total + EPS$1),
+            weightedF1: sumWF / (total + EPS$1)
+        };
+    }
+    /* =========================
+     * Log loss / cross-entropy
+     * ========================= */
+    function logLoss(yTrue, yPredProba) {
+        if (!isOneHot(yTrue) || !isOneHot(yPredProba)) {
+            throw new Error('logLoss expects one-hot ground truth and probability matrix (N x C).');
+        }
+        const Y = yTrue;
+        const P = yPredProba;
+        if (Y.length !== P.length)
+            throw new Error('logLoss: length mismatch');
+        const N = Y.length;
+        let sum = 0;
+        for (let i = 0; i < N; i++) {
+            const yi = Y[i];
+            const pi = P[i];
+            if (yi.length !== pi.length)
+                throw new Error('logLoss: class count mismatch');
+            for (let j = 0; j < yi.length; j++) {
+                if (yi[j] > 0) {
+                    const p = Math.min(Math.max(pi[j], EPS$1), 1 - EPS$1);
+                    sum += -Math.log(p);
+                }
+            }
+        }
+        return sum / N;
+    }
+    /* =========================
+     * Top-K accuracy
+     * ========================= */
+    function topKAccuracy(yTrueIdx, yPredProba, k = 5) {
+        const N = yTrueIdx.length;
+        let correct = 0;
+        for (let i = 0; i < N; i++) {
+            const probs = yPredProba[i];
+            const idx = probs.map((p, j) => j).sort((a, b) => probs[b] - probs[a]).slice(0, Math.max(1, Math.min(k, probs.length)));
+            if (idx.includes(yTrueIdx[i]))
+                correct++;
+        }
+        return correct / N;
+    }
+    function pairSortByScore(yTrue01, yScore) {
+        const pairs = yScore.map((s, i) => [s, yTrue01[i]]);
+        pairs.sort((a, b) => b[0] - a[0]);
+        return pairs;
+    }
+    function binaryROC(yTrue01, yScore) {
+        if (yTrue01.length !== yScore.length)
+            throw new Error('binaryROC: length mismatch');
+        const pairs = pairSortByScore(yTrue01, yScore);
+        const P = yTrue01.reduce((s, v) => s + (v ? 1 : 0), 0);
+        const N = yTrue01.length - P;
+        let tp = 0, fp = 0;
+        const tpr = [0], fpr = [0], thr = [Infinity];
+        for (let i = 0; i < pairs.length; i++) {
+            const [score, y] = pairs[i];
+            if (y === 1)
+                tp++;
+            else
+                fp++;
+            tpr.push(tp / (P + EPS$1));
+            fpr.push(fp / (N + EPS$1));
+            thr.push(score);
+        }
+        tpr.push(1);
+        fpr.push(1);
+        thr.push(-Infinity);
+        // Trapezoidal AUC
+        let auc = 0;
+        for (let i = 1; i < tpr.length; i++) {
+            const dx = fpr[i] - fpr[i - 1];
+            const yAvg = (tpr[i] + tpr[i - 1]) / 2;
+            auc += dx * yAvg;
+        }
+        return { thresholds: thr, tpr, fpr, auc };
+    }
+    function binaryPR(yTrue01, yScore) {
+        if (yTrue01.length !== yScore.length)
+            throw new Error('binaryPR: length mismatch');
+        const pairs = pairSortByScore(yTrue01, yScore);
+        const P = yTrue01.reduce((s, v) => s + (v ? 1 : 0), 0);
+        let tp = 0, fp = 0;
+        const precision = [], recall = [], thr = [];
+        // Add starting point
+        precision.push(P > 0 ? P / (P + 0) : 1);
+        recall.push(0);
+        thr.push(Infinity);
+        for (let i = 0; i < pairs.length; i++) {
+            const [score, y] = pairs[i];
+            if (y === 1)
+                tp++;
+            else
+                fp++;
+            const prec = tp / (tp + fp + EPS$1);
+            const rec = tp / (P + EPS$1);
+            precision.push(prec);
+            recall.push(rec);
+            thr.push(score);
+        }
+        // AUPRC via trapezoid over recall axis
+        let auc = 0;
+        for (let i = 1; i < precision.length; i++) {
+            const dx = recall[i] - recall[i - 1];
+            const yAvg = (precision[i] + precision[i - 1]) / 2;
+            auc += dx * yAvg;
+        }
+        return { thresholds: thr, precision, recall, auc };
+    }
+    /* =========================
+     * Main: evaluate classification
+     * ========================= */
+    /**
+     * Evaluate multi-class classification.
+     * - yTrue can be indices (N) or one-hot (N x C)
+     * - yPred can be indices (N) or probabilities (N x C)
+     * - If yPred are probabilities, we also compute logLoss and optional topK.
+     */
+    function evaluateClassification(yTrue, yPred, opts) {
+        const labels = opts === null || opts === void 0 ? void 0 : opts.labels;
+        const { yTrueIdx, yPredIdx, C } = toIndexLabels(yTrue, yPred);
+        const M = confusionMatrixFromIndices(yTrueIdx, yPredIdx, C);
+        const per = perClassFromCM(M, labels);
+        const correct = yTrueIdx.reduce((s, yt, i) => s + (yt === yPredIdx[i] ? 1 : 0), 0);
+        const accuracy = correct / yTrueIdx.length;
+        const averages = averagesFromPerClass(per, accuracy);
+        // Optional extras if we have probabilities
+        if (isOneHot(yTrue) && isOneHot(yPred)) {
+            try {
+                averages.logLoss = logLoss(yTrue, yPred);
+                if ((opts === null || opts === void 0 ? void 0 : opts.topK) && opts.topK > 1) {
+                    averages.topKAccuracy = topKAccuracy(yTrueIdx, yPred, opts.topK);
+                }
+            }
+            catch ( /* ignore extras if shapes disagree */_a) { /* ignore extras if shapes disagree */ }
+        }
+        return { confusionMatrix: M, perClass: per, averages };
+    }
+    /* =========================
+     * Regression
+     * ========================= */
+    function evaluateRegression(yTrue, yPred) {
+        const Y = Array.isArray(yTrue[0]) ? yTrue : yTrue.map(v => [v]);
+        const P = Array.isArray(yPred[0]) ? yPred : yPred.map(v => [v]);
+        if (Y.length !== P.length)
+            throw new Error('evaluateRegression: length mismatch');
+        const N = Y.length;
+        const D = Y[0].length;
+        const perOutput = [];
+        let sumMSE = 0, sumMAE = 0, sumR2 = 0;
+        for (let d = 0; d < D; d++) {
+            let mse = 0, mae = 0;
+            // mean of Y[:,d]
+            let mean = 0;
+            for (let i = 0; i < N; i++)
+                mean += Y[i][d];
+            mean /= N;
+            let ssTot = 0, ssRes = 0;
+            for (let i = 0; i < N; i++) {
+                const y = Y[i][d], p = P[i][d];
+                const e = y - p;
+                mse += e * e;
+                mae += Math.abs(e);
+                ssRes += e * e;
+                const dy = y - mean;
+                ssTot += dy * dy;
+            }
+            mse /= N;
+            const rmse = Math.sqrt(mse);
+            mae /= N;
+            const r2 = 1 - (ssRes / (ssTot + EPS$1));
+            perOutput.push({ index: d, mse, rmse, mae, r2 });
+            sumMSE += mse;
+            sumMAE += mae;
+            sumR2 += r2;
+        }
+        const mse = sumMSE / D;
+        const rmse = Math.sqrt(mse);
+        const mae = sumMAE / D;
+        const r2 = sumR2 / D;
+        return { perOutput, mse, rmse, mae, r2 };
+    }
+    /* =========================
+     * Pretty report (optional)
+     * ========================= */
+    function formatClassificationReport(rep) {
+        const lines = [];
+        lines.push('Class\tSupport\tPrecision\tRecall\tF1');
+        for (const c of rep.perClass) {
+            lines.push(`${c.label}\t${c.support}\t${c.precision.toFixed(4)}\t${c.recall.toFixed(4)}\t${c.f1.toFixed(4)}`);
+        }
+        const a = rep.averages;
+        lines.push('');
+        lines.push(`Accuracy:\t${a.accuracy.toFixed(4)}`);
+        lines.push(`Macro P/R/F1:\t${a.macroPrecision.toFixed(4)}\t${a.macroRecall.toFixed(4)}\t${a.macroF1.toFixed(4)}`);
+        lines.push(`Micro P/R/F1:\t${a.microPrecision.toFixed(4)}\t${a.microRecall.toFixed(4)}\t${a.microF1.toFixed(4)}`);
+        lines.push(`Weighted P/R/F1:\t${a.weightedPrecision.toFixed(4)}\t${a.weightedRecall.toFixed(4)}\t${a.weightedF1.toFixed(4)}`);
+        if (a.logLoss !== undefined)
+            lines.push(`LogLoss:\t${a.logLoss.toFixed(6)}`);
+        if (a.topKAccuracy !== undefined)
+            lines.push(`TopK Acc:\t${a.topKAccuracy.toFixed(4)}`);
+        return lines.join('\n');
+    }
+
+    const EPS = 1e-12;
+    /* ---------- math helpers ---------- */
+    function l2Norm(v) {
+        let s = 0;
+        for (let i = 0; i < v.length; i++)
+            s += v[i] * v[i];
+        return Math.sqrt(s);
+    }
+    function normalize(v) {
+        const out = new Float32Array(v.length);
+        const n = l2Norm(v);
+        if (n < EPS)
+            return out; // keep zeros; cosine with zero gives 0
+        const inv = 1 / n;
+        for (let i = 0; i < v.length; i++)
+            out[i] = v[i] * inv;
+        return out;
+    }
+    function dot(a, b) {
+        let s = 0;
+        for (let i = 0; i < a.length; i++)
+            s += a[i] * b[i];
+        return s;
+    }
+    /* ---------- main evaluation ---------- */
+    function evaluateEnsembleRetrieval(queries, reference, chains, k, options) {
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
+        const metric = (_a = options === null || options === void 0 ? void 0 : options.metric) !== null && _a !== void 0 ? _a : "cosine";
+        const aggregate = (_b = options === null || options === void 0 ? void 0 : options.aggregate) !== null && _b !== void 0 ? _b : "mean";
+        const weights = options === null || options === void 0 ? void 0 : options.weights;
+        const topK = Math.max(1, (_d = (_c = options === null || options === void 0 ? void 0 : options.k) !== null && _c !== void 0 ? _c : k) !== null && _d !== void 0 ? _d : 5);
+        const ignoreUnlabeled = (_e = options === null || options === void 0 ? void 0 : options.ignoreUnlabeledQueries) !== null && _e !== void 0 ? _e : true;
+        const reportPerLabel = (_f = options === null || options === void 0 ? void 0 : options.reportPerLabel) !== null && _f !== void 0 ? _f : false;
+        const returnRankings = (_g = options === null || options === void 0 ? void 0 : options.returnRankings) !== null && _g !== void 0 ? _g : false;
+        const logEvery = Math.max(1, (_h = options === null || options === void 0 ? void 0 : options.logEvery) !== null && _h !== void 0 ? _h : 10);
+        if (chains.length === 0) {
+            throw new Error("evaluateEnsembleRetrieval: 'chains' must be non-empty.");
+        }
+        if (aggregate === "weighted") {
+            if (!weights || weights.length !== chains.length) {
+                throw new Error(`aggregate='weighted' requires weights.length === chains.length`);
+            }
+            // normalize weights to sum=1 for interpretability
+            const sumW = weights.reduce((s, w) => s + w, 0) || 1;
+            for (let i = 0; i < weights.length; i++)
+                weights[i] = weights[i] / sumW;
+        }
+        console.log("🔹 Precomputing embeddings...");
+        // Pull raw embeddings from each chain
+        const chainQueryEmb = [];
+        const chainRefEmb = [];
+        for (let c = 0; c < chains.length; c++) {
+            const qMat = chains[c].getEmbedding(queries.map(q => {
+                const v = q.embedding;
+                if (!v || v.length === 0)
+                    throw new Error(`Query ${c} has empty embedding`);
+                return Array.from(v);
+            }));
+            const rMat = chains[c].getEmbedding(reference.map(r => {
+                const v = r.embedding;
+                if (!v || v.length === 0)
+                    throw new Error(`Reference has empty embedding`);
+                return Array.from(v);
+            }));
+            // Validate dims & normalize if cosine
+            const qArr = qMat.map(row => Float32Array.from(row));
+            const rArr = rMat.map(row => Float32Array.from(row));
+            if (metric === "cosine") {
+                chainQueryEmb.push(qArr.map(normalize));
+                chainRefEmb.push(rArr.map(normalize));
+            }
+            else {
+                chainQueryEmb.push(qArr);
+                chainRefEmb.push(rArr);
+            }
+            // Basic safety: check dimensions match across Q/R for this chain
+            const dimQ = (_k = (_j = qArr[0]) === null || _j === void 0 ? void 0 : _j.length) !== null && _k !== void 0 ? _k : 0;
+            const dimR = (_m = (_l = rArr[0]) === null || _l === void 0 ? void 0 : _l.length) !== null && _m !== void 0 ? _m : 0;
+            if (dimQ === 0 || dimR === 0 || dimQ !== dimR) {
+                throw new Error(`Chain ${c}: query/ref embedding dims mismatch (${dimQ} vs ${dimR})`);
+            }
+        }
+        console.log("✅ Precomputation complete. Starting retrieval evaluation...");
+        let hitsAt1 = 0, hitsAtK = 0, reciprocalRanks = 0;
+        let used = 0;
+        const perLabelRaw = {};
+        const rankings = [];
+        for (let i = 0; i < queries.length; i++) {
+            if (i % logEvery === 0)
+                console.log(`🔍 Query ${i + 1}/${queries.length}`);
+            const correctLabel = ((_o = queries[i].metadata.label) !== null && _o !== void 0 ? _o : "").toString();
+            if (!correctLabel && ignoreUnlabeled) {
+                continue; // skip this query entirely
+            }
+            // Accumulate ensemble scores per reference
+            // We keep (label, score) per reference j
+            const scores = new Array(reference.length);
+            for (let j = 0; j < reference.length; j++) {
+                let sAgg;
+                if (aggregate === "max") {
+                    // Take max across chains
+                    let sMax = -Infinity;
+                    for (let c = 0; c < chains.length; c++) {
+                        const q = chainQueryEmb[c][i];
+                        const r = chainRefEmb[c][j];
+                        const s = metric === "cosine" || metric === "dot" ? dot(q, r) : dot(q, r); // only cosine/dot supported
+                        if (s > sMax)
+                            sMax = s;
+                    }
+                    sAgg = sMax;
+                }
+                else if (aggregate === "sum") {
+                    let sSum = 0;
+                    for (let c = 0; c < chains.length; c++) {
+                        const q = chainQueryEmb[c][i];
+                        const r = chainRefEmb[c][j];
+                        sSum += (metric === "cosine" || metric === "dot") ? dot(q, r) : dot(q, r);
+                    }
+                    sAgg = sSum;
+                }
+                else if (aggregate === "weighted") {
+                    let sW = 0;
+                    for (let c = 0; c < chains.length; c++) {
+                        const q = chainQueryEmb[c][i];
+                        const r = chainRefEmb[c][j];
+                        sW += ((metric === "cosine" || metric === "dot") ? dot(q, r) : dot(q, r)) * weights[c];
+                    }
+                    sAgg = sW;
+                }
+                else { // "mean"
+                    let sSum = 0;
+                    for (let c = 0; c < chains.length; c++) {
+                        const q = chainQueryEmb[c][i];
+                        const r = chainRefEmb[c][j];
+                        sSum += (metric === "cosine" || metric === "dot") ? dot(q, r) : dot(q, r);
+                    }
+                    sAgg = sSum / chains.length;
+                }
+                scores[j] = {
+                    label: ((_p = reference[j].metadata.label) !== null && _p !== void 0 ? _p : "").toString(),
+                    score: sAgg
+                };
+            }
+            // Sort by score desc
+            scores.sort((a, b) => b.score - a.score);
+            const rankedLabels = scores.map(s => s.label);
+            // Update metrics
+            const r1 = rankedLabels[0] === correctLabel ? 1 : 0;
+            const rK = rankedLabels.slice(0, topK).includes(correctLabel) ? 1 : 0;
+            const rank = rankedLabels.indexOf(correctLabel);
+            const rr = rank === -1 ? 0 : 1 / (rank + 1);
+            hitsAt1 += r1;
+            hitsAtK += rK;
+            reciprocalRanks += rr;
+            used++;
+            if (reportPerLabel) {
+                const bucket = (_q = perLabelRaw[correctLabel]) !== null && _q !== void 0 ? _q : (perLabelRaw[correctLabel] = { count: 0, hitsAt1: 0, hitsAtK: 0, mrrSum: 0 });
+                bucket.count++;
+                bucket.hitsAt1 += r1;
+                bucket.hitsAtK += rK;
+                bucket.mrrSum += rr;
+            }
+            if (returnRankings) {
+                rankings.push({
+                    queryIndex: i,
+                    queryId: queries[i].id,
+                    label: correctLabel,
+                    topK: scores.slice(0, topK),
+                    correctRank: rank
+                });
+            }
+        }
+        const denom = used || 1;
+        const result = {
+            usedQueries: used,
+            recallAt1: hitsAt1 / denom,
+            recallAtK: hitsAtK / denom,
+            mrr: reciprocalRanks / denom
+        };
+        if (reportPerLabel) {
+            const out = {};
+            for (const [label, s] of Object.entries(perLabelRaw)) {
+                out[label] = {
+                    support: s.count,
+                    recallAt1: s.hitsAt1 / (s.count || 1),
+                    recallAtK: s.hitsAtK / (s.count || 1),
+                    mrr: s.mrrSum / (s.count || 1)
+                };
+            }
+            result.perLabel = out;
+        }
+        if (returnRankings)
+            result.rankings = rankings;
+        return result;
+    }
+
     /******************************************************************************
     Copyright (c) Microsoft Corporation.
 
@@ -1856,236 +3464,6 @@
         var e = new Error(message);
         return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
     };
-
-    // OnlineELM.ts — Online / OS-ELM with RLS updates
-    /* ========== utils ========== */
-    const EPS$3 = 1e-10;
-    function makePRNG$1(seed = 123456789) {
-        let s = seed | 0 || 1;
-        return () => {
-            s ^= s << 13;
-            s ^= s >>> 17;
-            s ^= s << 5;
-            return ((s >>> 0) / 0xffffffff);
-        };
-    }
-    /* ========== Online ELM (RLS) ========== */
-    class OnlineELM {
-        constructor(cfg) {
-            var _a, _b, _c, _d, _e, _f, _g, _h, _j;
-            this.inputDim = cfg.inputDim | 0;
-            this.outputDim = cfg.outputDim | 0;
-            this.hiddenUnits = cfg.hiddenUnits | 0;
-            if (this.inputDim <= 0 || this.outputDim <= 0 || this.hiddenUnits <= 0) {
-                throw new Error(`OnlineELM: invalid dims (inputDim=${this.inputDim}, outputDim=${this.outputDim}, hidden=${this.hiddenUnits})`);
-            }
-            this.activation = (_a = cfg.activation) !== null && _a !== void 0 ? _a : 'relu';
-            this.ridgeLambda = Math.max((_b = cfg.ridgeLambda) !== null && _b !== void 0 ? _b : 1e-2, EPS$3);
-            this.weightInit = (_c = cfg.weightInit) !== null && _c !== void 0 ? _c : 'xavier';
-            this.forgettingFactor = Math.max(Math.min((_d = cfg.forgettingFactor) !== null && _d !== void 0 ? _d : 1.0, 1.0), 1e-4);
-            this.verbose = (_f = (_e = cfg.log) === null || _e === void 0 ? void 0 : _e.verbose) !== null && _f !== void 0 ? _f : false;
-            this.modelName = (_h = (_g = cfg.log) === null || _g === void 0 ? void 0 : _g.modelName) !== null && _h !== void 0 ? _h : 'Online ELM';
-            const seed = (_j = cfg.seed) !== null && _j !== void 0 ? _j : 1337;
-            this.rng = makePRNG$1(seed);
-            this.actFn = Activations.get(this.activation);
-            // Random features
-            this.W = this.initW(this.hiddenUnits, this.inputDim);
-            this.b = this.initB(this.hiddenUnits);
-            // Not initialized yet — init() will set these
-            this.beta = null;
-            this.P = null;
-        }
-        /* ===== init helpers ===== */
-        xavierLimit(fanIn, fanOut) { return Math.sqrt(6 / (fanIn + fanOut)); }
-        heLimit(fanIn) { return Math.sqrt(6 / fanIn); }
-        initW(rows, cols) {
-            let limit = 1;
-            if (this.weightInit === 'xavier') {
-                limit = this.xavierLimit(cols, rows);
-                if (this.verbose)
-                    console.log(`✨ [${this.modelName}] Xavier W ~ U(±${limit.toFixed(4)})`);
-            }
-            else if (this.weightInit === 'he') {
-                limit = this.heLimit(cols);
-                if (this.verbose)
-                    console.log(`✨ [${this.modelName}] He W ~ U(±${limit.toFixed(4)})`);
-            }
-            else if (this.verbose) {
-                console.log(`✨ [${this.modelName}] Uniform W ~ U(±1)`);
-            }
-            const rnd = () => (this.rng() * 2 - 1) * limit;
-            return Array.from({ length: rows }, () => Array.from({ length: cols }, rnd));
-        }
-        initB(rows) {
-            const rnd = () => (this.rng() * 2 - 1) * 0.01;
-            return Array.from({ length: rows }, () => [rnd()]);
-        }
-        hidden(X) {
-            const tempH = Matrix.multiply(X, Matrix.transpose(this.W)); // (n x hidden)
-            const f = this.actFn;
-            return tempH.map(row => row.map((v, j) => f(v + this.b[j][0])));
-        }
-        /* ===== public API ===== */
-        /** Initialize β and P from a batch (ridge): P0=(HᵀH+λI)^-1, β0=P0 HᵀY */
-        init(X0, Y0) {
-            if (!(X0 === null || X0 === void 0 ? void 0 : X0.length) || !(Y0 === null || Y0 === void 0 ? void 0 : Y0.length))
-                throw new Error('init: empty X0 or Y0');
-            if (X0.length !== Y0.length)
-                throw new Error(`init: X0 rows ${X0.length} != Y0 rows ${Y0.length}`);
-            if (X0[0].length !== this.inputDim)
-                throw new Error(`init: X0 cols ${X0[0].length} != inputDim ${this.inputDim}`);
-            if (Y0[0].length !== this.outputDim)
-                throw new Error(`init: Y0 cols ${Y0[0].length} != outputDim ${this.outputDim}`);
-            const H0 = this.hidden(X0); // (n x h)
-            const Ht = Matrix.transpose(H0); // (h x n)
-            const A = Matrix.addRegularization(Matrix.multiply(Ht, H0), this.ridgeLambda + 1e-10); // (h x h)
-            const R = Matrix.multiply(Ht, Y0); // (h x k)
-            const P0 = Matrix.solveCholesky(A, Matrix.identity(this.hiddenUnits), 1e-10); // A^-1
-            const B0 = Matrix.multiply(P0, R); // (h x k)
-            this.P = P0;
-            this.beta = B0;
-            if (this.verbose)
-                console.log(`✅ [${this.modelName}] init: n=${X0.length}, hidden=${this.hiddenUnits}, out=${this.outputDim}`);
-        }
-        /** If not initialized, init(); otherwise RLS update. */
-        fit(X, Y) {
-            if (!(X === null || X === void 0 ? void 0 : X.length) || !(Y === null || Y === void 0 ? void 0 : Y.length))
-                throw new Error('fit: empty X or Y');
-            if (X.length !== Y.length)
-                throw new Error(`fit: X rows ${X.length} != Y rows ${Y.length}`);
-            if (!this.P || !this.beta)
-                this.init(X, Y);
-            else
-                this.update(X, Y);
-        }
-        /**
-         * RLS / OS-ELM update with forgetting ρ:
-         *   S = I + HPHᵀ
-         *   K = P Hᵀ S^-1
-         *   β ← β + K (Y - Hβ)
-         *   P ← (P - K H P) / ρ
-         */
-        update(X, Y) {
-            if (!(X === null || X === void 0 ? void 0 : X.length) || !(Y === null || Y === void 0 ? void 0 : Y.length))
-                throw new Error('update: empty X or Y');
-            if (X.length !== Y.length)
-                throw new Error(`update: X rows ${X.length} != Y rows ${Y.length}`);
-            if (!this.P || !this.beta)
-                throw new Error('update: model not initialized (call init() first)');
-            const n = X.length;
-            const H = this.hidden(X); // (n x h)
-            const Ht = Matrix.transpose(H); // (h x n)
-            const rho = this.forgettingFactor;
-            let P = this.P;
-            if (rho < 1.0) {
-                // Equivalent to P <- P / ρ (more responsive to new data)
-                P = P.map(row => row.map(v => v / rho));
-            }
-            // S = I + H P Hᵀ  (n x n, SPD)
-            const HP = Matrix.multiply(H, P); // (n x h)
-            const HPHt = Matrix.multiply(HP, Ht); // (n x n)
-            const S = Matrix.add(HPHt, Matrix.identity(n));
-            const S_inv = Matrix.solveCholesky(S, Matrix.identity(n), 1e-10);
-            // K = P Hᵀ S^-1  (h x n)
-            const PHt = Matrix.multiply(P, Ht); // (h x n)
-            const K = Matrix.multiply(PHt, S_inv); // (h x n)
-            // Innovation: (Y - Hβ)  (n x k)
-            const Hbeta = Matrix.multiply(H, this.beta);
-            const innov = Y.map((row, i) => row.map((yij, j) => yij - Hbeta[i][j]));
-            // β ← β + K * innov
-            const Delta = Matrix.multiply(K, innov); // (h x k)
-            this.beta = this.beta.map((row, i) => row.map((bij, j) => bij + Delta[i][j]));
-            // P ← P - K H P
-            const KH = Matrix.multiply(K, H); // (h x h)
-            const KHP = Matrix.multiply(KH, P); // (h x h)
-            this.P = P.map((row, i) => row.map((pij, j) => pij - KHP[i][j]));
-            if (this.verbose) {
-                const diagAvg = this.P.reduce((s, r, i) => s + r[i], 0) / this.P.length;
-                console.log(`🔁 [${this.modelName}] update: n=${n}, avg diag(P)≈${diagAvg.toFixed(6)}`);
-            }
-        }
-        /* ===== Prediction ===== */
-        logitsFromVectors(X) {
-            if (!this.beta)
-                throw new Error('predict: model not initialized');
-            const H = this.hidden(X);
-            return Matrix.multiply(H, this.beta);
-        }
-        predictLogitsFromVector(x) {
-            return this.logitsFromVectors([x])[0];
-        }
-        predictLogitsFromVectors(X) {
-            return this.logitsFromVectors(X);
-        }
-        predictProbaFromVector(x) {
-            return Activations.softmax(this.predictLogitsFromVector(x));
-        }
-        predictProbaFromVectors(X) {
-            return this.predictLogitsFromVectors(X).map(Activations.softmax);
-        }
-        predictTopKFromVector(x, k = 5) {
-            const p = this.predictProbaFromVector(x);
-            const kk = Math.max(1, Math.min(k, p.length));
-            return p.map((prob, index) => ({ index, prob }))
-                .sort((a, b) => b.prob - a.prob)
-                .slice(0, kk);
-        }
-        predictTopKFromVectors(X, k = 5) {
-            return this.predictProbaFromVectors(X).map(p => {
-                const kk = Math.max(1, Math.min(k, p.length));
-                return p.map((prob, index) => ({ index, prob }))
-                    .sort((a, b) => b.prob - a.prob)
-                    .slice(0, kk);
-            });
-        }
-        /* ===== Serialization ===== */
-        toJSON(includeP = false) {
-            if (!this.beta || !this.P)
-                throw new Error('toJSON: model not initialized');
-            const cfg = {
-                hiddenUnits: this.hiddenUnits,
-                inputDim: this.inputDim,
-                outputDim: this.outputDim,
-                activation: this.activation,
-                ridgeLambda: this.ridgeLambda,
-                weightInit: this.weightInit,
-                forgettingFactor: this.forgettingFactor,
-                __version: 'online-elm-1.0.0',
-            };
-            const o = { W: this.W, b: this.b, B: this.beta, config: cfg };
-            if (includeP)
-                o.P = this.P;
-            return o;
-        }
-        loadFromJSON(json) {
-            var _a;
-            const parsed = typeof json === 'string' ? JSON.parse(json) : json;
-            const { W, b, B, P, config } = parsed;
-            if (!W || !b || !B)
-                throw new Error('loadFromJSON: missing W/b/B');
-            if (W.length !== this.hiddenUnits || W[0].length !== this.inputDim) {
-                throw new Error(`loadFromJSON: mismatched W shape (${W.length}x${W[0].length})`);
-            }
-            if (b.length !== this.hiddenUnits || b[0].length !== 1) {
-                throw new Error(`loadFromJSON: mismatched b shape (${b.length}x${b[0].length})`);
-            }
-            if (B.length !== this.hiddenUnits || B[0].length !== this.outputDim) {
-                throw new Error(`loadFromJSON: mismatched B shape (${B.length}x${B[0].length})`);
-            }
-            this.W = W;
-            this.b = b;
-            this.beta = B;
-            this.P = P !== null && P !== void 0 ? P : null;
-            if (config === null || config === void 0 ? void 0 : config.activation) {
-                this.activation = config.activation;
-                this.actFn = Activations.get(this.activation); // refresh cache
-            }
-            if (config === null || config === void 0 ? void 0 : config.ridgeLambda)
-                this.ridgeLambda = config.ridgeLambda;
-            if (this.verbose)
-                console.log(`✅ [${this.modelName}] model loaded (v=${(_a = config === null || config === void 0 ? void 0 : config.__version) !== null && _a !== void 0 ? _a : 'n/a'})`);
-        }
-    }
 
     // src/workers/elm-worker.ts
     /// <reference lib="webworker" />
@@ -2446,1387 +3824,6 @@
         oelmLogits(X) { return this.call('oelm.logits', { X }); }
         oelmToJSON() { return this.call('oelm.toJSON'); }
         oelmLoadJSON(json) { return this.call('oelm.loadJSON', { json }); }
-    }
-
-    // EmbeddingStore.ts — Powerful in-memory vector store with fast KNN, thresholds, and JSON I/O
-    const EPS$2 = 1e-12;
-    /* ================= math utils ================= */
-    function l2Norm$1(v) {
-        let s = 0;
-        for (let i = 0; i < v.length; i++)
-            s += v[i] * v[i];
-        return Math.sqrt(s);
-    }
-    function l1Dist(a, b) {
-        let s = 0;
-        for (let i = 0; i < a.length; i++)
-            s += Math.abs(a[i] - b[i]);
-        return s;
-    }
-    function dot$2(a, b) {
-        let s = 0;
-        for (let i = 0; i < a.length; i++)
-            s += a[i] * b[i];
-        return s;
-    }
-    function normalizeToUnit(v) {
-        const out = new Float32Array(v.length);
-        const n = l2Norm$1(v);
-        if (n < EPS$2)
-            return out; // zero vector → stay zero; cosine with zero returns 0
-        const inv = 1 / n;
-        for (let i = 0; i < v.length; i++)
-            out[i] = v[i] * inv;
-        return out;
-    }
-    /** Quickselect (nth_element) on-place for top-k largest by score. Returns cutoff value index. */
-    function quickselectTopK(arr, k, scoreOf) {
-        if (k <= 0 || k >= arr.length)
-            return arr.length - 1;
-        let left = 0, right = arr.length - 1;
-        const target = k - 1; // 0-based index of kth largest after partition
-        function swap(i, j) {
-            const t = arr[i];
-            arr[i] = arr[j];
-            arr[j] = t;
-        }
-        function partition(l, r, pivotIdx) {
-            const pivotScore = scoreOf(arr[pivotIdx]);
-            swap(pivotIdx, r);
-            let store = l;
-            for (let i = l; i < r; i++) {
-                if (scoreOf(arr[i]) > pivotScore) { // ">" for largest-first
-                    swap(store, i);
-                    store++;
-                }
-            }
-            swap(store, r);
-            return store;
-        }
-        while (true) {
-            const pivotIdx = Math.floor((left + right) / 2);
-            const idx = partition(left, right, pivotIdx);
-            if (idx === target)
-                return idx;
-            if (target < idx)
-                right = idx - 1;
-            else
-                left = idx + 1;
-        }
-    }
-    /* ================= store ================= */
-    class EmbeddingStore {
-        constructor(dim, opts) {
-            var _a, _b;
-            // Data
-            this.ids = [];
-            this.metas = [];
-            this.vecs = []; // if storeUnit=true -> unit vectors; else raw vectors
-            // Index
-            this.idToIdx = new Map();
-            if (!Number.isFinite(dim) || dim <= 0)
-                throw new Error(`EmbeddingStore: invalid dim=${dim}`);
-            this.dim = dim | 0;
-            this.storeUnit = (_a = opts === null || opts === void 0 ? void 0 : opts.storeUnit) !== null && _a !== void 0 ? _a : true;
-            this.alsoStoreRaw = (_b = opts === null || opts === void 0 ? void 0 : opts.alsoStoreRaw) !== null && _b !== void 0 ? _b : this.storeUnit; // default: if normalizing, also keep raw so Euclidean is valid
-            if ((opts === null || opts === void 0 ? void 0 : opts.capacity) !== undefined) {
-                if (!Number.isFinite(opts.capacity) || opts.capacity <= 0)
-                    throw new Error(`capacity must be > 0`);
-                this.capacity = Math.floor(opts.capacity);
-            }
-            if (this.alsoStoreRaw) {
-                this.rawVecs = [];
-                this.rawNorms = new Float32Array(0);
-            }
-            if (!this.storeUnit) {
-                // storing raw in vecs → maintain norms for fast cosine
-                this.norms = new Float32Array(0);
-            }
-        }
-        /* ========== basic ops ========== */
-        size() { return this.ids.length; }
-        dimension() { return this.dim; }
-        isUnitStored() { return this.storeUnit; }
-        keepsRaw() { return !!this.rawVecs; }
-        getCapacity() { return this.capacity; }
-        setCapacity(capacity) {
-            if (capacity === undefined) {
-                this.capacity = undefined;
-                return;
-            }
-            if (!Number.isFinite(capacity) || capacity <= 0)
-                throw new Error(`capacity must be > 0`);
-            this.capacity = Math.floor(capacity);
-            this.enforceCapacity();
-        }
-        clear() {
-            this.ids = [];
-            this.vecs = [];
-            this.metas = [];
-            this.idToIdx.clear();
-            if (this.rawVecs)
-                this.rawVecs = [];
-            if (this.norms)
-                this.norms = new Float32Array(0);
-            if (this.rawNorms)
-                this.rawNorms = new Float32Array(0);
-        }
-        has(id) { return this.idToIdx.has(id); }
-        get(id) {
-            const idx = this.idToIdx.get(id);
-            if (idx === undefined)
-                return undefined;
-            return {
-                id,
-                vec: this.vecs[idx],
-                raw: this.rawVecs ? this.rawVecs[idx] : undefined,
-                meta: this.metas[idx],
-            };
-        }
-        /** Remove by id. Returns true if removed. */
-        remove(id) {
-            const idx = this.idToIdx.get(id);
-            if (idx === undefined)
-                return false;
-            // capture id, splice arrays
-            this.ids.splice(idx, 1);
-            this.vecs.splice(idx, 1);
-            this.metas.splice(idx, 1);
-            if (this.rawVecs)
-                this.rawVecs.splice(idx, 1);
-            if (this.norms)
-                this.norms = this.removeFromNorms(this.norms, idx);
-            if (this.rawNorms)
-                this.rawNorms = this.removeFromNorms(this.rawNorms, idx);
-            this.idToIdx.delete(id);
-            this.rebuildIndex(idx);
-            return true;
-        }
-        /** Add or replace an item by id. Returns true if added, false if replaced. */
-        upsert(item) {
-            var _a;
-            const { id, vec, meta } = item;
-            if (!id)
-                throw new Error('upsert: id is required');
-            if (!vec || vec.length !== this.dim) {
-                throw new Error(`upsert: vector dim ${(_a = vec === null || vec === void 0 ? void 0 : vec.length) !== null && _a !== void 0 ? _a : 'n/a'} != store dim ${this.dim}`);
-            }
-            const raw = new Float32Array(vec);
-            const unit = this.storeUnit ? normalizeToUnit(raw) : raw;
-            const idx = this.idToIdx.get(id);
-            if (idx !== undefined) {
-                // replace in place
-                this.vecs[idx] = unit;
-                this.metas[idx] = meta;
-                if (this.rawVecs)
-                    this.rawVecs[idx] = raw;
-                if (this.norms && !this.storeUnit)
-                    this.norms[idx] = l2Norm$1(raw);
-                if (this.rawNorms && this.rawVecs)
-                    this.rawNorms[idx] = l2Norm$1(raw);
-                return false;
-            }
-            else {
-                this.ids.push(id);
-                this.vecs.push(unit);
-                this.metas.push(meta);
-                if (this.rawVecs)
-                    this.rawVecs.push(raw);
-                if (this.norms && !this.storeUnit) {
-                    // append norm
-                    const n = l2Norm$1(raw);
-                    const newNorms = new Float32Array(this.ids.length);
-                    newNorms.set(this.norms, 0);
-                    newNorms[this.ids.length - 1] = n;
-                    this.norms = newNorms;
-                }
-                if (this.rawNorms && this.rawVecs) {
-                    const n = l2Norm$1(raw);
-                    const newNorms = new Float32Array(this.ids.length);
-                    newNorms.set(this.rawNorms, 0);
-                    newNorms[this.ids.length - 1] = n;
-                    this.rawNorms = newNorms;
-                }
-                this.idToIdx.set(id, this.ids.length - 1);
-                this.enforceCapacity();
-                return true;
-            }
-        }
-        add(item) {
-            const added = this.upsert(item);
-            if (!added)
-                throw new Error(`add: id "${item.id}" already exists (use upsert instead)`);
-        }
-        addAll(items, allowUpsert = true) {
-            for (const it of items) {
-                if (allowUpsert)
-                    this.upsert(it);
-                else
-                    this.add(it);
-            }
-        }
-        /** Merge another store (same dim & normalization strategy) into this one. */
-        merge(other, allowOverwrite = true) {
-            var _a;
-            if (other.dimension() !== this.dim)
-                throw new Error('merge: dimension mismatch');
-            if (other.isUnitStored() !== this.storeUnit)
-                throw new Error('merge: normalized flag mismatch');
-            if (other.keepsRaw() !== this.keepsRaw())
-                throw new Error('merge: raw retention mismatch');
-            for (let i = 0; i < other.ids.length; i++) {
-                const id = other.ids[i];
-                const vec = other.vecs[i];
-                const raw = (_a = other.rawVecs) === null || _a === void 0 ? void 0 : _a[i];
-                const meta = other.metas[i];
-                if (!allowOverwrite && this.has(id))
-                    continue;
-                // Use upsert path, but avoid double-normalizing when both stores have unit vectors:
-                this.upsert({ id, vec, meta });
-                if (this.rawVecs && raw)
-                    this.rawVecs[this.idToIdx.get(id)] = new Float32Array(raw);
-            }
-        }
-        /* ========== querying ========== */
-        /** Top-K KNN query. For L2/L1 we return NEGATIVE distance so higher is better. */
-        query(queryVec, k = 10, opts) {
-            var _a, _b, _c, _d, _e, _f;
-            if (queryVec.length !== this.dim) {
-                throw new Error(`query: vector dim ${queryVec.length} != store dim ${this.dim}`);
-            }
-            const metric = (_a = opts === null || opts === void 0 ? void 0 : opts.metric) !== null && _a !== void 0 ? _a : 'cosine';
-            const filter = opts === null || opts === void 0 ? void 0 : opts.filter;
-            const returnVectors = (_b = opts === null || opts === void 0 ? void 0 : opts.returnVectors) !== null && _b !== void 0 ? _b : false;
-            const minScore = opts === null || opts === void 0 ? void 0 : opts.minScore;
-            const maxDistance = opts === null || opts === void 0 ? void 0 : opts.maxDistance;
-            const restrictSet = (opts === null || opts === void 0 ? void 0 : opts.restrictToIds) ? new Set(opts.restrictToIds) : undefined;
-            let q;
-            let qNorm = 0;
-            if (metric === 'cosine') {
-                // cosine → normalize query; stored data either unit (fast) or raw (use cached norms)
-                q = normalizeToUnit(queryVec);
-            }
-            else if (metric === 'dot') {
-                q = new Float32Array(queryVec);
-                qNorm = l2Norm$1(q); // only used for potential future scoring transforms
-            }
-            else {
-                // L2/L1 use RAW query
-                q = new Float32Array(queryVec);
-                qNorm = l2Norm$1(q);
-            }
-            const hits = [];
-            const N = this.vecs.length;
-            // helpers
-            const pushHit = (i, score) => {
-                if (restrictSet && !restrictSet.has(this.ids[i]))
-                    return;
-                if (filter && !filter(this.metas[i], this.ids[i]))
-                    return;
-                // Apply thresholds
-                if (metric === 'euclidean' || metric === 'manhattan') {
-                    const dist = -score; // score is negative distance
-                    if (maxDistance !== undefined && dist > maxDistance)
-                        return;
-                }
-                else {
-                    if (minScore !== undefined && score < minScore)
-                        return;
-                }
-                hits.push(returnVectors
-                    ? { id: this.ids[i], score, index: i, meta: this.metas[i], vec: this.vecs[i] }
-                    : { id: this.ids[i], score, index: i, meta: this.metas[i] });
-            };
-            if (metric === 'cosine') {
-                if (this.storeUnit) {
-                    // both unit → score = dot
-                    for (let i = 0; i < N; i++) {
-                        const s = dot$2(q, this.vecs[i]);
-                        pushHit(i, s);
-                    }
-                }
-                else {
-                    // stored raw in vecs → use cached norms (if available) for cos = dot / (||q||*||v||)
-                    if (!this.norms || this.norms.length !== N) {
-                        // build norms on-demand once
-                        this.norms = new Float32Array(N);
-                        for (let i = 0; i < N; i++)
-                            this.norms[i] = l2Norm$1(this.vecs[i]);
-                    }
-                    const qn = l2Norm$1(q) || 1; // guard
-                    for (let i = 0; i < N; i++) {
-                        const dn = this.norms[i] || 1;
-                        const s = dn < EPS$2 ? 0 : dot$2(q, this.vecs[i]) / (qn * dn);
-                        pushHit(i, s);
-                    }
-                }
-            }
-            else if (metric === 'dot') {
-                for (let i = 0; i < N; i++) {
-                    const s = dot$2(q, this.storeUnit ? this.vecs[i] : this.vecs[i]); // same storage
-                    pushHit(i, s);
-                }
-            }
-            else if (metric === 'euclidean') {
-                // Need RAW vectors
-                const base = (_c = this.rawVecs) !== null && _c !== void 0 ? _c : (!this.storeUnit ? this.vecs : null);
-                if (!base)
-                    throw new Error('euclidean query requires raw vectors; create store with alsoStoreRaw=true or storeUnit=false');
-                // Use fast formula: ||q - v|| = sqrt(||q||^2 + ||v||^2 - 2 q·v)
-                const vNorms = this.rawVecs ? ((_d = this.rawNorms) !== null && _d !== void 0 ? _d : this.buildRawNorms()) :
-                    (_e = this.norms) !== null && _e !== void 0 ? _e : this.buildNorms();
-                const q2 = qNorm * qNorm;
-                for (let i = 0; i < N; i++) {
-                    const d2 = Math.max(q2 + vNorms[i] * vNorms[i] - 2 * dot$2(q, base[i]), 0);
-                    const dist = Math.sqrt(d2);
-                    pushHit(i, -dist); // NEGATIVE distance so higher is better
-                }
-            }
-            else { // 'manhattan'
-                const base = (_f = this.rawVecs) !== null && _f !== void 0 ? _f : (!this.storeUnit ? this.vecs : null);
-                if (!base)
-                    throw new Error('manhattan query requires raw vectors; create store with alsoStoreRaw=true or storeUnit=false');
-                for (let i = 0; i < N; i++) {
-                    const dist = l1Dist(q, base[i]);
-                    pushHit(i, -dist); // NEGATIVE distance
-                }
-            }
-            if (hits.length === 0)
-                return [];
-            const kk = Math.max(1, Math.min(k, hits.length));
-            // Use quickselect to avoid full O(n log n) sort
-            quickselectTopK(hits, kk, (h) => h.score);
-            // Now sort just the top-K region for stable ordering
-            hits
-                .slice(0, kk)
-                .sort((a, b) => b.score - a.score)
-                .forEach((h, i) => (hits[i] = h));
-            return hits.slice(0, kk);
-        }
-        /** Batch query helper. Returns array of results aligned to input queries. */
-        queryBatch(queries, k = 10, opts) {
-            return queries.map(q => this.query(q, k, opts));
-        }
-        /** Convenience: query by id */
-        queryById(id, k = 10, opts) {
-            var _a;
-            const rec = this.get(id);
-            if (!rec)
-                return [];
-            const use = ((opts === null || opts === void 0 ? void 0 : opts.metric) === 'euclidean' || (opts === null || opts === void 0 ? void 0 : opts.metric) === 'manhattan')
-                ? ((_a = rec.raw) !== null && _a !== void 0 ? _a : rec.vec) // prefer raw for distance
-                : rec.vec;
-            return this.query(use, k, opts);
-        }
-        /* ========== export / import ========== */
-        toJSON() {
-            const includeRaw = !!this.rawVecs;
-            return {
-                dim: this.dim,
-                normalized: this.storeUnit,
-                alsoStoredRaw: includeRaw,
-                capacity: this.capacity,
-                items: this.ids.map((id, i) => ({
-                    id,
-                    vec: Array.from(this.vecs[i]),
-                    raw: includeRaw ? Array.from(this.rawVecs[i]) : undefined,
-                    meta: this.metas[i],
-                })),
-                __version: 'embedding-store-2.0.0',
-            };
-        }
-        static fromJSON(obj) {
-            var _a, _b;
-            const parsed = typeof obj === 'string' ? JSON.parse(obj) : obj;
-            if (!parsed || !parsed.dim || !Array.isArray(parsed.items)) {
-                throw new Error('EmbeddingStore.fromJSON: invalid payload');
-            }
-            const store = new EmbeddingStore(parsed.dim, {
-                storeUnit: parsed.normalized,
-                capacity: parsed.capacity,
-                alsoStoreRaw: (_a = parsed.alsoStoredRaw) !== null && _a !== void 0 ? _a : false,
-            });
-            for (const it of parsed.items) {
-                if (!it || typeof it.id !== 'string' || !Array.isArray(it.vec))
-                    continue;
-                if (it.vec.length !== parsed.dim) {
-                    throw new Error(`fromJSON: vector dim ${it.vec.length} != dim ${parsed.dim} for id ${it.id}`);
-                }
-                // Use public API to keep norms consistent
-                store.upsert({ id: it.id, vec: (_b = it.raw) !== null && _b !== void 0 ? _b : it.vec, meta: it.meta });
-                // If payload includes both vec and raw, ensure both sides are *exactly* respected
-                if (store.storeUnit && store.rawVecs && it.raw) {
-                    const idx = store.idToIdx.get(it.id);
-                    store.rawVecs[idx] = new Float32Array(it.raw);
-                    if (store.rawNorms) {
-                        const newNorms = new Float32Array(store.size());
-                        newNorms.set(store.rawNorms, 0);
-                        newNorms[idx] = l2Norm$1(store.rawVecs[idx]);
-                        store.rawNorms = newNorms;
-                    }
-                }
-                else if (!store.storeUnit && it.vec) ;
-            }
-            return store;
-        }
-        /* ========== diagnostics / utils ========== */
-        /** Estimate memory footprint in bytes (arrays only; metadata excluded). */
-        memoryUsageBytes() {
-            const f32 = 4;
-            let bytes = 0;
-            for (const v of this.vecs)
-                bytes += v.length * f32;
-            if (this.rawVecs)
-                for (const v of this.rawVecs)
-                    bytes += v.length * f32;
-            if (this.norms)
-                bytes += this.norms.length * f32;
-            if (this.rawNorms)
-                bytes += this.rawNorms.length * f32;
-            // ids + metas are JS objects; not included
-            return bytes;
-        }
-        /** Re-normalize all vectors in-place (useful if you bulk-updated raw storage). */
-        reNormalizeAll() {
-            if (!this.storeUnit)
-                return; // nothing to do
-            for (let i = 0; i < this.vecs.length; i++) {
-                const raw = this.rawVecs ? this.rawVecs[i] : this.vecs[i];
-                this.vecs[i] = normalizeToUnit(raw);
-            }
-        }
-        /** Iterate over all items */
-        *entries() {
-            var _a;
-            for (let i = 0; i < this.ids.length; i++) {
-                yield { id: this.ids[i], vec: this.vecs[i], raw: (_a = this.rawVecs) === null || _a === void 0 ? void 0 : _a[i], meta: this.metas[i] };
-            }
-        }
-        /* ========== internals ========== */
-        removeFromNorms(src, removeIdx) {
-            const out = new Float32Array(src.length - 1);
-            if (removeIdx > 0)
-                out.set(src.subarray(0, removeIdx), 0);
-            if (removeIdx < src.length - 1)
-                out.set(src.subarray(removeIdx + 1), removeIdx);
-            return out;
-        }
-        /** After a splice at 'start', rebuild id→index for shifted tail */
-        rebuildIndex(start = 0) {
-            if (start <= 0) {
-                this.idToIdx.clear();
-                for (let i = 0; i < this.ids.length; i++)
-                    this.idToIdx.set(this.ids[i], i);
-                return;
-            }
-            for (let i = start; i < this.ids.length; i++)
-                this.idToIdx.set(this.ids[i], i);
-        }
-        /** Enforce capacity by evicting oldest items (front of arrays) */
-        enforceCapacity() {
-            if (this.capacity === undefined)
-                return;
-            while (this.ids.length > this.capacity) {
-                const removedId = this.ids[0];
-                // shift( ) is O(n); for very large stores consider a circular buffer
-                this.ids.shift();
-                this.vecs.shift();
-                this.metas.shift();
-                if (this.rawVecs)
-                    this.rawVecs.shift();
-                if (this.norms)
-                    this.norms = this.removeFromNorms(this.norms, 0);
-                if (this.rawNorms)
-                    this.rawNorms = this.removeFromNorms(this.rawNorms, 0);
-                this.idToIdx.delete(removedId);
-                // rebuild full index (ids shifted)
-                this.idToIdx.clear();
-                for (let i = 0; i < this.ids.length; i++)
-                    this.idToIdx.set(this.ids[i], i);
-            }
-        }
-        buildNorms() {
-            const out = new Float32Array(this.vecs.length);
-            for (let i = 0; i < this.vecs.length; i++)
-                out[i] = l2Norm$1(this.vecs[i]);
-            this.norms = out;
-            return out;
-        }
-        buildRawNorms() {
-            if (!this.rawVecs)
-                throw new Error('no raw vectors to build norms for');
-            const out = new Float32Array(this.rawVecs.length);
-            for (let i = 0; i < this.rawVecs.length; i++)
-                out[i] = l2Norm$1(this.rawVecs[i]);
-            this.rawNorms = out;
-            return out;
-        }
-    }
-
-    const EPS$1 = 1e-12;
-    /* ---------- math helpers ---------- */
-    function l2Norm(v) {
-        let s = 0;
-        for (let i = 0; i < v.length; i++)
-            s += v[i] * v[i];
-        return Math.sqrt(s);
-    }
-    function normalize(v) {
-        const out = new Float32Array(v.length);
-        const n = l2Norm(v);
-        if (n < EPS$1)
-            return out; // keep zeros; cosine with zero gives 0
-        const inv = 1 / n;
-        for (let i = 0; i < v.length; i++)
-            out[i] = v[i] * inv;
-        return out;
-    }
-    function dot$1(a, b) {
-        let s = 0;
-        for (let i = 0; i < a.length; i++)
-            s += a[i] * b[i];
-        return s;
-    }
-    /* ---------- main evaluation ---------- */
-    function evaluateEnsembleRetrieval(queries, reference, chains, k, options) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
-        const metric = (_a = options === null || options === void 0 ? void 0 : options.metric) !== null && _a !== void 0 ? _a : "cosine";
-        const aggregate = (_b = options === null || options === void 0 ? void 0 : options.aggregate) !== null && _b !== void 0 ? _b : "mean";
-        const weights = options === null || options === void 0 ? void 0 : options.weights;
-        const topK = Math.max(1, (_d = (_c = options === null || options === void 0 ? void 0 : options.k) !== null && _c !== void 0 ? _c : k) !== null && _d !== void 0 ? _d : 5);
-        const ignoreUnlabeled = (_e = options === null || options === void 0 ? void 0 : options.ignoreUnlabeledQueries) !== null && _e !== void 0 ? _e : true;
-        const reportPerLabel = (_f = options === null || options === void 0 ? void 0 : options.reportPerLabel) !== null && _f !== void 0 ? _f : false;
-        const returnRankings = (_g = options === null || options === void 0 ? void 0 : options.returnRankings) !== null && _g !== void 0 ? _g : false;
-        const logEvery = Math.max(1, (_h = options === null || options === void 0 ? void 0 : options.logEvery) !== null && _h !== void 0 ? _h : 10);
-        if (chains.length === 0) {
-            throw new Error("evaluateEnsembleRetrieval: 'chains' must be non-empty.");
-        }
-        if (aggregate === "weighted") {
-            if (!weights || weights.length !== chains.length) {
-                throw new Error(`aggregate='weighted' requires weights.length === chains.length`);
-            }
-            // normalize weights to sum=1 for interpretability
-            const sumW = weights.reduce((s, w) => s + w, 0) || 1;
-            for (let i = 0; i < weights.length; i++)
-                weights[i] = weights[i] / sumW;
-        }
-        console.log("🔹 Precomputing embeddings...");
-        // Pull raw embeddings from each chain
-        const chainQueryEmb = [];
-        const chainRefEmb = [];
-        for (let c = 0; c < chains.length; c++) {
-            const qMat = chains[c].getEmbedding(queries.map(q => {
-                const v = q.embedding;
-                if (!v || v.length === 0)
-                    throw new Error(`Query ${c} has empty embedding`);
-                return Array.from(v);
-            }));
-            const rMat = chains[c].getEmbedding(reference.map(r => {
-                const v = r.embedding;
-                if (!v || v.length === 0)
-                    throw new Error(`Reference has empty embedding`);
-                return Array.from(v);
-            }));
-            // Validate dims & normalize if cosine
-            const qArr = qMat.map(row => Float32Array.from(row));
-            const rArr = rMat.map(row => Float32Array.from(row));
-            if (metric === "cosine") {
-                chainQueryEmb.push(qArr.map(normalize));
-                chainRefEmb.push(rArr.map(normalize));
-            }
-            else {
-                chainQueryEmb.push(qArr);
-                chainRefEmb.push(rArr);
-            }
-            // Basic safety: check dimensions match across Q/R for this chain
-            const dimQ = (_k = (_j = qArr[0]) === null || _j === void 0 ? void 0 : _j.length) !== null && _k !== void 0 ? _k : 0;
-            const dimR = (_m = (_l = rArr[0]) === null || _l === void 0 ? void 0 : _l.length) !== null && _m !== void 0 ? _m : 0;
-            if (dimQ === 0 || dimR === 0 || dimQ !== dimR) {
-                throw new Error(`Chain ${c}: query/ref embedding dims mismatch (${dimQ} vs ${dimR})`);
-            }
-        }
-        console.log("✅ Precomputation complete. Starting retrieval evaluation...");
-        let hitsAt1 = 0, hitsAtK = 0, reciprocalRanks = 0;
-        let used = 0;
-        const perLabelRaw = {};
-        const rankings = [];
-        for (let i = 0; i < queries.length; i++) {
-            if (i % logEvery === 0)
-                console.log(`🔍 Query ${i + 1}/${queries.length}`);
-            const correctLabel = ((_o = queries[i].metadata.label) !== null && _o !== void 0 ? _o : "").toString();
-            if (!correctLabel && ignoreUnlabeled) {
-                continue; // skip this query entirely
-            }
-            // Accumulate ensemble scores per reference
-            // We keep (label, score) per reference j
-            const scores = new Array(reference.length);
-            for (let j = 0; j < reference.length; j++) {
-                let sAgg;
-                if (aggregate === "max") {
-                    // Take max across chains
-                    let sMax = -Infinity;
-                    for (let c = 0; c < chains.length; c++) {
-                        const q = chainQueryEmb[c][i];
-                        const r = chainRefEmb[c][j];
-                        const s = metric === "cosine" || metric === "dot" ? dot$1(q, r) : dot$1(q, r); // only cosine/dot supported
-                        if (s > sMax)
-                            sMax = s;
-                    }
-                    sAgg = sMax;
-                }
-                else if (aggregate === "sum") {
-                    let sSum = 0;
-                    for (let c = 0; c < chains.length; c++) {
-                        const q = chainQueryEmb[c][i];
-                        const r = chainRefEmb[c][j];
-                        sSum += (metric === "cosine" || metric === "dot") ? dot$1(q, r) : dot$1(q, r);
-                    }
-                    sAgg = sSum;
-                }
-                else if (aggregate === "weighted") {
-                    let sW = 0;
-                    for (let c = 0; c < chains.length; c++) {
-                        const q = chainQueryEmb[c][i];
-                        const r = chainRefEmb[c][j];
-                        sW += ((metric === "cosine" || metric === "dot") ? dot$1(q, r) : dot$1(q, r)) * weights[c];
-                    }
-                    sAgg = sW;
-                }
-                else { // "mean"
-                    let sSum = 0;
-                    for (let c = 0; c < chains.length; c++) {
-                        const q = chainQueryEmb[c][i];
-                        const r = chainRefEmb[c][j];
-                        sSum += (metric === "cosine" || metric === "dot") ? dot$1(q, r) : dot$1(q, r);
-                    }
-                    sAgg = sSum / chains.length;
-                }
-                scores[j] = {
-                    label: ((_p = reference[j].metadata.label) !== null && _p !== void 0 ? _p : "").toString(),
-                    score: sAgg
-                };
-            }
-            // Sort by score desc
-            scores.sort((a, b) => b.score - a.score);
-            const rankedLabels = scores.map(s => s.label);
-            // Update metrics
-            const r1 = rankedLabels[0] === correctLabel ? 1 : 0;
-            const rK = rankedLabels.slice(0, topK).includes(correctLabel) ? 1 : 0;
-            const rank = rankedLabels.indexOf(correctLabel);
-            const rr = rank === -1 ? 0 : 1 / (rank + 1);
-            hitsAt1 += r1;
-            hitsAtK += rK;
-            reciprocalRanks += rr;
-            used++;
-            if (reportPerLabel) {
-                const bucket = (_q = perLabelRaw[correctLabel]) !== null && _q !== void 0 ? _q : (perLabelRaw[correctLabel] = { count: 0, hitsAt1: 0, hitsAtK: 0, mrrSum: 0 });
-                bucket.count++;
-                bucket.hitsAt1 += r1;
-                bucket.hitsAtK += rK;
-                bucket.mrrSum += rr;
-            }
-            if (returnRankings) {
-                rankings.push({
-                    queryIndex: i,
-                    queryId: queries[i].id,
-                    label: correctLabel,
-                    topK: scores.slice(0, topK),
-                    correctRank: rank
-                });
-            }
-        }
-        const denom = used || 1;
-        const result = {
-            usedQueries: used,
-            recallAt1: hitsAt1 / denom,
-            recallAtK: hitsAtK / denom,
-            mrr: reciprocalRanks / denom
-        };
-        if (reportPerLabel) {
-            const out = {};
-            for (const [label, s] of Object.entries(perLabelRaw)) {
-                out[label] = {
-                    support: s.count,
-                    recallAt1: s.hitsAt1 / (s.count || 1),
-                    recallAtK: s.hitsAtK / (s.count || 1),
-                    mrr: s.mrrSum / (s.count || 1)
-                };
-            }
-            result.perLabel = out;
-        }
-        if (returnRankings)
-            result.rankings = rankings;
-        return result;
-    }
-
-    // Evaluation.ts — Classification & Regression metrics (no deps)
-    const EPS = 1e-12;
-    /* =========================
-     * Helpers
-     * ========================= */
-    function isOneHot(Y) {
-        return Array.isArray(Y[0]);
-    }
-    function argmax(a) {
-        let i = 0;
-        for (let k = 1; k < a.length; k++)
-            if (a[k] > a[i])
-                i = k;
-        return i;
-    }
-    function toIndexLabels(yTrue, yPred, numClasses) {
-        let yTrueIdx;
-        let yPredIdx;
-        if (isOneHot(yTrue))
-            yTrueIdx = yTrue.map(argmax);
-        else
-            yTrueIdx = yTrue;
-        if (isOneHot(yPred))
-            yPredIdx = yPred.map(argmax);
-        else
-            yPredIdx = yPred;
-        const C = 1 + Math.max(Math.max(...yTrueIdx), Math.max(...yPredIdx));
-        return { yTrueIdx, yPredIdx, C };
-    }
-    /* =========================
-     * Confusion matrix
-     * ========================= */
-    function confusionMatrixFromIndices(yTrueIdx, yPredIdx, C) {
-        if (yTrueIdx.length !== yPredIdx.length) {
-            throw new Error(`confusionMatrix: length mismatch (${yTrueIdx.length} vs ${yPredIdx.length})`);
-        }
-        const classes = C !== null && C !== void 0 ? C : 1 + Math.max(Math.max(...yTrueIdx), Math.max(...yPredIdx));
-        const M = Array.from({ length: classes }, () => new Array(classes).fill(0));
-        for (let i = 0; i < yTrueIdx.length; i++) {
-            const r = yTrueIdx[i] | 0;
-            const c = yPredIdx[i] | 0;
-            if (r >= 0 && r < classes && c >= 0 && c < classes)
-                M[r][c]++;
-        }
-        return M;
-    }
-    /* =========================
-     * Per-class metrics
-     * ========================= */
-    function perClassFromCM(M, labels) {
-        var _a;
-        const C = M.length;
-        const totals = new Array(C).fill(0);
-        const colTotals = new Array(C).fill(0);
-        let N = 0;
-        for (let i = 0; i < C; i++) {
-            let rsum = 0;
-            for (let j = 0; j < C; j++) {
-                rsum += M[i][j];
-                colTotals[j] += M[i][j];
-                N += M[i][j];
-            }
-            totals[i] = rsum;
-        }
-        const perClass = [];
-        for (let k = 0; k < C; k++) {
-            const tp = M[k][k];
-            const fp = colTotals[k] - tp;
-            const fn = totals[k] - tp;
-            const tn = N - tp - fp - fn;
-            const precision = tp / (tp + fp + EPS);
-            const recall = tp / (tp + fn + EPS);
-            const f1 = (2 * precision * recall) / (precision + recall + EPS);
-            perClass.push({
-                label: (_a = labels === null || labels === void 0 ? void 0 : labels[k]) !== null && _a !== void 0 ? _a : k,
-                support: totals[k],
-                tp, fp, fn, tn,
-                precision, recall, f1
-            });
-        }
-        return perClass;
-    }
-    /* =========================
-     * Averages
-     * ========================= */
-    function averagesFromPerClass(per, accuracy) {
-        const C = per.length;
-        let sumP = 0, sumR = 0, sumF = 0;
-        let sumWP = 0, sumWR = 0, sumWF = 0, total = 0;
-        let tp = 0, fp = 0, fn = 0; // for micro
-        for (const c of per) {
-            sumP += c.precision;
-            sumR += c.recall;
-            sumF += c.f1;
-            sumWP += c.precision * c.support;
-            sumWR += c.recall * c.support;
-            sumWF += c.f1 * c.support;
-            total += c.support;
-            tp += c.tp;
-            fp += c.fp;
-            fn += c.fn;
-        }
-        const microP = tp / (tp + fp + EPS);
-        const microR = tp / (tp + fn + EPS);
-        const microF = (2 * microP * microR) / (microP + microR + EPS);
-        return {
-            accuracy,
-            macroPrecision: sumP / C,
-            macroRecall: sumR / C,
-            macroF1: sumF / C,
-            microPrecision: microP,
-            microRecall: microR,
-            microF1: microF,
-            weightedPrecision: sumWP / (total + EPS),
-            weightedRecall: sumWR / (total + EPS),
-            weightedF1: sumWF / (total + EPS)
-        };
-    }
-    /* =========================
-     * Log loss / cross-entropy
-     * ========================= */
-    function logLoss(yTrue, yPredProba) {
-        if (!isOneHot(yTrue) || !isOneHot(yPredProba)) {
-            throw new Error('logLoss expects one-hot ground truth and probability matrix (N x C).');
-        }
-        const Y = yTrue;
-        const P = yPredProba;
-        if (Y.length !== P.length)
-            throw new Error('logLoss: length mismatch');
-        const N = Y.length;
-        let sum = 0;
-        for (let i = 0; i < N; i++) {
-            const yi = Y[i];
-            const pi = P[i];
-            if (yi.length !== pi.length)
-                throw new Error('logLoss: class count mismatch');
-            for (let j = 0; j < yi.length; j++) {
-                if (yi[j] > 0) {
-                    const p = Math.min(Math.max(pi[j], EPS), 1 - EPS);
-                    sum += -Math.log(p);
-                }
-            }
-        }
-        return sum / N;
-    }
-    /* =========================
-     * Top-K accuracy
-     * ========================= */
-    function topKAccuracy(yTrueIdx, yPredProba, k = 5) {
-        const N = yTrueIdx.length;
-        let correct = 0;
-        for (let i = 0; i < N; i++) {
-            const probs = yPredProba[i];
-            const idx = probs.map((p, j) => j).sort((a, b) => probs[b] - probs[a]).slice(0, Math.max(1, Math.min(k, probs.length)));
-            if (idx.includes(yTrueIdx[i]))
-                correct++;
-        }
-        return correct / N;
-    }
-    function pairSortByScore(yTrue01, yScore) {
-        const pairs = yScore.map((s, i) => [s, yTrue01[i]]);
-        pairs.sort((a, b) => b[0] - a[0]);
-        return pairs;
-    }
-    function binaryROC(yTrue01, yScore) {
-        if (yTrue01.length !== yScore.length)
-            throw new Error('binaryROC: length mismatch');
-        const pairs = pairSortByScore(yTrue01, yScore);
-        const P = yTrue01.reduce((s, v) => s + (v ? 1 : 0), 0);
-        const N = yTrue01.length - P;
-        let tp = 0, fp = 0;
-        const tpr = [0], fpr = [0], thr = [Infinity];
-        for (let i = 0; i < pairs.length; i++) {
-            const [score, y] = pairs[i];
-            if (y === 1)
-                tp++;
-            else
-                fp++;
-            tpr.push(tp / (P + EPS));
-            fpr.push(fp / (N + EPS));
-            thr.push(score);
-        }
-        tpr.push(1);
-        fpr.push(1);
-        thr.push(-Infinity);
-        // Trapezoidal AUC
-        let auc = 0;
-        for (let i = 1; i < tpr.length; i++) {
-            const dx = fpr[i] - fpr[i - 1];
-            const yAvg = (tpr[i] + tpr[i - 1]) / 2;
-            auc += dx * yAvg;
-        }
-        return { thresholds: thr, tpr, fpr, auc };
-    }
-    function binaryPR(yTrue01, yScore) {
-        if (yTrue01.length !== yScore.length)
-            throw new Error('binaryPR: length mismatch');
-        const pairs = pairSortByScore(yTrue01, yScore);
-        const P = yTrue01.reduce((s, v) => s + (v ? 1 : 0), 0);
-        let tp = 0, fp = 0;
-        const precision = [], recall = [], thr = [];
-        // Add starting point
-        precision.push(P > 0 ? P / (P + 0) : 1);
-        recall.push(0);
-        thr.push(Infinity);
-        for (let i = 0; i < pairs.length; i++) {
-            const [score, y] = pairs[i];
-            if (y === 1)
-                tp++;
-            else
-                fp++;
-            const prec = tp / (tp + fp + EPS);
-            const rec = tp / (P + EPS);
-            precision.push(prec);
-            recall.push(rec);
-            thr.push(score);
-        }
-        // AUPRC via trapezoid over recall axis
-        let auc = 0;
-        for (let i = 1; i < precision.length; i++) {
-            const dx = recall[i] - recall[i - 1];
-            const yAvg = (precision[i] + precision[i - 1]) / 2;
-            auc += dx * yAvg;
-        }
-        return { thresholds: thr, precision, recall, auc };
-    }
-    /* =========================
-     * Main: evaluate classification
-     * ========================= */
-    /**
-     * Evaluate multi-class classification.
-     * - yTrue can be indices (N) or one-hot (N x C)
-     * - yPred can be indices (N) or probabilities (N x C)
-     * - If yPred are probabilities, we also compute logLoss and optional topK.
-     */
-    function evaluateClassification(yTrue, yPred, opts) {
-        const labels = opts === null || opts === void 0 ? void 0 : opts.labels;
-        const { yTrueIdx, yPredIdx, C } = toIndexLabels(yTrue, yPred);
-        const M = confusionMatrixFromIndices(yTrueIdx, yPredIdx, C);
-        const per = perClassFromCM(M, labels);
-        const correct = yTrueIdx.reduce((s, yt, i) => s + (yt === yPredIdx[i] ? 1 : 0), 0);
-        const accuracy = correct / yTrueIdx.length;
-        const averages = averagesFromPerClass(per, accuracy);
-        // Optional extras if we have probabilities
-        if (isOneHot(yTrue) && isOneHot(yPred)) {
-            try {
-                averages.logLoss = logLoss(yTrue, yPred);
-                if ((opts === null || opts === void 0 ? void 0 : opts.topK) && opts.topK > 1) {
-                    averages.topKAccuracy = topKAccuracy(yTrueIdx, yPred, opts.topK);
-                }
-            }
-            catch ( /* ignore extras if shapes disagree */_a) { /* ignore extras if shapes disagree */ }
-        }
-        return { confusionMatrix: M, perClass: per, averages };
-    }
-    /* =========================
-     * Regression
-     * ========================= */
-    function evaluateRegression(yTrue, yPred) {
-        const Y = Array.isArray(yTrue[0]) ? yTrue : yTrue.map(v => [v]);
-        const P = Array.isArray(yPred[0]) ? yPred : yPred.map(v => [v]);
-        if (Y.length !== P.length)
-            throw new Error('evaluateRegression: length mismatch');
-        const N = Y.length;
-        const D = Y[0].length;
-        const perOutput = [];
-        let sumMSE = 0, sumMAE = 0, sumR2 = 0;
-        for (let d = 0; d < D; d++) {
-            let mse = 0, mae = 0;
-            // mean of Y[:,d]
-            let mean = 0;
-            for (let i = 0; i < N; i++)
-                mean += Y[i][d];
-            mean /= N;
-            let ssTot = 0, ssRes = 0;
-            for (let i = 0; i < N; i++) {
-                const y = Y[i][d], p = P[i][d];
-                const e = y - p;
-                mse += e * e;
-                mae += Math.abs(e);
-                ssRes += e * e;
-                const dy = y - mean;
-                ssTot += dy * dy;
-            }
-            mse /= N;
-            const rmse = Math.sqrt(mse);
-            mae /= N;
-            const r2 = 1 - (ssRes / (ssTot + EPS));
-            perOutput.push({ index: d, mse, rmse, mae, r2 });
-            sumMSE += mse;
-            sumMAE += mae;
-            sumR2 += r2;
-        }
-        const mse = sumMSE / D;
-        const rmse = Math.sqrt(mse);
-        const mae = sumMAE / D;
-        const r2 = sumR2 / D;
-        return { perOutput, mse, rmse, mae, r2 };
-    }
-    /* =========================
-     * Pretty report (optional)
-     * ========================= */
-    function formatClassificationReport(rep) {
-        const lines = [];
-        lines.push('Class\tSupport\tPrecision\tRecall\tF1');
-        for (const c of rep.perClass) {
-            lines.push(`${c.label}\t${c.support}\t${c.precision.toFixed(4)}\t${c.recall.toFixed(4)}\t${c.f1.toFixed(4)}`);
-        }
-        const a = rep.averages;
-        lines.push('');
-        lines.push(`Accuracy:\t${a.accuracy.toFixed(4)}`);
-        lines.push(`Macro P/R/F1:\t${a.macroPrecision.toFixed(4)}\t${a.macroRecall.toFixed(4)}\t${a.macroF1.toFixed(4)}`);
-        lines.push(`Micro P/R/F1:\t${a.microPrecision.toFixed(4)}\t${a.microRecall.toFixed(4)}\t${a.microF1.toFixed(4)}`);
-        lines.push(`Weighted P/R/F1:\t${a.weightedPrecision.toFixed(4)}\t${a.weightedRecall.toFixed(4)}\t${a.weightedF1.toFixed(4)}`);
-        if (a.logLoss !== undefined)
-            lines.push(`LogLoss:\t${a.logLoss.toFixed(6)}`);
-        if (a.topKAccuracy !== undefined)
-            lines.push(`TopK Acc:\t${a.topKAccuracy.toFixed(4)}`);
-        return lines.join('\n');
-    }
-
-    // KernelELM.ts — Kernel Extreme Learning Machine (Exact + Nyström + Whitening)
-    // Dependencies: Matrix (multiply, transpose, addRegularization, solveCholesky, identity, zeros)
-    class KernelRegistry {
-        static register(name, fn) {
-            if (!name || typeof fn !== 'function')
-                throw new Error('KernelRegistry.register: invalid args');
-            this.map.set(name, fn);
-        }
-        static get(name) {
-            const f = this.map.get(name);
-            if (!f)
-                throw new Error(`KernelRegistry: kernel "${name}" not found`);
-            return f;
-        }
-    }
-    KernelRegistry.map = new Map();
-    function l2sq(a, b) {
-        let s = 0;
-        for (let i = 0; i < a.length; i++) {
-            const d = a[i] - b[i];
-            s += d * d;
-        }
-        return s;
-    }
-    function l1(a, b) {
-        let s = 0;
-        for (let i = 0; i < a.length; i++)
-            s += Math.abs(a[i] - b[i]);
-        return s;
-    }
-    function dot(a, b) {
-        let s = 0;
-        for (let i = 0; i < a.length; i++)
-            s += a[i] * b[i];
-        return s;
-    }
-    function softmaxRow(v) {
-        const m = Math.max(...v);
-        const ex = v.map(x => Math.exp(x - m));
-        const s = ex.reduce((a, b) => a + b, 0) || 1;
-        return ex.map(e => e / s);
-    }
-    function makePRNG(seed = 123456789) {
-        let s = seed | 0 || 1;
-        return () => { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return (s >>> 0) / 0xffffffff; };
-    }
-    function buildKernel(spec, dim) {
-        var _a, _b, _c, _d, _e;
-        switch (spec.type) {
-            case 'custom':
-                if (!spec.name)
-                    throw new Error('custom kernel requires "name"');
-                return KernelRegistry.get(spec.name);
-            case 'linear':
-                return (x, z) => dot(x, z);
-            case 'poly': {
-                const gamma = (_a = spec.gamma) !== null && _a !== void 0 ? _a : 1 / Math.max(1, dim);
-                const degree = (_b = spec.degree) !== null && _b !== void 0 ? _b : 2;
-                const coef0 = (_c = spec.coef0) !== null && _c !== void 0 ? _c : 1;
-                return (x, z) => Math.pow(gamma * dot(x, z) + coef0, degree);
-            }
-            case 'laplacian': {
-                const gamma = (_d = spec.gamma) !== null && _d !== void 0 ? _d : 1 / Math.max(1, dim);
-                return (x, z) => Math.exp(-gamma * l1(x, z));
-            }
-            case 'rbf':
-            default: {
-                const gamma = (_e = spec.gamma) !== null && _e !== void 0 ? _e : 1 / Math.max(1, dim);
-                return (x, z) => Math.exp(-gamma * l2sq(x, z));
-            }
-        }
-    }
-    /* ============== Landmark selection (Nyström) ============== */
-    function pickUniform(X, m, seed = 1337) {
-        const prng = makePRNG(seed);
-        const N = X.length;
-        const idx = Array.from({ length: N }, (_, i) => i);
-        // Fisher–Yates (only first m)
-        for (let i = 0; i < m; i++) {
-            const j = i + Math.floor(prng() * (N - i));
-            const t = idx[i];
-            idx[i] = idx[j];
-            idx[j] = t;
-        }
-        return idx.slice(0, m);
-    }
-    function pickKMeansPP(X, m, seed = 1337) {
-        const prng = makePRNG(seed);
-        const N = X.length;
-        if (m >= N)
-            return Array.from({ length: N }, (_, i) => i);
-        const centers = [];
-        centers.push(Math.floor(prng() * N));
-        const D2 = new Float64Array(N).fill(Infinity);
-        while (centers.length < m) {
-            const c = centers[centers.length - 1];
-            for (let i = 0; i < N; i++) {
-                const d2 = l2sq(X[i], X[c]);
-                if (d2 < D2[i])
-                    D2[i] = d2;
-            }
-            let sum = 0;
-            for (let i = 0; i < N; i++)
-                sum += D2[i];
-            let r = prng() * (sum || 1);
-            let next = 0;
-            for (let i = 0; i < N; i++) {
-                r -= D2[i];
-                if (r <= 0) {
-                    next = i;
-                    break;
-                }
-            }
-            centers.push(next);
-        }
-        return centers;
-    }
-    /* ====================== KernelELM ====================== */
-    class KernelELM {
-        constructor(config) {
-            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s;
-            // exact mode params
-            this.Xtrain = [];
-            this.alpha = [];
-            // nystrom params
-            this.Z = []; // landmarks (m x D)
-            this.W = []; // weights in feature space (m x K)
-            this.R = []; // symmetric whitener K_mm^{-1/2} (m x m) when whitening
-            const resolved = {
-                outputDim: config.outputDim,
-                kernel: config.kernel,
-                ridgeLambda: (_a = config.ridgeLambda) !== null && _a !== void 0 ? _a : 1e-2,
-                task: (_b = config.task) !== null && _b !== void 0 ? _b : 'classification',
-                mode: (_c = config.mode) !== null && _c !== void 0 ? _c : 'exact',
-                nystrom: {
-                    m: (_d = config.nystrom) === null || _d === void 0 ? void 0 : _d.m,
-                    strategy: (_f = (_e = config.nystrom) === null || _e === void 0 ? void 0 : _e.strategy) !== null && _f !== void 0 ? _f : 'uniform',
-                    seed: (_h = (_g = config.nystrom) === null || _g === void 0 ? void 0 : _g.seed) !== null && _h !== void 0 ? _h : 1337,
-                    preset: (_j = config.nystrom) === null || _j === void 0 ? void 0 : _j.preset,
-                    whiten: (_l = (_k = config.nystrom) === null || _k === void 0 ? void 0 : _k.whiten) !== null && _l !== void 0 ? _l : false,
-                    jitter: (_o = (_m = config.nystrom) === null || _m === void 0 ? void 0 : _m.jitter) !== null && _o !== void 0 ? _o : 1e-10,
-                },
-                log: {
-                    modelName: (_q = (_p = config.log) === null || _p === void 0 ? void 0 : _p.modelName) !== null && _q !== void 0 ? _q : 'KernelELM',
-                    verbose: (_s = (_r = config.log) === null || _r === void 0 ? void 0 : _r.verbose) !== null && _s !== void 0 ? _s : false,
-                },
-            };
-            this.cfg = resolved;
-            this.verbose = this.cfg.log.verbose;
-            this.name = this.cfg.log.modelName;
-        }
-        /* ------------------- Train ------------------- */
-        fit(X, Y) {
-            var _a, _b, _c, _d, _e;
-            if (!(X === null || X === void 0 ? void 0 : X.length) || !((_a = X[0]) === null || _a === void 0 ? void 0 : _a.length))
-                throw new Error('KernelELM.fit: empty X');
-            if (!(Y === null || Y === void 0 ? void 0 : Y.length) || !((_b = Y[0]) === null || _b === void 0 ? void 0 : _b.length))
-                throw new Error('KernelELM.fit: empty Y');
-            if (X.length !== Y.length)
-                throw new Error(`KernelELM.fit: X rows ${X.length} != Y rows ${Y.length}`);
-            if (Y[0].length !== this.cfg.outputDim) {
-                throw new Error(`KernelELM.fit: Y dims ${Y[0].length} != outputDim ${this.cfg.outputDim}`);
-            }
-            const N = X.length, D = X[0].length, K = Y[0].length;
-            this.kernel = buildKernel(this.cfg.kernel, D);
-            if (this.cfg.mode === 'exact') {
-                // Gram K (N x N)
-                if (this.verbose)
-                    console.log(`🔧 [${this.name}] exact Gram: N=${N}, D=${D}`);
-                const Kmat = new Array(N);
-                for (let i = 0; i < N; i++) {
-                    const row = new Array(N);
-                    Kmat[i] = row;
-                    row[i] = 1;
-                    for (let j = i + 1; j < N; j++)
-                        row[j] = this.kernel(X[i], X[j]);
-                }
-                for (let i = 1; i < N; i++)
-                    for (let j = 0; j < i; j++)
-                        Kmat[i][j] = Kmat[j][i];
-                // (K + λI) α = Y
-                const A = Matrix.addRegularization(Kmat, this.cfg.ridgeLambda + 1e-10);
-                const Alpha = Matrix.solveCholesky(A, Y, 1e-12); // (N x K)
-                this.Xtrain = X.map(r => r.slice());
-                this.alpha = Alpha;
-                this.Z = [];
-                this.W = [];
-                this.R = [];
-                if (this.verbose)
-                    console.log(`✅ [${this.name}] exact fit complete: alpha(${N}x${K})`);
-                return;
-            }
-            // ---------- Nyström ----------
-            const ny = this.cfg.nystrom;
-            let Z;
-            if (ny.strategy === 'preset' && (((_c = ny.preset) === null || _c === void 0 ? void 0 : _c.points) || ((_d = ny.preset) === null || _d === void 0 ? void 0 : _d.indices))) {
-                Z = ny.preset.points ? ny.preset.points.map(r => r.slice())
-                    : ny.preset.indices.map(i => X[i]);
-            }
-            else {
-                const m = (_e = ny.m) !== null && _e !== void 0 ? _e : Math.max(10, Math.min(300, Math.floor(Math.sqrt(N))));
-                const idx = (ny.strategy === 'kmeans++') ? pickKMeansPP(X, m, ny.seed) : pickUniform(X, m, ny.seed);
-                Z = idx.map(i => X[i]);
-            }
-            const m = Z.length;
-            if (this.verbose)
-                console.log(`🔹 [${this.name}] Nyström: m=${m}, strategy=${ny.strategy}, whiten=${ny.whiten ? 'on' : 'off'}`);
-            // K_nm (N x m)
-            const Knm = new Array(N);
-            for (let i = 0; i < N; i++) {
-                const row = new Array(m), xi = X[i];
-                for (let j = 0; j < m; j++)
-                    row[j] = this.kernel(xi, Z[j]);
-                Knm[i] = row;
-            }
-            // Optional whitening with R = K_mm^{-1/2} (symmetric via eigen)
-            let Phi = Knm;
-            let R = [];
-            if (ny.whiten) {
-                // K_mm (m x m)
-                const Kmm = new Array(m);
-                for (let i = 0; i < m; i++) {
-                    const row = new Array(m);
-                    Kmm[i] = row;
-                    row[i] = 1;
-                    for (let j = i + 1; j < m; j++)
-                        row[j] = this.kernel(Z[i], Z[j]);
-                }
-                for (let i = 1; i < m; i++)
-                    for (let j = 0; j < i; j++)
-                        Kmm[i][j] = Kmm[j][i];
-                // R = K_mm^{-1/2} with jitter
-                const KmmJ = Matrix.addRegularization(Kmm, ny.jitter);
-                R = Matrix.invSqrtSym(KmmJ, ny.jitter);
-                Phi = Matrix.multiply(Knm, R); // (N x m)
-            }
-            // Ridge in feature space: W = (Φᵀ Φ + λ I)^-1 Φᵀ Y   (m x K)
-            const PhiT = Matrix.transpose(Phi);
-            const G = Matrix.multiply(PhiT, Phi); // (m x m)
-            const Greg = Matrix.addRegularization(G, this.cfg.ridgeLambda + 1e-10);
-            const Rhs = Matrix.multiply(PhiT, Y); // (m x K)
-            const W = Matrix.solveCholesky(Greg, Rhs, 1e-12); // (m x K)
-            this.Z = Z;
-            this.W = W;
-            this.R = R; // empty when whiten=false
-            this.Xtrain = [];
-            this.alpha = [];
-            if (this.verbose)
-                console.log(`✅ [${this.name}] Nyström fit complete: Z(${m}x${D}), W(${m}x${K})`);
-        }
-        /* --------------- Features / Predict --------------- */
-        featuresFor(X) {
-            if (this.cfg.mode === 'exact') {
-                const N = this.Xtrain.length, M = X.length;
-                const Kqx = new Array(M);
-                for (let i = 0; i < M; i++) {
-                    const row = new Array(N), xi = X[i];
-                    for (let j = 0; j < N; j++)
-                        row[j] = this.kernel(xi, this.Xtrain[j]);
-                    Kqx[i] = row;
-                }
-                return Kqx;
-            }
-            // Nyström
-            if (!this.Z.length)
-                throw new Error('featuresFor: Nyström model not fitted');
-            const M = X.length, m = this.Z.length;
-            const Kxm = new Array(M);
-            for (let i = 0; i < M; i++) {
-                const row = new Array(m), xi = X[i];
-                for (let j = 0; j < m; j++)
-                    row[j] = this.kernel(xi, this.Z[j]);
-                Kxm[i] = row;
-            }
-            return this.R.length ? Matrix.multiply(Kxm, this.R) : Kxm;
-        }
-        /** Raw logits for batch (M x K) */
-        predictLogitsFromVectors(X) {
-            const Phi = this.featuresFor(X);
-            if (this.cfg.mode === 'exact') {
-                if (!this.alpha.length)
-                    throw new Error('predict: exact model not fitted');
-                return Matrix.multiply(Phi, this.alpha);
-            }
-            if (!this.W.length)
-                throw new Error('predict: Nyström model not fitted');
-            return Matrix.multiply(Phi, this.W);
-        }
-        /** Probabilities for classification; raw scores for regression */
-        predictProbaFromVectors(X) {
-            const logits = this.predictLogitsFromVectors(X);
-            return this.cfg.task === 'classification' ? logits.map(softmaxRow) : logits;
-        }
-        /** Top-K for classification */
-        predictTopKFromVectors(X, k = 5) {
-            const P = this.predictProbaFromVectors(X);
-            return P.map(row => row.map((p, i) => ({ index: i, prob: p }))
-                .sort((a, b) => b.prob - a.prob)
-                .slice(0, k));
-        }
-        /** Embedding for chaining:
-         *  - exact: Φ = K(X, X_train)  (M x N)
-         *  - nystrom: Φ = K(X, Z)      (M x m)  or K(X,Z)·R if whiten=true
-         */
-        getEmbedding(X) {
-            return this.featuresFor(X);
-        }
-        /* -------------------- JSON I/O -------------------- */
-        toJSON() {
-            const base = { config: Object.assign(Object.assign({}, this.cfg), { __version: 'kelm-2.1.0' }) };
-            if (this.cfg.mode === 'exact') {
-                return Object.assign(Object.assign({}, base), { X: this.Xtrain, alpha: this.alpha });
-            }
-            return Object.assign(Object.assign({}, base), { Z: this.Z, W: this.W, R: this.R.length ? this.R : undefined });
-        }
-        fromJSON(payload) {
-            var _a, _b, _c, _d, _e, _f, _g, _h;
-            const obj = typeof payload === 'string' ? JSON.parse(payload) : payload;
-            // Merge config (keep current defaults where missing)
-            this.cfg.kernel = Object.assign({}, obj.config.kernel);
-            this.cfg.ridgeLambda = (_a = obj.config.ridgeLambda) !== null && _a !== void 0 ? _a : this.cfg.ridgeLambda;
-            this.cfg.task = ((_b = obj.config.task) !== null && _b !== void 0 ? _b : this.cfg.task);
-            this.cfg.mode = ((_c = obj.config.mode) !== null && _c !== void 0 ? _c : this.cfg.mode);
-            this.cfg.nystrom = Object.assign(Object.assign({}, this.cfg.nystrom), ((_d = obj.config.nystrom) !== null && _d !== void 0 ? _d : {}));
-            // Restore params
-            if (obj.X && obj.alpha) {
-                this.Xtrain = obj.X.map(r => r.slice());
-                this.alpha = obj.alpha.map(r => r.slice());
-                this.Z = [];
-                this.W = [];
-                this.R = [];
-                const D = (_f = (_e = this.Xtrain[0]) === null || _e === void 0 ? void 0 : _e.length) !== null && _f !== void 0 ? _f : 1;
-                this.kernel = buildKernel(this.cfg.kernel, D);
-                return;
-            }
-            if (obj.Z && obj.W) {
-                this.Z = obj.Z.map(r => r.slice());
-                this.W = obj.W.map(r => r.slice());
-                this.R = obj.R ? obj.R.map(r => r.slice()) : [];
-                this.Xtrain = [];
-                this.alpha = [];
-                const D = (_h = (_g = this.Z[0]) === null || _g === void 0 ? void 0 : _g.length) !== null && _h !== void 0 ? _h : 1;
-                this.kernel = buildKernel(this.cfg.kernel, D);
-                return;
-            }
-            throw new Error('KernelELM.fromJSON: invalid payload');
-        }
     }
 
     class TFIDF {
@@ -5613,7 +5610,6 @@
     exports.IntentClassifier = IntentClassifier;
     exports.KNN = KNN;
     exports.KernelELM = KernelELM;
-    exports.KernelRegistry = KernelRegistry;
     exports.LanguageClassifier = LanguageClassifier;
     exports.Matrix = Matrix;
     exports.OnlineELM = OnlineELM;
@@ -5643,7 +5639,6 @@
     exports.normalizeConfig = normalizeConfig;
     exports.topKAccuracy = topKAccuracy;
     exports.wrapELM = wrapELM;
-    exports.wrapOnlineELM = wrapOnlineELM;
 
 }));
 //# sourceMappingURL=astermind.umd.js.map

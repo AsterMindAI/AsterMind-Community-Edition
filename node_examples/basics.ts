@@ -18,18 +18,18 @@
  *  - KELM (with Nyström + whitening) is sample-efficient and stabilizes cosine geometry.
  *
  * Minimal CLI flags (no deps):
- *   --topK=3            Top-K retrieval
- *   --m=256             Nyström landmarks
- *   --whiten=true       Apply whitening to Nyström features
- *   --ridge=0.01        Ridge regularization for KELM
- *   --gamma=auto        RBF gamma (auto uses median heuristic on X)
- *   --mode=nystrom      'nystrom' | 'exact'
- *   --saveEmb=emb.json  Optional: export target embeddings (E_targets)
- *   --saveKELM=kelm.json Optional: export trained KELM snapshot
+ *   --topK=3              Top-K retrieval
+ *   --m=256               Nyström landmarks
+ *   --whiten=true         Apply whitening to Nyström features
+ *   --ridge=0.01          Ridge regularization for KELM
+ *   --gamma=auto          RBF gamma (auto uses median heuristic on X)
+ *   --mode=nystrom        'nystrom' | 'exact'
+ *   --saveEmb=emb.json    Optional: export target embeddings (E_targets)
+ *   --saveKELM=kelm.json  Optional: export trained KELM snapshot
  *
  * Usage:
- *   npx ts-node deepelm-kelm-retrieval.ts
- *   npx ts-node deepelm-kelm-retrieval.ts --topK=5 --m=512 --whiten=true --ridge=0.02
+ *   npx ts-node --esm node_examples/deepelm-kelm-retrieval.ts
+ *   npx ts-node --esm node_examples/deepelm-kelm-retrieval.ts --topK=5 --m=512 --whiten=true --ridge=0.02
  *
  * Pipeline Overview:
  *
@@ -69,17 +69,13 @@
  *             Retrieved Answer(s)
  */
 
-import { UniversalEncoder } from "../src/preprocessing/UniversalEncoder";
-// Robust imports for KernelELM & EmbeddingStore regardless of default/named export form.
-import * as KELMMod from "../src/core/KernelELM";
-import * as StoreMod from "../src/core/EmbeddingStore";
-import * as DeepMod from "../src/core/DeepELM";
+import {
+    UniversalEncoder,
+    KernelELM,
+    DeepELM,
+    EmbeddingStore,
+} from "@astermind/astermind-elm";
 import * as fs from "fs";
-
-// Resolve modules
-const KernelELM: any = (KELMMod as any).KernelELM || (KELMMod as any).default;
-const EmbeddingStore: any = (StoreMod as any).EmbeddingStore || (StoreMod as any).default;
-const DeepELM: any = (DeepMod as any).DeepELM || (DeepMod as any).default;
 
 // ---------- tiny flag parser (no deps) ----------
 type Flags = Record<string, string | boolean>;
@@ -95,7 +91,7 @@ function parseFlags(argv: string[]): Flags {
 const flags = parseFlags(process.argv);
 
 const TOP_K = Number(flags.topK ?? 3);
-const M = Number(flags.m ?? 256);                 // Nyström landmarks
+const M = Number(flags.m ?? 256);              // Nyström landmarks
 const WHITEN = String(flags.whiten ?? "true") === "true";
 const RIDGE = Number(flags.ridge ?? 1e-2);
 const MODE = String(flags.mode ?? "nystrom") as "nystrom" | "exact";
@@ -108,7 +104,6 @@ const l2 = (v: number[]) => {
     const n = Math.sqrt(v.reduce((s, x) => s + x * x, 0));
     return n === 0 ? v : v.map((x) => x / n);
 };
-const dot = (a: number[], b: number[]) => a.reduce((s, x, i) => s + x * (b[i] || 0), 0);
 
 // Median heuristic for RBF gamma on X (uses random pair sampling)
 function medianGamma(X: number[][], maxPairs = 2000): number {
@@ -132,7 +127,7 @@ function medianGamma(X: number[][], maxPairs = 2000): number {
     vals.sort((a, b) => a - b);
     const med = vals[Math.floor(vals.length / 2)];
     if (med <= 1e-12) return 0.5;
-    // RBF: k(x,x') = exp(-gamma * ||x-x'||^2), median trick → gamma = 1/(2*median(||x-x'||^2))
+    // RBF: k(x,x') = exp(-gamma * ||x-x'||^2)
     return 1 / (2 * med);
 }
 
@@ -181,8 +176,6 @@ const encoder = new UniversalEncoder({
     maxLen: MAXLEN,
     mode: "char",
     useTokenizer: false,
-    // charset optional; UniversalEncoder has defaults, keep explicit if you prefer:
-    // charSet: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,:;!?()[]{}<>+-=*/%"\'' + '`' + '_#|\\ \t',
 });
 
 const X = pairs.map((p) => encoder.normalize(encoder.encode(p.query)));
@@ -238,9 +231,7 @@ const autoGamma = medianGamma(X);
 const gamma = String(flags.gamma ?? "auto") === "auto" ? autoGamma : Number(flags.gamma);
 
 console.log(
-    `⚙️ Training KELM (task=regression, mode=${MODE}, m=${M}, whiten=${WHITEN}, ridge=${RIDGE}, gamma=${gamma.toFixed(
-        6
-    )}) ...`
+    `⚙️ Training KELM (task=regression, mode=${MODE}, m=${M}, whiten=${WHITEN}, ridge=${RIDGE}, gamma=${gamma.toFixed(6)}) ...`
 );
 
 const kelm = new KernelELM({
@@ -248,7 +239,7 @@ const kelm = new KernelELM({
     task: "regression",
     ridgeLambda: RIDGE,
     mode: MODE,
-    nystrom: { m: M, whiten: WHITEN, strategy: "kmeans++" }, // 'uniform' also fine if kmeans++ not available
+    nystrom: { m: M, whiten: WHITEN }, // strategy optional; defaults are fine
     kernel: { type: "rbf", gamma },
 });
 
@@ -276,9 +267,8 @@ function retrieve(query: string, topK = TOP_K, tagFilter?: string): Hit[] {
     const hits = store.query({
         vec: qhat,
         topK,
-        metric: "cosine",
-        includeVectors: false,
-        filter: tagFilter ? (m: { tag: string; }) => m?.tag === tagFilter : undefined,
+        // metric defaults to cosine in most setups; omit if not in your signature
+        filter: tagFilter ? (m: any) => m?.tag === tagFilter : undefined,
     });
     return hits.map((h: any) => ({
         id: h.id,
