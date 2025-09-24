@@ -934,12 +934,62 @@
    <section class="slide" id="slide0" data-stage="overview"
          data-hero-h="280" data-left-h="420" data-right-h="360"> -->
 
+<!-- SLIDE: ABOUT / JOURNEY -->
+<section class="slide" id="slideAbout" data-stage="about" data-hero-h="420" data-left-h="420" data-right-h="420">
+  <figure class="hero" style="background-image: radial-gradient(900px 420px at 50% -120px, rgba(90,209,255,.12), rgba(10,20,45,0));">
+    <!-- Optional hero image (safe scaling) -->
+    <img src="images/me.png" alt="About & Journey" style="max-height:380px; width:auto; object-fit:contain; display:block; margin:0 auto;" />
+    <div class="caption">Who I Am & Why I Built This</div>
+  </figure>
+
+  <div class="left">
+    <div class="panel">
+      <h2>My Journey</h2>
+      <p>Hi, I’m <strong>Julian Wilkison-Duran</strong> (aka “Clock Work”). I began in <strong>clinical labs</strong>—hands-on with analyzers and diagnostics—which hard-wired me for experiments and reliability.</p>
+      <p>Then I moved into <strong>software engineering</strong>—Go, TypeScript/JavaScript, Kubernetes, Terraform, ArgoCD—building dependable systems at scale.</p>
+      <p>That blend of <em>science + engineering</em> led me to <strong>Extreme Learning Machines</strong>: fast to train, simple to run, perfect for the web.</p>
+      <p class="note">Question I asked: “Why can’t front-end engineers ship AI like they ship UI?”</p>
+      <div class="notes"><span class="label">Speaker notes</span>
+        Emphasize background (labs → software), the systems mindset, and how ELM’s speed/simplicity clicked for the browser. Transition to mission: practical AI for JS devs.
+      </div>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="panel">
+      <h2>Why AsterMind-ELM</h2>
+      <ul>
+        <li>⚡ <strong>Trains in seconds/minutes</strong> — iterate live</li>
+        <li>🌐 <strong>Runs in the browser</strong> — no servers/GPUs</li>
+        <li>🔒 <strong>Private</strong> — data stays on device</li>
+        <li>🔗 <strong>Composable</strong> — encoder → classifier → refiner</li>
+      </ul>
+
+      <div class="row" style="margin-top:8px; gap:8px; flex-wrap:wrap;">
+        <span class="chip">Senior Engineer @ Ippon</span>
+        <span class="chip">Former Clinical Scientist</span>
+        <span class="chip">Go / TS / K8s / Terraform</span>
+        <span class="chip">Creator: AsterMind-ELM</span>
+      </div>
+
+      <!-- (Optional) Add a small CTA row -->
+      <div style="margin-top:12px;">
+        <a href="https://www.npmjs.com/package/@astermind/astermind-elm" target="_blank" rel="noopener"
+           class="chip" style="text-decoration:none;">npm: @astermind/astermind-elm</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="footerBar"></div>
+</section>
+
       <!-- SLIDE: NEW FRONTIER -->
       <section class="slide" id="slideNewFrontier" data-stage="overview" data-hero-h="520" data-left-h="380"
         data-right-h="360">
-        <figure class="hero"
-          style="background-image: radial-gradient(800px 400px at 50% -120px, rgba(90,209,255,.15), rgba(10,20,45,.0));">
-          <img src="images/new-frontier.png" alt="A New Frontier in AI" />
+        <figure class="hero" style="background:transparent;">
+          <img src="images/new-frontier.png"
+              alt="A New Frontier in AI"
+              style="max-height:400px; width:auto; display:block; margin:0 auto;" />
           <div class="caption">Why this matters</div>
         </figure>
         <div class="left">
@@ -972,6 +1022,69 @@
         </div>
         <div class="footerBar"></div>
       </section>
+
+<!-- SLIDE: LIBRARY INTRO -->
+<section class="slide" id="slideLibrary" data-stage="overview" data-hero-h="480" data-left-h="380" data-right-h="360">
+  <figure class="hero" style="background-image: radial-gradient(900px 420px at 50% -120px, rgba(110,231,162,.12), rgba(10,20,45,0));">
+    <!-- Keep the hero as a subtle banner; do NOT use the QR here -->
+    <img src="images/library-intro.png" alt="Meet AsterMind-ELM" style="max-height:400px; width:auto; display:block; margin:0 auto;"/>
+    <div class="caption">Meet the library</div>
+  </figure>
+
+  <div class="left">
+    <div class="panel">
+      <h2>Meet AsterMind-ELM</h2>
+      <p><strong>AsterMind-ELM</strong> helps you build tiny, fast AI models <em>right in the browser</em>.</p>
+      <div class="kv"><code>npm i @astermind/astermind-elm</code></div>
+      <p class="note">Use it like any other JS library. Train in seconds; chain models for bigger tasks.</p>
+      <p>"LEGO for AI": fast to train, easy to compose, private by default.</p>
+            <!-- Add the QR here at a fixed size with a white pad for scanability -->
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:10px;">
+        <img
+          src="images/astermind-elm-npm-qr.png"
+          alt="QR code for AsterMind-ELM on npm"
+          style="width:180px; height:auto; background:#fff; padding:10px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.25);" />
+        <a href="https://www.npmjs.com/package/@astermind/astermind-elm" target="_blank" rel="noopener"
+           style="color:#e5efff; text-decoration:underline;">Open npm package</a>
+      </div>
+      <div class="notes"><span class="label">Speaker notes</span>
+        Position it as "LEGO for AI": fast to train, easy to compose, private by default.
+      </div>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="panel">
+      <h2>2-Minute Quickstart</h2>
+      <pre style="overflow:auto; font-size:.86rem; line-height:1.35; background:#071332; padding:10px; border-radius:8px; border:1px solid #203a7c;"><code>// Browser (ESM) example
+import { ELM, TFIDFVectorizer } from '@astermind/astermind-elm';
+
+// 1) Encode a small corpus
+const tfidf = new TFIDFVectorizer();
+await tfidf.fit(['hello world', 'hola mundo', 'bonjour monde']);
+
+// 2) Train a tiny classifier in seconds
+const X = tfidf.transform(['hello world', 'hola mundo', 'bonjour monde']);
+const y = [[1,0,0],[0,1,0],[0,0,1]]; // one-hot labels
+const model = new ELM({ hiddenUnits: 64, activation: 'leakyrelu', ridgeLambda: 1e-2 });
+model.train(X, y);
+
+// 3) Predict locally (no server needed)
+const x = tfidf.transform(['hola']);           // -> [[...features]] 
+const probs = model.predict(x);                // -> [[0.02, 0.95, 0.03]]
+
+// Tip: use a Web Worker for training to keep the UI smooth.</code></pre>
+
+      <ul class="note" style="margin-top:8px;">
+        <li>ESM or UMD, runs in browser & Node</li>
+        <li>Works great with Web Workers</li>
+        <li>Composable: encoder → classifier → refiner</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footerBar"></div>
+</section>
 
       <!-- SLIDE: OVERVIEW -->
       <section class="slide" id="slide0" data-stage="overview" data-hero-h="550">
@@ -1539,7 +1652,7 @@
           <p><a href="https://github.com/infiniteCrank/AsterMind-ELM" style="color:white;" target="_blank">
               https://github.com/infiniteCrank/AsterMind-ELM
             </a></p>
-          <img src="images/elm_qr_code.png" alt="Astermind-ELM logo">
+          <img src="images/elm_qr_code.png" alt="Astermind-ELM qr code">
         </div>
         <div class="right panel">
           <h2>Why Astermind-ELM?</h2>
@@ -1549,6 +1662,7 @@
             <li>🔧 Includes encoders (ELM, TF-IDF, Universal)</li>
             <li>🌐 Works in browser or Node</li>
           </ul>
+          <img src="images/astermind-elm-npm-qr.png" alt="Astermind-ELM qr code">
           <div class="notes">
             <span class="label">Speaker Notes</span>
             <p>Invite the audience to try Astermind-ELM themselves. Mention NPM install, GitHub link, and key features.

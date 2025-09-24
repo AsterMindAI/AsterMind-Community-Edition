@@ -6,6 +6,36 @@
 document.addEventListener('DOMContentLoaded', () => {
   const NOTES = {
     /* =========================
+   SLIDE About — Who I Am & Why I Built This
+   ========================= */
+slideAbout: {
+  left: `
+    <p>Hi, I’m <strong>Julian Wilkison-Duran</strong> (aka “Clock Work”). I started my career in <strong>clinical labs</strong>—phlebotomy, analyzers, diagnostics—so I’m wired for experiments and careful systems thinking.</p>
+
+    <p>I later moved into <strong>software engineering</strong>—Go, TypeScript/JavaScript, Kubernetes, Terraform, ArgoCD—building reliable systems at scale. That blend of science + engineering is what led me to <strong>Extreme Learning Machines</strong>.</p>
+
+    <p>ELMs train <em>fast</em> and are simple enough to run <em>in the browser</em>. I wondered: what if front-end engineers could build AI experiences with the same ease they compose UI? That’s why I built <strong>AsterMind-ELM</strong>—to make on-device, instant-train AI <em>practical</em> for JS developers.</p>
+  `,
+  right: `
+    <h3>At a Glance</h3>
+    <ul>
+      <li>👨‍💻 Senior Software Engineer (Ippon Technologies)</li>
+      <li>🔬 Former Clinical Laboratory Scientist</li>
+      <li>⚡ Science × Software × AI</li>
+      <li>🧩 Creator of <strong>AsterMind-ELM</strong></li>
+      <li>🎯 Mission: AI any JS engineer can use in minutes</li>
+    </ul>
+
+    <h4>Why This Library</h4>
+    <ul>
+      <li>Trains in <em>seconds/minutes</em>, not hours/days</li>
+      <li>Runs <em>in the browser</em> (no servers/GPUs)</li>
+      <li>Private by default (data stays on device)</li>
+      <li>Composable pipelines: encoder → classifier → refiner</li>
+    </ul>
+  `
+},
+    /* =========================
    SLIDE NewFrontier — A New Frontier in AI
    ========================= */
     slideNewFrontier: {
@@ -23,6 +53,28 @@ document.addEventListener('DOMContentLoaded', () => {
           <li><strong>Achievable:</strong> Keep it jargon-free.</li>
           <li><strong>Relevant:</strong> Directly useful to JS engineers building web apps.</li>
           <li><strong>Time-bound:</strong> Deliver in under 3 minutes.</li>
+        </ul>
+      `
+    },
+
+    /* =========================
+       SLIDE Library — Meet AsterMind-ELM
+       ========================= */
+    slideLibrary: {
+      left: `
+        <p><strong>AsterMind-ELM</strong> is a JavaScript/TypeScript library that lets you build tiny, fast AI models <em>right in the browser</em>.</p>
+        <p>Installation is just <code>npm i @astermind/astermind-elm</code>. You can import it like any other JS lib and run it in a Web Worker to keep the UI snappy.</p>
+        <p>Think of it like LEGO for AI: you can <em>train small models in seconds</em>, then chain them—an encoder, a classifier, a refiner—into powerful, private pipelines.</p>
+        <p>We’ll use it in today’s demos to show how you can go from raw text → features → instant predictions, all on-device.</p>
+      `,
+      right: `
+        <h3>For JS Engineers</h3>
+        <ul>
+          <li><strong>Install:</strong> <code>npm i @astermind/astermind-elm</code></li>
+          <li><strong>Use:</strong> ESM/UMD, runs in browser & Node</li>
+          <li><strong>Workers:</strong> Train/predict off the main thread</li>
+          <li><strong>Encoders:</strong> Built-in simple encoders (incl. TF-IDF)</li>
+          <li><strong>Compose:</strong> Chain models into pipelines</li>
         </ul>
       `
     },
