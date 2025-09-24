@@ -6,6 +6,27 @@
 document.addEventListener('DOMContentLoaded', () => {
   const NOTES = {
     /* =========================
+   SLIDE NewFrontier — A New Frontier in AI
+   ========================= */
+    slideNewFrontier: {
+      left: `
+        <p>Imagine training an AI model <strong>in your browser</strong> in just seconds. Not hours. Not days. Just seconds or minutes—while the page is open, right on your laptop.</p>
+        <p>Once trained, the model makes predictions instantly, without sending your data to the cloud. Everything happens locally, on your device.</p>
+        <p>Even more powerful: chain these tiny models into pipelines—encoder → classifier → refiner—so you get <strong>AI systems running in the browser</strong> that feel like magic.</p>
+        <p>This is new. It’s pioneering. And it could change how we build AI-powered applications on the web.</p>
+      `,
+      right: `
+        <h3>SMART Goal for This Slide</h3>
+        <ul>
+          <li><strong>Specific:</strong> Convey that in-browser AI can now train fast, run locally, and be composed.</li>
+          <li><strong>Measurable:</strong> Audience can repeat: “trains in seconds, runs in the browser, chainable.”</li>
+          <li><strong>Achievable:</strong> Keep it jargon-free.</li>
+          <li><strong>Relevant:</strong> Directly useful to JS engineers building web apps.</li>
+          <li><strong>Time-bound:</strong> Deliver in under 3 minutes.</li>
+        </ul>
+      `
+    },
+    /* =========================
        SLIDE 0 — OVERVIEW
        ========================= */
     slide0: {

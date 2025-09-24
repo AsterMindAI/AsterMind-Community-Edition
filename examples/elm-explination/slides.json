@@ -1,5 +1,10 @@
 [
   {
+    "id": "slideNewFrontier",
+    "title": "A New Frontier in AI",
+    "stage": "overview"
+  },
+  {
     "id": "slide0",
     "title": "Intro",
     "stage": "overview"
