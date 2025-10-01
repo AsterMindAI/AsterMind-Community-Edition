@@ -63,13 +63,10 @@ See [Releases](#releases) for full changelog.
 17. [Data Augmentation Utilities](#data-augmentation-utilities)  
 18. [IO Utilities (Experimental)](#io-utilities-experimental)  
 19. [Embedding Store](#embedding-store)  
-20. [Utilities: Matrix & Activations](#utilities-matrix--activations)  
-21. [Adapters & Chains](#adapters--chains)  
-22. [Workers: ELMWorker & ELMWorkerClient](#workers-elmworker--elmworkerclient)  
-23. [Example Demos and Scripts](#example-demos-and-scripts)  
-24. [Experiments and Results](#experiments-and-results)  
-25. [Releases](#releases)  
-26. [License](#license)
+20. [Example Demos and Scripts](#example-demos-and-scripts)  
+21. [Experiments and Results](#experiments-and-results)  
+22. [Releases](#releases)  
+23. [License](#license)
 
 ---
 
@@ -82,8 +79,8 @@ Welcome to **AsterMind**, a modular, decentralized ML framework built around coo
 
 This library preserves the core Extreme Learning Machine idea — random hidden layer, nonlinear activation, closed-form output solve — but extends it with:
 
-- Multiple activations (ReLU, LeakyReLU, Sigmoid, **Linear, GELU**)  
-- Xavier/Uniform/**He** initialization  
+- Multiple activations (ReLU, LeakyReLU, Sigmoid, Tanh, Linear, GELU)  
+- Xavier/uniform/He initialization  
 - Dropout on hidden activations  
 - Sample weighting  
 - Metrics gate (RMSE, MAE, Accuracy, F1, Cross-Entropy, R²)  
@@ -160,48 +157,26 @@ ol.update(Xt, Yt);
 ol.predictProbaFromVectors(Xq);
 ```
 
-**Notes**  
-- `forgettingFactor` controls how fast older observations decay (default 1.0).  
-- Two natural embedding modes: **hidden** (activations) or **logits** (pre-softmax). Use with `ELMAdapter` (see below).
-
 ---
 
 <a id="deepelm"></a>
 ## 🌊 DeepELM
 
-Stack multiple ELM layers for deep nonlinear embeddings and an optional top ELM classifier.
+Stack multiple ELM layers for deep nonlinear embeddings.
 
 ```ts
 import { DeepELM } from '@astermind/astermind-elm';
-const deep = new DeepELM({
-  inputDim: D,
-  layers: [{ hiddenUnits: 128 }, { hiddenUnits: 64 }],
-  numClasses: K
-});
-// 1) Unsupervised layer-wise training (autoencoders Y=X)
-const X_L = deep.fitAutoencoders(X);
-// 2) Supervised head (ELM) on last layer features
-deep.fitClassifier(X_L, Y);
-// 3) Predict
-const probs = deep.predictProbaFromVectors(Xq);
+const deep = new DeepELM([{ hiddenUnits: 128 }, { hiddenUnits: 64 }]);
+deep.fit(X, Y);
+deep.predictProbaFromVectors(Xq);
 ```
-
-**JSON I/O**  
-`toJSON()` and `fromJSON()` persist the full stack (AEs + classifier).
 
 ---
 
 <a id="web-worker-adapter"></a>
 ## 🧵 Web Worker Adapter
 
-Move heavy ops off the main thread. Provides `ELMWorker` + `ELMWorkerClient` for RPC-style training/prediction with progress events.
-
-- Initialize with `initELM(config)` or `initOnlineELM(config)`  
-- Train via `train` / `trainFromData` / `fit` / `update`  
-- Predict via `predict`, `predictFromVector`, or `predictLogits`  
-- Subscribe to progress callbacks per call
-
-See [Workers](#workers-elmworker--elmworkerclient) for full API.
+Move heavy ops off the main thread. Provides `ELMWorker` + `ELMWorkerClient`.
 
 ---
 
@@ -286,31 +261,27 @@ Because you can build AI systems that:
 ## 📚 Core API Documentation
 
 ### ELM  
-- `train`, `trainFromData`, `predict`, `predictFromVector`, `getEmbedding`, **`predictLogitsFromVectors`**, JSON I/O, metrics  
+- `train`, `trainFromData`, `predict`, `predictFromVector`, `getEmbedding`, JSON I/O, metrics  
 - `loadModelFromJSON`, `saveModelAsJSONFile`  
 - Evaluation: RMSE, MAE, Accuracy, F1, Cross-Entropy, R²  
-- Config highlights: `ridgeLambda`, `weightInit` (`uniform` | `xavier` | `he`), `seed`
 
 ### OnlineELM  
-- `init`, `update`, `fit`, `predictLogitsFromVectors`, `predictProbaFromVectors`, embeddings (hidden/logits), JSON I/O  
-- Config highlights: `inputDim`, `outputDim`, `hiddenUnits`, `activation`, `ridgeLambda`, `forgettingFactor`
+- `init`, `update`, `fit`, predictions, embeddings, JSON I/O  
 
 ### KernelELM  
 - `fit`, `predictProbaFromVectors`, `getEmbedding`, JSON I/O  
-- `mode: 'exact' | 'nystrom'`, kernels: `rbf | linear | poly | laplacian | custom`
 
 ### DeepELM  
-- `fitAutoencoders(X)`, `transform(X)`, `fitClassifier(X_L, Y)`, `predictProbaFromVectors(X)`  
-- `toJSON()`, `fromJSON()` for full-pipeline persistence
+- `fit`, `predict`, `getEmbedding`, JSON I/O  
 
 ### ELMChain  
-- sequential embeddings through multiple encoders
+- sequential embeddings through multiple encoders  
 
 ### TFIDFVectorizer  
-- `vectorize`, `vectorizeAll`
+- `vectorize`, `vectorizeAll`  
 
 ### KNN  
-- `find(queryVec, dataset, k, topX, metric)`
+- `find(queryVec, dataset, k, topX, metric)`  
 
 ---
 
@@ -323,7 +294,7 @@ Because you can build AI systems that:
 
 ### `trainFromData(X, Y, options?)`
 - `X`: Input matrix  
-- `Y`: Label matrix or one-hot  
+- `Y`: Label matrix  
 - `options`: `{ reuseWeights, weights }`  
 
 ### `predict(text, topK)`  
@@ -356,9 +327,7 @@ Because you can build AI systems that:
 | `metrics`            | `object`   | Thresholds (`rmse`, `mae`, `accuracy`, etc.).                 |
 | `log`                | `object`   | Logging config.                                               |
 | `dropout`            | `number`   | Dropout rate.                                                 |
-| `weightInit`         | `string`   | Initializer. (`uniform` | `xavier` | `he`)                    |
-| `ridgeLambda`        | `number`   | Ridge penalty for closed-form solve.                          |
-| `seed`               | `number`   | PRNG seed for reproducibility.                                |
+| `weightInit`         | `string`   | Initializer.                                                  |
 
 ---
 
@@ -409,63 +378,6 @@ Experimental and may be unstable.
 ## 🧰 Embedding Store
 
 Lightweight vector store with cosine/dot/euclidean KNN, unit-norm storage, ring buffer capacity.
-
-**Usage**
-```ts
-import { EmbeddingStore } from '@astermind/astermind-elm';
-
-const store = new EmbeddingStore({ capacity: 5000, normalize: true });
-store.add({ id: 'doc1', vector: [/* ... */], meta: { title: 'Hello' } });
-const hits = store.query({ vector: q, k: 10, metric: 'cosine' });
-```
-
----
-
-<a id="utilities-matrix--activations"></a>
-## 🔧 Utilities: Matrix & Activations
-
-**Matrix** – internal linear algebra utilities (multiply, transpose, addRegularization, solveCholesky, etc.).  
-**Activations** – `relu`, `leakyrelu`, `sigmoid`, `tanh`, `linear`, `gelu`, plus `softmax`, derivatives, and helpers (`get`, `getDerivative`, `getPair`).
-
----
-
-<a id="adapters--chains"></a>
-## 🔗 Adapters & Chains
-
-**ELMAdapter** wraps an `ELM` or `OnlineELM` to behave like an encoder for `ELMChain`:
-
-```ts
-import { ELMAdapter, wrapELM, wrapOnlineELM } from '@astermind/astermind-elm';
-
-const enc1 = wrapELM(elm);                          // uses elm.getEmbedding(X)
-const enc2 = wrapOnlineELM(online, { mode: 'logits' }); // 'hidden' or 'logits'
-const chain = new ELMChain([enc1, enc2], { normalizeFinal: true });
-
-const Z = chain.getEmbedding(X); // stacked embeddings
-```
-
----
-
-<a id="workers-elmworker--elmworkerclient"></a>
-## 🧱 Workers: ELMWorker & ELMWorkerClient
-
-**ELMWorker** (inside a Web Worker) exposes a tolerant RPC surface:  
-- lifecycle: `initELM`, `initOnlineELM`, `dispose`, `getKind`, `setVerbose`  
-- training: `train`, `fit`, `update`, `trainFromData` (all routed appropriately)  
-- prediction: `predict`, `predictFromVector`, `predictLogits`  
-- progress events: `{ type:'progress', phase, pct }` during training
-
-**ELMWorkerClient** (on the main thread) is a thin promise-based RPC client:
-
-```ts
-import { ELMWorkerClient } from '@astermind/astermind-elm/worker';
-
-const client = new ELMWorkerClient(new Worker(new URL('./ELMWorker.js', import.meta.url)));
-await client.initELM({ categories:['A','B'], hiddenUnits:128 });
-
-await client.elmTrain({}, (p) => console.log(p.phase, p.pct));
-const preds = await client.elmPredict('bonjour', 5);
-```
 
 ---
 
