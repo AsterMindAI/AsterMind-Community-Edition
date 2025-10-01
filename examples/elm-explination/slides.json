@@ -1,5 +1,20 @@
 [
   {
+  "id": "slideAbout",
+  "title": "Who I Am & Why I Built This",
+  "stage": "about"
+},
+  {
+    "id": "slideNewFrontier",
+    "title": "A New Frontier in AI",
+    "stage": "overview"
+  },
+    {
+    "id": "slideLibrary",
+    "title": "Meet AsterMind-ELM",
+    "stage": "overview"
+  },
+  {
     "id": "slide0",
     "title": "Intro",
     "stage": "overview"
