@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
    ========================= */
 slideAbout: {
   left: `
-    <p>Hi, I’m <strong>Julian Wilkison-Duran</strong> (aka “Clock Work”). I started my career in <strong>clinical labs</strong>—phlebotomy, analyzers, diagnostics—so I’m wired for experiments and careful systems thinking.</p>
+    <p>Hi, I’m <strong>Julian Wilkison-Duran</strong>. I started my career in <strong>clinical labs</strong>—phlebotomy, analyzers, diagnostics—so I’m wired for experiments and careful systems thinking.</p>
 
     <p>I later moved into <strong>software engineering</strong>—Go, TypeScript/JavaScript, Kubernetes, Terraform, ArgoCD—building reliable systems at scale. That blend of science + engineering is what led me to <strong>Extreme Learning Machines</strong>.</p>
 
