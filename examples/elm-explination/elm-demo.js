@@ -1124,9 +1124,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const DPR = window.devicePixelRatio || 1;
       function resize() {
         const W = c.clientWidth;
-        const H = CFG.heightCSS;
-        c.width = Math.max(1, W * DPR);
-        c.height = Math.max(1, H * DPR);
+        const H = c.clientHeight || c.parentElement?.clientHeight || CFG.heightCSS; // read live CSS height
+        c.width = Math.max(1, Math.round(W * DPR));
+        c.height = Math.max(1, Math.round(H * DPR));
         g.setTransform(DPR, 0, 0, DPR, 0, 0);
       }
       resize();
@@ -1134,7 +1134,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Geometry layout (in CSS pixels)
       function layout() {
-        const W = c.clientWidth, H = CFG.heightCSS;
+        const W = c.clientWidth, H = c.clientHeight || c.parentElement?.clientHeight || CFG.heightCSS;
         const pad = 40;
         const leftX = pad + 50;           // inputs end
         const sumX = Math.round(W * 0.38);
