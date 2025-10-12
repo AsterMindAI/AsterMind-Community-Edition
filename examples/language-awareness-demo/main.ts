@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 // @ts-ignore
 const AM = (window as any).astermind || {};
 const { LanguageClassifier } = AM;

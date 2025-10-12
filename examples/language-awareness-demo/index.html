@@ -1,10 +1,17 @@
+<!-- // © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713 -->
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>Language Awareness Demo</title>
   <style>
-    body { font-family: sans-serif; padding: 2rem; }
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+    }
+
     .confidence-bar {
       height: 24px;
       border-radius: 12px;
@@ -12,6 +19,7 @@
       overflow: hidden;
       margin-top: 1rem;
     }
+
     .confidence-fill {
       height: 100%;
       text-align: center;
@@ -21,12 +29,16 @@
     }
   </style>
 </head>
+
 <body>
   <h2>Language Classifier Awareness</h2>
   <input type="text" id="langInput" placeholder="Type something..." size="40" />
-  <div class="confidence-bar"><div id="langFill" class="confidence-fill" style="width:0%"></div></div>
-    <!-- 👇 Load library from public folder -->
-    <script src="/astermind.umd.js"></script>
-    <script type="module" src="./main.ts"></script>
+  <div class="confidence-bar">
+    <div id="langFill" class="confidence-fill" style="width:0%"></div>
+  </div>
+  <!-- 👇 Load library from public folder -->
+  <script src="/astermind.umd.js"></script>
+  <script type="module" src="./main.ts"></script>
 </body>
+
 </html>

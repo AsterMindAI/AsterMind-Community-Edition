@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 /**
  * Weighted Hybrid Multi-Level Retrieval — Residual Student + RRF (Markdown Corpus)
  *

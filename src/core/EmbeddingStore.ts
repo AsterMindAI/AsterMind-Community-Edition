@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 // EmbeddingStore.ts — Powerful in-memory vector store with fast KNN, thresholds, and JSON I/O
 
 export type Metric = 'cosine' | 'dot' | 'euclidean' | 'manhattan';

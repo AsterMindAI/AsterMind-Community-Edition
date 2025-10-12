@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 // FeatureCombinerELM.ts — combine encoder vectors + metadata, train numeric ELM
 
 import { ELM } from '../core/ELM';

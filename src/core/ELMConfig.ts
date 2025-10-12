@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 // ELMConfig.ts - Configuration interfaces, defaults, helpers for ELM-based models
 
 /* =========== Types =========== */

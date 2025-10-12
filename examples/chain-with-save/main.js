@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 /* ELM Showcase 2.0 — main thread
    - Orchestrates UI and a Web Worker that trains/evaluates
    - Requires window.astermind to be available globally

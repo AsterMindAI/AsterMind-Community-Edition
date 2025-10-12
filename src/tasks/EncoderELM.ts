@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 // EncoderELM.ts — string→vector encoder using ELM (batch) + OnlineELM (incremental)
 
 import { ELM } from '../core/ELM';

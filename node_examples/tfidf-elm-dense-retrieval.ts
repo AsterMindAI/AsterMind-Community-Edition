@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 /**
  * Book Index — TF-IDF → ELM (Autoencoder) + Hybrid Re-rank (Dense ⊕ TF-IDF)
  *

@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 // Evaluation.ts — Classification & Regression metrics (no deps)
 
 const EPS = 1e-12;

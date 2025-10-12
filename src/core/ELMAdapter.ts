@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 // ELMAdapter.ts — unify ELM / OnlineELM as EncoderLike for ELMChain
 
 import type { EncoderLike } from './ELMChain';

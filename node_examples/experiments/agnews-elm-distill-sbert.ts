@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 /**
  * AG News — Distill SBERT into Lightweight ELM Students (with Deep Teacher option)
  *

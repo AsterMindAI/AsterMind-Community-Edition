@@ -57,7 +57,11 @@
     "browser",
     "node"
   ],
-  "author": "Julian Wilkison-Duran <julianwilkisonduran@gmail.com>",
+  "author": "Julian Wilkison-Duran <clockworksyler@gmail.com>",
+  "company": "AsterMind LLC",
+  "founder": "Julian Wilkison-Duran",
+  "patentPending": "US 63/897,713",
+  "incorporationDate": "2025-10-10",
   "devDependencies": {
     "@types/csv-parse": "^1.1.12",
     "@types/node": "^24.0.3",

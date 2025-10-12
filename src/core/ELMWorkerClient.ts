@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 // src/workers/ELMWorkerClient.ts
 
 export type WorkerProgress = {

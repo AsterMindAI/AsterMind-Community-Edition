@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 /* global window, document, Worker, Blob, URL, FileReader */
 
 const DATA_URL = '/ag-news-classification-dataset/train.csv';

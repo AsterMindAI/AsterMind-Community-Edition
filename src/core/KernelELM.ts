@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 // KernelELM.ts — Kernel Extreme Learning Machine (Exact + Nyström + Whitening)
 // Dependencies: Matrix (multiply, transpose, addRegularization, solveCholesky, identity, zeros)
 

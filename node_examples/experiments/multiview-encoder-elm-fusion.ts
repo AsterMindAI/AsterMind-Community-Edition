@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 /**
  * Multi-View Encoder → Per-View ELM → Fusion → Indexer ELMChain → TF-IDF Hybrid Retrieval
  *

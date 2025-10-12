@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 // ConfidenceClassifierELM.ts — numeric confidence classifier on top of ELM
 // Upgrades:
 //  • Numeric-only pipeline (no tokenizer)
