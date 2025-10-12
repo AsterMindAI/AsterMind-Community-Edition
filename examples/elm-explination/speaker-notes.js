@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 /**
  * Injects detailed speaker notes for each slide.
  * - Left column: verbatim script (what to say)
@@ -8,15 +10,15 @@ document.addEventListener('DOMContentLoaded', () => {
     /* =========================
    SLIDE About — Who I Am & Why I Built This
    ========================= */
-slideAbout: {
-  left: `
+    slideAbout: {
+      left: `
     <p>Hi, I’m <strong>Julian Wilkison-Duran</strong>. I started my career in <strong>clinical labs</strong>—phlebotomy, analyzers, diagnostics—so I’m wired for experiments and careful systems thinking.</p>
 
     <p>I later moved into <strong>software engineering</strong>—Go, TypeScript/JavaScript, Kubernetes, Terraform, ArgoCD—building reliable systems at scale. That blend of science + engineering is what led me to <strong>Extreme Learning Machines</strong>.</p>
 
     <p>ELMs train <em>fast</em> and are simple enough to run <em>in the browser</em>. I wondered: what if front-end engineers could build AI experiences with the same ease they compose UI? That’s why I built <strong>AsterMind-ELM</strong>—to make on-device, instant-train AI <em>practical</em> for JS developers.</p>
   `,
-  right: `
+      right: `
     <h3>At a Glance</h3>
     <ul>
       <li>👨‍💻 Senior Software Engineer (Ippon Technologies)</li>
@@ -34,7 +36,7 @@ slideAbout: {
       <li>Composable pipelines: encoder → classifier → refiner</li>
     </ul>
   `
-},
+    },
     /* =========================
    SLIDE NewFrontier — A New Frontier in AI
    ========================= */

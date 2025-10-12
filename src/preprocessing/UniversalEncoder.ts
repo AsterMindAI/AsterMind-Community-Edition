@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 // UniversalEncoder.ts - Automatically selects appropriate encoder (char or token based)
 
 import { TextEncoder, TextEncoderConfig } from './TextEncoder';

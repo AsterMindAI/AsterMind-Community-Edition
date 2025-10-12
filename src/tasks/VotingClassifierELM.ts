@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 // VotingClassifierELM.ts — meta-classifier that learns to combine multiple ELMs' predictions
 
 import { ELM } from '../core/ELM';

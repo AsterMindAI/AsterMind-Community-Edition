@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 // ELM.ts - Core ELM logic with TypeScript types (numeric & text modes)
 
 import { Matrix, ensureRectNumber2D } from './Matrix';

@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 /* ELM Showcase 2.0 — worker
    - Owns all ELM instances; trains/evaluates off the main thread
    - Provides load → train → predict → export with schema migration

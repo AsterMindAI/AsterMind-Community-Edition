@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 // intentClassifier.ts — ELM-based intent classification (text → label)
 
 import { ELM } from '../core/ELM';

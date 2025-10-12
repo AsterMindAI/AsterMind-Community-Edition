@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 // OnlineELM.ts — Online / OS-ELM with RLS updates
 
 import { Matrix } from './Matrix';

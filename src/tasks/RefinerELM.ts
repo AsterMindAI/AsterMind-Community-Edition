@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 // RefinerELM.ts — numeric “refinement” classifier on top of arbitrary feature vectors
 
 import { ELM } from '../core/ELM';

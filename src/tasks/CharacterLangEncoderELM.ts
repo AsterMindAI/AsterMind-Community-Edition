@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 // CharacterLangEncoderELM.ts — robust char/token text encoder on top of ELM
 // Upgrades:
 //  • Safe preset extraction (no union-type errors on maxLen/charSet)

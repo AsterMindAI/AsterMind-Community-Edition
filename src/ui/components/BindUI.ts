@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 // BindUI.ts - Utility to bind ELM model to HTML inputs and outputs
 
 import { ELM } from '../../core/ELM';

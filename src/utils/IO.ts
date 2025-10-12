@@ -1,3 +1,5 @@
+// © 2025 AsterMind LLC – All Rights Reserved.
+// Patent Pending US 63/897,713
 // IO.ts - Import/export utilities for labeled training data
 
 export interface LabeledExample {
