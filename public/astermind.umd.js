@@ -4,6 +4,8 @@
     (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.astermind = {}));
 })(this, (function (exports) { 'use strict';
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // Matrix.ts — tolerant, safe helpers with dimension checks and stable ops
     class DimError extends Error {
         constructor(msg) {
@@ -429,6 +431,8 @@
         }
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // Activations.ts - Common activation functions (with derivatives)
     class Activations {
         /* ========= Forward ========= */
@@ -618,6 +622,8 @@
         }
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // ELMConfig.ts - Configuration interfaces, defaults, helpers for ELM-based models
     /* =========== Defaults =========== */
     const defaultBase = {
@@ -681,6 +687,8 @@
         return tc;
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     class Tokenizer {
         constructor(customDelimiter) {
             this.delimiter = customDelimiter || /[\s,.;!?()\[\]{}"']+/;
@@ -712,6 +720,8 @@
         }
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // TextEncoder.ts - Text preprocessing and one-hot encoding for ELM
     const defaultTextEncoderConfig = {
         charSet: 'abcdefghijklmnopqrstuvwxyz',
@@ -766,6 +776,8 @@
         }
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // UniversalEncoder.ts - Automatically selects appropriate encoder (char or token based)
     const defaultUniversalConfig = {
         charSet: 'abcdefghijklmnopqrstuvwxyz',
@@ -795,6 +807,8 @@
         }
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // Augment.ts - Basic augmentation utilities for category training examples
     class Augment {
         static addSuffix(text, suffixes) {
@@ -831,6 +845,8 @@
         }
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // ELM.ts - Core ELM logic with TypeScript types (numeric & text modes)
     // Seeded PRNG (xorshift-ish) for deterministic init
     function makePRNG$2(seed = 123456789) {
@@ -1444,6 +1460,8 @@
         }
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // KernelELM.ts — Kernel Extreme Learning Machine (Exact + Nyström + Whitening)
     // Dependencies: Matrix (multiply, transpose, addRegularization, solveCholesky, identity, zeros)
     class KernelRegistry {
@@ -1793,6 +1811,8 @@
         }
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // OnlineELM.ts — Online / OS-ELM with RLS updates
     /* ========== utils ========== */
     const EPS$3 = 1e-10;
@@ -2023,6 +2043,8 @@
         }
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // ELMChain.ts — simple encoder pipeline with checks, normalization, and profiling
     function l2NormalizeRows$1(M) {
         return M.map(row => {
@@ -2160,6 +2182,8 @@
         }
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // ELMAdapter.ts — unify ELM / OnlineELM as EncoderLike for ELMChain
     function assertNonEmptyBatch(X, where) {
         if (!Array.isArray(X) || X.length === 0 || !Array.isArray(X[0]) || X[0].length === 0) {
@@ -2260,6 +2284,8 @@
         return new ELMAdapter({ type: 'elm', model, name });
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // DeepELM.ts — stacked ELM autoencoders + top ELM classifier
     class DeepELM {
         constructor(cfg) {
@@ -2401,6 +2427,8 @@
         });
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // EmbeddingStore.ts — Powerful in-memory vector store with fast KNN, thresholds, and JSON I/O
     const EPS$2 = 1e-12;
     /* ================= math utils ================= */
@@ -2916,6 +2944,8 @@
         }
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // Evaluation.ts — Classification & Regression metrics (no deps)
     const EPS$1 = 1e-12;
     /* =========================
@@ -3433,6 +3463,8 @@
         return result;
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // src/workers/ELMWorkerClient.ts
     class ELMWorkerClient {
         constructor(worker) {
@@ -3495,6 +3527,8 @@
         oelmLoadJSON(json) { return this.call('oelm.loadJSON', { json }); }
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     class TFIDF {
         constructor(corpusDocs) {
             this.termFrequency = {};
@@ -3672,6 +3706,8 @@
         }
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     class KNN {
         /**
          * Compute cosine similarity between two numeric vectors.
@@ -3733,6 +3769,8 @@
         }
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // BindUI.ts - Utility to bind ELM model to HTML inputs and outputs
     function bindAutocompleteUI({ model, inputElement, outputElement, topK = 5 }) {
         inputElement.addEventListener('input', () => {
@@ -3754,6 +3792,8 @@
         });
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // Presets.ts — Reusable configuration presets for ELM (updated for new ELMConfig union)
     /**
      * NOTE:
@@ -3768,6 +3808,8 @@
         charSet: 'abcdefghijklmnopqrstuvwxyz',
         tokenizerDelimiter: /[\s,.;!?()\[\]{}"']+/};
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // ✅ AutoComplete.ts — ELM | KernelELM (Nyström+whiten) | OnlineELM
     // Fixes:
     //  • Avoids union narrowing on EnglishTokenPreset by shimming preset fields (no ExtendedELMConfig maxLen error)
@@ -4032,6 +4074,8 @@
         }
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // CharacterLangEncoderELM.ts — robust char/token text encoder on top of ELM
     // Upgrades:
     //  • Safe preset extraction (no union-type errors on maxLen/charSet)
@@ -4154,6 +4198,8 @@
         }
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // FeatureCombinerELM.ts — combine encoder vectors + metadata, train numeric ELM
     class FeatureCombinerELM {
         constructor(config) {
@@ -4251,6 +4297,8 @@
         }
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // ConfidenceClassifierELM.ts — numeric confidence classifier on top of ELM
     // Upgrades:
     //  • Numeric-only pipeline (no tokenizer)
@@ -4400,6 +4448,8 @@
         }
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // EncoderELM.ts — string→vector encoder using ELM (batch) + OnlineELM (incremental)
     class EncoderELM {
         constructor(config) {
@@ -4593,6 +4643,8 @@
         }
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // intentClassifier.ts — ELM-based intent classification (text → label)
     class IntentClassifier {
         constructor(config) {
@@ -4708,6 +4760,8 @@
         }
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // IO.ts - Import/export utilities for labeled training data
     class IO {
         static importJSON(json) {
@@ -4826,6 +4880,8 @@
         }
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // LanguageClassifier.ts — upgraded for new ELM/OnlineELM APIs (with requireEncoder guard)
     class LanguageClassifier {
         constructor(config) {
@@ -4994,6 +5050,8 @@
         }
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // RefinerELM.ts — numeric “refinement” classifier on top of arbitrary feature vectors
     class RefinerELM {
         constructor(opts) {
@@ -5091,6 +5149,8 @@
         }
     }
 
+    // © 2025 AsterMind LLC – All Rights Reserved.
+    // Patent Pending US 63/897,713
     // VotingClassifierELM.ts — meta-classifier that learns to combine multiple ELMs' predictions
     class VotingClassifierELM {
         // Keep constructor shape compatible with your existing calls

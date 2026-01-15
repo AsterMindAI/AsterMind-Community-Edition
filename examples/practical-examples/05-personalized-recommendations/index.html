@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personalized Recommendations - AsterMind ELM</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        
+        .explanation {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 1.5rem;
+            margin: 0;
+        }
+        
+        .explanation h2 {
+            color: #667eea;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .explanation p {
+            color: #374151;
+            line-height: 1.7;
+            margin-bottom: 1rem;
+        }
+        
+        .explanation p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .explanation strong {
+            color: #667eea;
+        }
+        
+        .interaction-section {
+            padding: 2rem;
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .item-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .item-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .item-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+        
+        .item-card.interacted {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+        
+        .item-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #1f2937;
+        }
+        
+        .item-category {
+            font-size: 0.85rem;
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+        }
+        
+        .item-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+        }
+        
+        .item-tag {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            background: #f3f4f6;
+            border-radius: 12px;
+            color: #6b7280;
+        }
+        
+        .recommendations-section {
+            padding: 2rem;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #1f2937;
+        }
+        
+        .recommendation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        
+        .recommendation-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .recommendation-card::before {
+            content: '⭐';
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            font-size: 1.5rem;
+        }
+        
+        .recommendation-score {
+            position: absolute;
+            top: 0.5rem;
+            left: 0.5rem;
+            background: rgba(255,255,255,0.2);
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .recommendation-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            margin-top: 1.5rem;
+        }
+        
+        .recommendation-category {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 0.5rem;
+        }
+        
+        .recommendation-reason {
+            font-size: 0.85rem;
+            opacity: 0.8;
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+        
+        .reset-btn {
+            padding: 0.75rem 1.5rem;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 1rem;
+        }
+        
+        .reset-btn:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+        }
+        
+        .stats {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: #f3f4f6;
+            border-radius: 8px;
+        }
+        
+        .stat-item {
+            flex: 1;
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: #6b7280;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Personalized Recommendations</h1>
+            <p>Learn from user interactions to provide personalized recommendations. Privacy-first, on-device learning.</p>
+        </div>
+        
+        <div class="explanation">
+            <h2>What This Demo Does</h2>
+            <p>This demo creates <strong>personalized recommendations</strong> based on user interactions. Click items you like, and the system learns your preferences. It then recommends similar items using semantic similarity - finding items with similar features, categories, and tags. The recommendations adapt in real-time as you interact with more items, building a personalized profile entirely in your browser.</p>
+            
+            <h2>Why AsterMind Makes This Possible</h2>
+            <p><strong>Hard-coded logic can't do this:</strong> Traditional recommendation systems use simple rules: "If user likes Action Movie, show other Action Movies" or "Show items with matching tags". But this misses semantic relationships - a user who likes "Action Movie" might also enjoy "Thriller Movie" or "Adventure Book" because they share semantic features (excitement, adventure). You'd need to manually create relationship graphs, maintain tag hierarchies, and still miss nuanced connections.</p>
+            
+            <p><strong>AsterMind enables:</strong> The ELM encoder creates semantic embeddings where similar items are close together in high-dimensional space. When you like "Action Movie" and "Sci-Fi Book", the system creates a user profile vector that captures your preference for "action" and "sci-fi" themes. It then finds items with similar semantic meaning using cosine similarity - discovering that "Thriller Movie" matches your profile even if it doesn't share exact tags. The system learns complex, multi-dimensional preferences that simple rules can't capture, enabling truly personalized recommendations that improve with each interaction.</p>
+        </div>
+        
+        <div class="interaction-section">
+            <h2 class="section-title">Browse Items (Click to interact)</h2>
+            <div class="item-grid" id="itemGrid"></div>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-label">Items Viewed</div>
+                    <div class="stat-value" id="viewedCount">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Items Liked</div>
+                    <div class="stat-value" id="likedCount">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Recommendations</div>
+                    <div class="stat-value" id="recommendationCount">0</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="recommendations-section">
+            <h2 class="section-title">Recommended for You</h2>
+            <div class="recommendation-grid" id="recommendationGrid">
+                <div style="padding: 2rem; text-align: center; color: #6b7280;">
+                    Interact with items above to see personalized recommendations!
+                </div>
+            </div>
+            <button class="reset-btn" onclick="resetInteractions()">Reset Interactions</button>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@astermind/astermind-elm/dist/astermind.umd.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
+
+
+
+

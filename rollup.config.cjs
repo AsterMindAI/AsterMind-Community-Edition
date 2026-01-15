@@ -57,7 +57,7 @@ module.exports = [
     {
         input: 'src/core/ELMWorker.ts',
         output: {
-            file: 'dist/core/ELMWorker.js',
+            file: 'dist/workers/elm-worker.js',
             format: 'esm',
             sourcemap: true,
         },

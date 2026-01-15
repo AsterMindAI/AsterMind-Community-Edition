@@ -59,7 +59,7 @@ SOFTWARE.
 ## Trademark and Brand
 
 **AsterMind™**, **AsterMind ELM™**, and related marks, logos, and designs are trademarks
-of **AsterMind LLC**. Any unauthorized use of these marks without written consent is
+of **AsterMind AI Corp**. Any unauthorized use of these marks without written consent is
 strictly prohibited.
 
 ---
@@ -68,7 +68,7 @@ strictly prohibited.
 
 This software was created independently by **Julian Wilkison-Duran**, outside of his
 employment with Ippon Technology (USA), Inc., and without the use of company resources
-or confidential information. All rights to this invention are retained by AsterMind LLC.
+or confidential information. All rights to this invention are retained by AsterMind AI Corp.
 
 ---
 

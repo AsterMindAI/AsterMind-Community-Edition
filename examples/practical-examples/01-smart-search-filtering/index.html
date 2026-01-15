@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Search & Filtering - AsterMind ELM</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        
+        .explanation {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 1.5rem;
+            margin: 0;
+        }
+        
+        .explanation h2 {
+            color: #667eea;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .explanation p {
+            color: #374151;
+            line-height: 1.7;
+            margin-bottom: 1rem;
+        }
+        
+        .explanation p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .explanation strong {
+            color: #667eea;
+        }
+        
+        .search-section {
+            padding: 2rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            transition: border-color 0.3s;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .stats {
+            margin-top: 1rem;
+            display: flex;
+            gap: 2rem;
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+        
+        .results {
+            padding: 2rem;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .result-item {
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            background: #f9fafb;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .result-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .result-title {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+        
+        .result-description {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+        
+        .result-score {
+            display: inline-block;
+            margin-top: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background: #667eea;
+            color: white;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+        }
+        
+        .error {
+            padding: 1rem;
+            background: #fee2e2;
+            color: #991b1b;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Smart Search & Filtering</h1>
+            <p>Real-time semantic search powered by AsterMind ELM. No server calls, instant results, privacy-first.</p>
+        </div>
+        
+        <div class="explanation">
+            <h2>What This Demo Does</h2>
+            <p>This demo shows <strong>semantic search</strong> - a search system that understands meaning, not just keywords. Type "wireless audio" and it finds "Bluetooth Headphones" even though they don't share exact words. Search for "track fitness" and it finds "Smart Fitness Tracker" because it understands the semantic relationship.</p>
+            
+            <h2>Why AsterMind Makes This Possible</h2>
+            <p><strong>Hard-coded logic can't do this:</strong> Traditional search uses exact keyword matching or simple regex patterns. If you search for "wireless audio", it won't find "Bluetooth Headphones" because there are no shared words. You'd need to manually create synonym lists, maintain complex rules, and still miss semantic relationships.</p>
+            
+            <p><strong>AsterMind enables:</strong> The ELM encoder learns semantic relationships from your data. It creates vector embeddings where similar meanings are close together in high-dimensional space. When you search, it finds items with similar semantic meaning using cosine similarity - something impossible with hard-coded rules. The model learns that "wireless", "Bluetooth", and "audio" are semantically related, enabling intelligent search that adapts to your specific content.</p>
+        </div>
+        
+        <div class="search-section">
+            <input 
+                type="text" 
+                id="searchInput" 
+                class="search-box" 
+                placeholder="Search products, descriptions, or features..."
+                autocomplete="off"
+            />
+            <div class="stats">
+                <span id="resultCount">0 results</span>
+                <span id="searchTime">0ms</span>
+            </div>
+        </div>
+        
+        <div class="results" id="results"></div>
+    </div>
+    
+    <!-- Load AsterMind from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@astermind/astermind-elm/dist/astermind.umd.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
+
+
+
+

@@ -1,6 +1,6 @@
 {
   "name": "@astermind/astermind-elm",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "JavaScript Extreme Learning Machine (ELM) library for browser and Node.js.",
   "license": "MIT",
   "type": "module",
@@ -35,6 +35,11 @@
     "dev:music": "DEMO=elm-drum-demo-mainthread vite",
     "dev:elm": "DEMO=elm-explination vite",
     "dev:lang": "DEMO=language-awareness-demo vite",
+    "dev:search": "DEMO=practical-examples/01-smart-search-filtering vite",
+    "dev:moderation": "DEMO=practical-examples/02-content-moderation vite",
+    "dev:form-autocomplete": "DEMO=practical-examples/03-smart-form-autocomplete vite",
+    "dev:intent": "DEMO=practical-examples/04-user-intent-classification vite",
+    "dev:recommendations": "DEMO=practical-examples/05-personalized-recommendations vite",
     "test": "vitest"
   },
   "publishConfig": {
