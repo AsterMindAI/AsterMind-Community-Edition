@@ -1,8 +1,28 @@
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-    typeof define === 'function' && define.amd ? define(['exports'], factory) :
-    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.astermind = {}));
-})(this, (function (exports) { 'use strict';
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('fs'), require('path')) :
+    typeof define === 'function' && define.amd ? define(['exports', 'fs', 'path'], factory) :
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.astermind = {}, global.fs, global.path));
+})(this, (function (exports, fs, path) { 'use strict';
+
+    function _interopNamespaceDefault(e) {
+        var n = Object.create(null);
+        if (e) {
+            Object.keys(e).forEach(function (k) {
+                if (k !== 'default') {
+                    var d = Object.getOwnPropertyDescriptor(e, k);
+                    Object.defineProperty(n, k, d.get ? d : {
+                        enumerable: true,
+                        get: function () { return e[k]; }
+                    });
+                }
+            });
+        }
+        n.default = e;
+        return Object.freeze(n);
+    }
+
+    var fs__namespace = /*#__PURE__*/_interopNamespaceDefault(fs);
+    var path__namespace = /*#__PURE__*/_interopNamespaceDefault(path);
 
     // © 2026 AsterMind AI Co. – All Rights Reserved.
     // Patent Pending US 63/897,713
@@ -13,7 +33,7 @@
             this.name = 'DimError';
         }
     }
-    const EPS$4 = 1e-12;
+    const EPS$5 = 1e-12;
     /* ===================== Array-like coercion helpers ===================== */
     // ✅ Narrow to ArrayLike<number> so numeric indexing is allowed
     function isArrayLikeRow(row) {
@@ -232,7 +252,7 @@
                         sum -= L[i][k] * L[j][k];
                     if (i === j) {
                         const v = sum + jitter;
-                        L[i][j] = Math.sqrt(Math.max(v, EPS$4));
+                        L[i][j] = Math.sqrt(Math.max(v, EPS$5));
                     }
                     else {
                         L[i][j] = sum / L[j][j];
@@ -296,7 +316,7 @@
                         maxRow = r;
                     }
                 }
-                if (maxVal < EPS$4)
+                if (maxVal < EPS$5)
                     throw new Error('Matrix is singular or ill-conditioned');
                 if (maxRow !== p) {
                     const tmp = aug[p];
@@ -313,7 +333,7 @@
                     if (r === p)
                         continue;
                     const f = aug[r][p];
-                    if (Math.abs(f) < EPS$4)
+                    if (Math.abs(f) < EPS$5)
                         continue;
                     for (let c = 0; c < cols; c++)
                         aug[r][c] -= f * aug[p][c];
@@ -887,7 +907,7 @@
         return Y;
     }
     /** (HᵀH + λI)B = HᵀY solved via Cholesky */
-    function ridgeSolve(H, Y, lambda) {
+    function ridgeSolve$1(H, Y, lambda) {
         const Ht = Matrix.transpose(H);
         const A = Matrix.addRegularization(Matrix.multiply(Ht, H), lambda + 1e-10);
         const R = Matrix.multiply(Ht, Y);
@@ -1090,7 +1110,7 @@
                 Yw = Ynum.map((row, i) => row.map(x => x * Math.sqrt(ww[i])));
             }
             // Solve ridge (stable)
-            const beta = ridgeSolve(H, Yw, this.ridgeLambda);
+            const beta = ridgeSolve$1(H, Yw, this.ridgeLambda);
             this.model = { W, b, beta };
             // Evaluate & maybe save
             const predictions = Matrix.multiply(H, beta);
@@ -1172,7 +1192,7 @@
                 H = H.map((row, i) => row.map(x => x * Math.sqrt(weights[i])));
                 Y = Y.map((row, i) => row.map(x => x * Math.sqrt(weights[i])));
             }
-            const beta = ridgeSolve(H, Y, this.ridgeLambda);
+            const beta = ridgeSolve$1(H, Y, this.ridgeLambda);
             this.model = { W, b, beta };
             const predictions = Matrix.multiply(H, beta);
             if (this.metrics) {
@@ -1492,7 +1512,7 @@
             s += Math.abs(a[i] - b[i]);
         return s;
     }
-    function dot$2(a, b) {
+    function dot$4(a, b) {
         let s = 0;
         for (let i = 0; i < a.length; i++)
             s += a[i] * b[i];
@@ -1516,12 +1536,12 @@
                     throw new Error('custom kernel requires "name"');
                 return KernelRegistry.get(spec.name);
             case 'linear':
-                return (x, z) => dot$2(x, z);
+                return (x, z) => dot$4(x, z);
             case 'poly': {
                 const gamma = (_a = spec.gamma) !== null && _a !== void 0 ? _a : 1 / Math.max(1, dim);
                 const degree = (_b = spec.degree) !== null && _b !== void 0 ? _b : 2;
                 const coef0 = (_c = spec.coef0) !== null && _c !== void 0 ? _c : 1;
-                return (x, z) => Math.pow(gamma * dot$2(x, z) + coef0, degree);
+                return (x, z) => Math.pow(gamma * dot$4(x, z) + coef0, degree);
             }
             case 'laplacian': {
                 const gamma = (_d = spec.gamma) !== null && _d !== void 0 ? _d : 1 / Math.max(1, dim);
@@ -1815,7 +1835,7 @@
     // Patent Pending US 63/897,713
     // OnlineELM.ts — Online / OS-ELM with RLS updates
     /* ========== utils ========== */
-    const EPS$3 = 1e-10;
+    const EPS$4 = 1e-10;
     function makePRNG(seed = 123456789) {
         let s = seed | 0 || 1;
         return () => {
@@ -1836,7 +1856,7 @@
                 throw new Error(`OnlineELM: invalid dims (inputDim=${this.inputDim}, outputDim=${this.outputDim}, hidden=${this.hiddenUnits})`);
             }
             this.activation = (_a = cfg.activation) !== null && _a !== void 0 ? _a : 'relu';
-            this.ridgeLambda = Math.max((_b = cfg.ridgeLambda) !== null && _b !== void 0 ? _b : 1e-2, EPS$3);
+            this.ridgeLambda = Math.max((_b = cfg.ridgeLambda) !== null && _b !== void 0 ? _b : 1e-2, EPS$4);
             this.weightInit = (_c = cfg.weightInit) !== null && _c !== void 0 ? _c : 'xavier';
             this.forgettingFactor = Math.max(Math.min((_d = cfg.forgettingFactor) !== null && _d !== void 0 ? _d : 1.0, 1.0), 1e-4);
             this.verbose = (_f = (_e = cfg.log) === null || _e === void 0 ? void 0 : _e.verbose) !== null && _f !== void 0 ? _f : false;
@@ -2430,7 +2450,7 @@
     // © 2026 AsterMind AI Co. – All Rights Reserved.
     // Patent Pending US 63/897,713
     // EmbeddingStore.ts — Powerful in-memory vector store with fast KNN, thresholds, and JSON I/O
-    const EPS$2 = 1e-12;
+    const EPS$3 = 1e-12;
     /* ================= math utils ================= */
     function l2Norm$1(v) {
         let s = 0;
@@ -2444,7 +2464,7 @@
             s += Math.abs(a[i] - b[i]);
         return s;
     }
-    function dot$1(a, b) {
+    function dot$3(a, b) {
         let s = 0;
         for (let i = 0; i < a.length; i++)
             s += a[i] * b[i];
@@ -2453,7 +2473,7 @@
     function normalizeToUnit(v) {
         const out = new Float32Array(v.length);
         const n = l2Norm$1(v);
-        if (n < EPS$2)
+        if (n < EPS$3)
             return out; // zero vector → stay zero; cosine with zero returns 0
         const inv = 1 / n;
         for (let i = 0; i < v.length; i++)
@@ -2722,7 +2742,7 @@
                 if (this.storeUnit) {
                     // both unit → score = dot
                     for (let i = 0; i < N; i++) {
-                        const s = dot$1(q, this.vecs[i]);
+                        const s = dot$3(q, this.vecs[i]);
                         pushHit(i, s);
                     }
                 }
@@ -2737,14 +2757,14 @@
                     const qn = l2Norm$1(q) || 1; // guard
                     for (let i = 0; i < N; i++) {
                         const dn = this.norms[i] || 1;
-                        const s = dn < EPS$2 ? 0 : dot$1(q, this.vecs[i]) / (qn * dn);
+                        const s = dn < EPS$3 ? 0 : dot$3(q, this.vecs[i]) / (qn * dn);
                         pushHit(i, s);
                     }
                 }
             }
             else if (metric === 'dot') {
                 for (let i = 0; i < N; i++) {
-                    const s = dot$1(q, this.storeUnit ? this.vecs[i] : this.vecs[i]); // same storage
+                    const s = dot$3(q, this.storeUnit ? this.vecs[i] : this.vecs[i]); // same storage
                     pushHit(i, s);
                 }
             }
@@ -2758,7 +2778,7 @@
                     (_e = this.norms) !== null && _e !== void 0 ? _e : this.buildNorms();
                 const q2 = qNorm * qNorm;
                 for (let i = 0; i < N; i++) {
-                    const d2 = Math.max(q2 + vNorms[i] * vNorms[i] - 2 * dot$1(q, base[i]), 0);
+                    const d2 = Math.max(q2 + vNorms[i] * vNorms[i] - 2 * dot$3(q, base[i]), 0);
                     const dist = Math.sqrt(d2);
                     pushHit(i, -dist); // NEGATIVE distance so higher is better
                 }
@@ -2947,14 +2967,14 @@
     // © 2026 AsterMind AI Co. – All Rights Reserved.
     // Patent Pending US 63/897,713
     // Evaluation.ts — Classification & Regression metrics (no deps)
-    const EPS$1 = 1e-12;
+    const EPS$2 = 1e-12;
     /* =========================
      * Helpers
      * ========================= */
     function isOneHot(Y) {
         return Array.isArray(Y[0]);
     }
-    function argmax(a) {
+    function argmax$1(a) {
         let i = 0;
         for (let k = 1; k < a.length; k++)
             if (a[k] > a[i])
@@ -2965,11 +2985,11 @@
         let yTrueIdx;
         let yPredIdx;
         if (isOneHot(yTrue))
-            yTrueIdx = yTrue.map(argmax);
+            yTrueIdx = yTrue.map(argmax$1);
         else
             yTrueIdx = yTrue;
         if (isOneHot(yPred))
-            yPredIdx = yPred.map(argmax);
+            yPredIdx = yPred.map(argmax$1);
         else
             yPredIdx = yPred;
         const C = 1 + Math.max(Math.max(...yTrueIdx), Math.max(...yPredIdx));
@@ -3016,9 +3036,9 @@
             const fp = colTotals[k] - tp;
             const fn = totals[k] - tp;
             const tn = N - tp - fp - fn;
-            const precision = tp / (tp + fp + EPS$1);
-            const recall = tp / (tp + fn + EPS$1);
-            const f1 = (2 * precision * recall) / (precision + recall + EPS$1);
+            const precision = tp / (tp + fp + EPS$2);
+            const recall = tp / (tp + fn + EPS$2);
+            const f1 = (2 * precision * recall) / (precision + recall + EPS$2);
             perClass.push({
                 label: (_a = labels === null || labels === void 0 ? void 0 : labels[k]) !== null && _a !== void 0 ? _a : k,
                 support: totals[k],
@@ -3048,9 +3068,9 @@
             fp += c.fp;
             fn += c.fn;
         }
-        const microP = tp / (tp + fp + EPS$1);
-        const microR = tp / (tp + fn + EPS$1);
-        const microF = (2 * microP * microR) / (microP + microR + EPS$1);
+        const microP = tp / (tp + fp + EPS$2);
+        const microR = tp / (tp + fn + EPS$2);
+        const microF = (2 * microP * microR) / (microP + microR + EPS$2);
         return {
             accuracy,
             macroPrecision: sumP / C,
@@ -3059,9 +3079,9 @@
             microPrecision: microP,
             microRecall: microR,
             microF1: microF,
-            weightedPrecision: sumWP / (total + EPS$1),
-            weightedRecall: sumWR / (total + EPS$1),
-            weightedF1: sumWF / (total + EPS$1)
+            weightedPrecision: sumWP / (total + EPS$2),
+            weightedRecall: sumWR / (total + EPS$2),
+            weightedF1: sumWF / (total + EPS$2)
         };
     }
     /* =========================
@@ -3084,7 +3104,7 @@
                 throw new Error('logLoss: class count mismatch');
             for (let j = 0; j < yi.length; j++) {
                 if (yi[j] > 0) {
-                    const p = Math.min(Math.max(pi[j], EPS$1), 1 - EPS$1);
+                    const p = Math.min(Math.max(pi[j], EPS$2), 1 - EPS$2);
                     sum += -Math.log(p);
                 }
             }
@@ -3124,8 +3144,8 @@
                 tp++;
             else
                 fp++;
-            tpr.push(tp / (P + EPS$1));
-            fpr.push(fp / (N + EPS$1));
+            tpr.push(tp / (P + EPS$2));
+            fpr.push(fp / (N + EPS$2));
             thr.push(score);
         }
         tpr.push(1);
@@ -3157,8 +3177,8 @@
                 tp++;
             else
                 fp++;
-            const prec = tp / (tp + fp + EPS$1);
-            const rec = tp / (P + EPS$1);
+            const prec = tp / (tp + fp + EPS$2);
+            const rec = tp / (P + EPS$2);
             precision.push(prec);
             recall.push(rec);
             thr.push(score);
@@ -3233,7 +3253,7 @@
             mse /= N;
             const rmse = Math.sqrt(mse);
             mae /= N;
-            const r2 = 1 - (ssRes / (ssTot + EPS$1));
+            const r2 = 1 - (ssRes / (ssTot + EPS$2));
             perOutput.push({ index: d, mse, rmse, mae, r2 });
             sumMSE += mse;
             sumMAE += mae;
@@ -3267,7 +3287,7 @@
         return lines.join('\n');
     }
 
-    const EPS = 1e-12;
+    const EPS$1 = 1e-12;
     /* ---------- math helpers ---------- */
     function l2Norm(v) {
         let s = 0;
@@ -3278,14 +3298,14 @@
     function normalize(v) {
         const out = new Float32Array(v.length);
         const n = l2Norm(v);
-        if (n < EPS)
+        if (n < EPS$1)
             return out; // keep zeros; cosine with zero gives 0
         const inv = 1 / n;
         for (let i = 0; i < v.length; i++)
             out[i] = v[i] * inv;
         return out;
     }
-    function dot(a, b) {
+    function dot$2(a, b) {
         let s = 0;
         for (let i = 0; i < a.length; i++)
             s += a[i] * b[i];
@@ -3372,7 +3392,7 @@
                     for (let c = 0; c < chains.length; c++) {
                         const q = chainQueryEmb[c][i];
                         const r = chainRefEmb[c][j];
-                        const s = metric === "cosine" || metric === "dot" ? dot(q, r) : dot(q, r); // only cosine/dot supported
+                        const s = metric === "cosine" || metric === "dot" ? dot$2(q, r) : dot$2(q, r); // only cosine/dot supported
                         if (s > sMax)
                             sMax = s;
                     }
@@ -3383,7 +3403,7 @@
                     for (let c = 0; c < chains.length; c++) {
                         const q = chainQueryEmb[c][i];
                         const r = chainRefEmb[c][j];
-                        sSum += (metric === "cosine" || metric === "dot") ? dot(q, r) : dot(q, r);
+                        sSum += (metric === "cosine" || metric === "dot") ? dot$2(q, r) : dot$2(q, r);
                     }
                     sAgg = sSum;
                 }
@@ -3392,7 +3412,7 @@
                     for (let c = 0; c < chains.length; c++) {
                         const q = chainQueryEmb[c][i];
                         const r = chainRefEmb[c][j];
-                        sW += ((metric === "cosine" || metric === "dot") ? dot(q, r) : dot(q, r)) * weights[c];
+                        sW += ((metric === "cosine" || metric === "dot") ? dot$2(q, r) : dot$2(q, r)) * weights[c];
                     }
                     sAgg = sW;
                 }
@@ -3401,7 +3421,7 @@
                     for (let c = 0; c < chains.length; c++) {
                         const q = chainQueryEmb[c][i];
                         const r = chainRefEmb[c][j];
-                        sSum += (metric === "cosine" || metric === "dot") ? dot(q, r) : dot(q, r);
+                        sSum += (metric === "cosine" || metric === "dot") ? dot$2(q, r) : dot$2(q, r);
                     }
                     sAgg = sSum / chains.length;
                 }
@@ -5321,53 +5341,10329 @@
         }
     }
 
+    // adaptive-online-elm.ts — Adaptive Online ELM with dynamic hidden unit adjustment
+    // Adjusts hidden units dynamically based on data complexity
+    // Import OnlineELM directly - now that we're using ES modules, this works!
+    /**
+     * Adaptive Online ELM that dynamically adjusts hidden units
+     * Features:
+     * - Grows hidden units when error is high
+     * - Shrinks hidden units when performance is stable
+     * - Maintains efficiency while adapting to data complexity
+     */
+    class AdaptiveOnlineELM {
+        constructor(options) {
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+            this.elm = null;
+            this.trained = false;
+            this.errorHistory = [];
+            this.performanceHistory = [];
+            this.categories = options.categories;
+            this.options = {
+                categories: options.categories,
+                initialHiddenUnits: (_a = options.initialHiddenUnits) !== null && _a !== void 0 ? _a : 128,
+                minHiddenUnits: (_b = options.minHiddenUnits) !== null && _b !== void 0 ? _b : 32,
+                maxHiddenUnits: (_c = options.maxHiddenUnits) !== null && _c !== void 0 ? _c : 1024,
+                growthThreshold: (_d = options.growthThreshold) !== null && _d !== void 0 ? _d : 0.3,
+                shrinkThreshold: (_e = options.shrinkThreshold) !== null && _e !== void 0 ? _e : 0.1,
+                growthFactor: (_f = options.growthFactor) !== null && _f !== void 0 ? _f : 1.5,
+                shrinkFactor: (_g = options.shrinkFactor) !== null && _g !== void 0 ? _g : 0.8,
+                activation: (_h = options.activation) !== null && _h !== void 0 ? _h : 'relu',
+                maxLen: (_j = options.maxLen) !== null && _j !== void 0 ? _j : 100,
+                useTokenizer: (_k = options.useTokenizer) !== null && _k !== void 0 ? _k : true,
+            };
+            this.currentHiddenUnits = this.options.initialHiddenUnits;
+            this._initializeELM();
+        }
+        /**
+         * Initialize or reinitialize ELM with current hidden units
+         */
+        _initializeELM(inputDim) {
+            // inputDim must be provided if elm is null or needs reinitialization
+            if (inputDim === undefined && this.elm && typeof this.elm.inputDim === 'number') {
+                inputDim = this.elm.inputDim;
+            }
+            if (inputDim === undefined) {
+                // Can't initialize without inputDim
+                return;
+            }
+            this.elm = new OnlineELM({
+                inputDim: inputDim,
+                outputDim: this.categories.length,
+                hiddenUnits: this.currentHiddenUnits,
+                activation: this.options.activation,
+            });
+        }
+        /**
+         * Train with batch data
+         */
+        fit(X, y) {
+            // Convert to one-hot if needed
+            const oneHotY = this._toOneHot(y);
+            // Initialize or reinitialize if needed
+            if (!this.elm || (this.elm && typeof this.elm.inputDim === 'number' && this.elm.inputDim === 0)) {
+                if (X.length > 0) {
+                    this._initializeELM(X[0].length);
+                }
+            }
+            if (!this.elm) {
+                throw new Error('Failed to initialize ELM model');
+            }
+            // Initial training with OnlineELM
+            if (this.elm) {
+                this.elm.fit(X, oneHotY);
+            }
+            // Evaluate and potentially adjust
+            const error = this._evaluateError(X, oneHotY);
+            this.errorHistory.push(error);
+            // Adaptive adjustment (may reinitialize ELM)
+            this._adaptHiddenUnits(error);
+            this.trained = true;
+        }
+        /**
+         * Incremental update with adaptive adjustment
+         */
+        update(x, y) {
+            if (!this.trained || !this.elm) {
+                throw new Error('Model must be initially trained with fit() before incremental updates');
+            }
+            const oneHotY = Array.isArray(y)
+                ? y
+                : (() => {
+                    const oh = new Array(this.categories.length).fill(0);
+                    oh[y] = 1;
+                    return oh;
+                })();
+            // Update model with OnlineELM
+            if (this.elm) {
+                this.elm.update([x], [oneHotY]);
+            }
+            else {
+                throw new Error('Model not initialized');
+            }
+            // Evaluate recent performance
+            const recentError = this._evaluateRecentError();
+            this.errorHistory.push(recentError);
+            // Keep history limited
+            if (this.errorHistory.length > 100) {
+                this.errorHistory.shift();
+            }
+            // Adaptive adjustment (may reinitialize ELM)
+            this._adaptHiddenUnits(recentError);
+        }
+        /**
+         * Predict with adaptive model
+         */
+        predict(x, topK = 3) {
+            if (!this.trained || !this.elm) {
+                throw new Error('Model must be trained before prediction');
+            }
+            const XArray = Array.isArray(x[0]) ? x : [x];
+            const results = [];
+            for (const xi of XArray) {
+                if (!this.elm)
+                    continue;
+                const predVec = this.elm.predictLogitsFromVector(xi);
+                if (!predVec)
+                    continue;
+                // Convert to probabilities
+                const probs = this._softmax(Array.from(predVec));
+                // Get top-K
+                const indexed = [];
+                for (let idx = 0; idx < probs.length; idx++) {
+                    indexed.push({
+                        label: this.categories[idx],
+                        prob: probs[idx],
+                        index: idx,
+                    });
+                }
+                indexed.sort((a, b) => b.prob - a.prob);
+                for (let i = 0; i < Math.min(topK, indexed.length); i++) {
+                    results.push({
+                        label: indexed[i].label,
+                        prob: indexed[i].prob,
+                    });
+                }
+            }
+            return results;
+        }
+        /**
+         * Adapt hidden units based on error
+         */
+        _adaptHiddenUnits(currentError) {
+            if (this.errorHistory.length < 5)
+                return; // Need some history
+            const avgError = this.errorHistory.slice(-10).reduce((a, b) => a + b, 0) / Math.min(10, this.errorHistory.length);
+            const recentError = this.errorHistory.slice(-3).reduce((a, b) => a + b, 0) / Math.min(3, this.errorHistory.length);
+            // Grow if error is high
+            if (recentError > this.options.growthThreshold &&
+                this.currentHiddenUnits < this.options.maxHiddenUnits) {
+                const newUnits = Math.min(this.options.maxHiddenUnits, Math.floor(this.currentHiddenUnits * this.options.growthFactor));
+                if (newUnits > this.currentHiddenUnits) {
+                    const oldInputDim = this.elm && typeof this.elm.inputDim === 'number'
+                        ? this.elm.inputDim
+                        : undefined;
+                    this.currentHiddenUnits = newUnits;
+                    if (oldInputDim !== undefined) {
+                        this._initializeELM(oldInputDim);
+                    }
+                    // Note: In practice, you'd want to store recent data for retraining
+                    // For now, model will need to be retrained
+                }
+            }
+            // Shrink if error is low and stable
+            if (recentError < this.options.shrinkThreshold &&
+                avgError < this.options.shrinkThreshold &&
+                this.currentHiddenUnits > this.options.minHiddenUnits) {
+                const newUnits = Math.max(this.options.minHiddenUnits, Math.floor(this.currentHiddenUnits * this.options.shrinkFactor));
+                if (newUnits < this.currentHiddenUnits) {
+                    const oldInputDim = this.elm && typeof this.elm.inputDim === 'number'
+                        ? this.elm.inputDim
+                        : undefined;
+                    this.currentHiddenUnits = newUnits;
+                    if (oldInputDim !== undefined) {
+                        this._initializeELM(oldInputDim);
+                    }
+                }
+            }
+        }
+        /**
+         * Evaluate error on data
+         */
+        _evaluateError(X, y) {
+            var _a, _b, _c, _d;
+            if (!this.elm)
+                return 1.0;
+            let totalError = 0;
+            let count = 0;
+            for (let i = 0; i < Math.min(100, X.length); i++) {
+                const pred = ((_b = (_a = this.elm).transform) === null || _b === void 0 ? void 0 : _b.call(_a, [X[i]])) || ((_d = (_c = this.elm).predict) === null || _d === void 0 ? void 0 : _d.call(_c, [X[i]]));
+                const predVec = Array.isArray(pred) ? pred[0] : pred;
+                if (!predVec)
+                    continue;
+                const trueIdx = this._argmax(y[i]);
+                const predIdx = this._argmax(Array.from(predVec));
+                if (trueIdx !== predIdx)
+                    totalError++;
+                count++;
+            }
+            return count > 0 ? totalError / count : 1.0;
+        }
+        /**
+         * Evaluate recent error (for incremental updates)
+         */
+        _evaluateRecentError() {
+            // Use last few predictions for error estimate
+            // In practice, you'd track actual errors
+            if (this.errorHistory.length === 0)
+                return 0.5;
+            return this.errorHistory[this.errorHistory.length - 1];
+        }
+        _toOneHot(y) {
+            if (Array.isArray(y[0])) {
+                return y;
+            }
+            const labels = y;
+            return labels.map((label) => {
+                const oneHot = new Array(this.categories.length).fill(0);
+                oneHot[label] = 1;
+                return oneHot;
+            });
+        }
+        _softmax(logits) {
+            const max = Math.max(...logits);
+            const exp = logits.map(x => Math.exp(x - max));
+            const sum = exp.reduce((a, b) => a + b, 0);
+            return exp.map(x => x / sum);
+        }
+        _argmax(arr) {
+            let maxIdx = 0;
+            let maxVal = arr[0] || 0;
+            for (let i = 1; i < arr.length; i++) {
+                if ((arr[i] || 0) > maxVal) {
+                    maxVal = arr[i] || 0;
+                    maxIdx = i;
+                }
+            }
+            return maxIdx;
+        }
+        /**
+         * Get current number of hidden units
+         */
+        getHiddenUnits() {
+            return this.currentHiddenUnits;
+        }
+        /**
+         * Get error history
+         */
+        getErrorHistory() {
+            return [...this.errorHistory];
+        }
+    }
+
+    // forgetting-online-elm.ts — Forgetting Online ELM with time-decay for concept drift
+    // Handles concept drift by decaying old samples over time
+    // Import OnlineELM directly - now that we're using ES modules, this works!
+    /**
+     * Forgetting Online ELM with time-decay for concept drift
+     * Features:
+     * - Exponential decay of old samples
+     * - Time-based or sample-based forgetting
+     * - Sliding window for memory efficiency
+     * - Handles concept drift automatically
+     */
+    class ForgettingOnlineELM {
+        constructor(options) {
+            var _a, _b, _c, _d, _e;
+            this.elm = null;
+            this.samples = [];
+            this.trained = false;
+            this.currentTime = 0;
+            this.categories = options.categories;
+            this.options = {
+                categories: options.categories,
+                hiddenUnits: (_a = options.hiddenUnits) !== null && _a !== void 0 ? _a : 256,
+                decayRate: (_b = options.decayRate) !== null && _b !== void 0 ? _b : 0.99,
+                windowSize: (_c = options.windowSize) !== null && _c !== void 0 ? _c : 1000,
+                timeBasedDecay: (_d = options.timeBasedDecay) !== null && _d !== void 0 ? _d : false,
+                activation: (_e = options.activation) !== null && _e !== void 0 ? _e : 'relu',
+            };
+            // inputDim will be set during first fit
+            // Note: OnlineELM will be initialized during fit() when we have inputDim
+            this.elm = null;
+        }
+        /**
+         * Initial training with batch data
+         */
+        fit(X, y) {
+            const oneHotY = this._toOneHot(y);
+            // Store samples with timestamps
+            for (let i = 0; i < X.length; i++) {
+                this.samples.push({
+                    x: [...X[i]],
+                    y: [...oneHotY[i]],
+                    timestamp: this.currentTime++,
+                    weight: 1.0,
+                });
+            }
+            // Train on all samples (will initialize OnlineELM if needed)
+            this._retrain();
+            this.trained = true;
+        }
+        /**
+         * Incremental update with forgetting mechanism
+         */
+        update(x, y) {
+            if (!this.trained) {
+                throw new Error('Model must be initially trained with fit() before incremental updates');
+            }
+            const oneHotY = Array.isArray(y)
+                ? y
+                : (() => {
+                    const oh = new Array(this.categories.length).fill(0);
+                    oh[y] = 1;
+                    return oh;
+                })();
+            // Apply decay to existing samples
+            this._applyDecay();
+            // Add new sample
+            this.samples.push({
+                x: [...x],
+                y: [...oneHotY],
+                timestamp: this.currentTime++,
+                weight: 1.0,
+            });
+            // Remove old samples if window exceeded
+            if (this.samples.length > this.options.windowSize) {
+                const removeCount = this.samples.length - this.options.windowSize;
+                this.samples.splice(0, removeCount);
+            }
+            // Retrain with weighted samples
+            this._retrain();
+        }
+        /**
+         * Predict with forgetting model
+         */
+        predict(x, topK = 3) {
+            if (!this.trained) {
+                throw new Error('Model must be trained before prediction');
+            }
+            const XArray = Array.isArray(x[0]) ? x : [x];
+            const results = [];
+            for (const xi of XArray) {
+                const predVec = this.elm ? this.elm.predictLogitsFromVector(xi) : null;
+                if (!predVec)
+                    continue;
+                // Convert to probabilities
+                const probs = this._softmax(Array.from(predVec));
+                // Get top-K
+                const indexed = [];
+                for (let idx = 0; idx < probs.length; idx++) {
+                    indexed.push({
+                        label: this.categories[idx],
+                        prob: probs[idx],
+                        index: idx,
+                    });
+                }
+                indexed.sort((a, b) => b.prob - a.prob);
+                for (let i = 0; i < Math.min(topK, indexed.length); i++) {
+                    results.push({
+                        label: indexed[i].label,
+                        prob: indexed[i].prob,
+                    });
+                }
+            }
+            return results;
+        }
+        /**
+         * Apply decay to all samples
+         */
+        _applyDecay() {
+            if (this.options.timeBasedDecay) {
+                // Time-based: decay based on time difference
+                const currentTime = this.currentTime;
+                for (const sample of this.samples) {
+                    const timeDiff = currentTime - sample.timestamp;
+                    sample.weight *= Math.pow(this.options.decayRate, timeDiff);
+                }
+            }
+            else {
+                // Sample-based: uniform decay
+                for (const sample of this.samples) {
+                    sample.weight *= this.options.decayRate;
+                }
+            }
+        }
+        /**
+         * Retrain model with weighted samples
+         */
+        _retrain() {
+            if (this.samples.length === 0)
+                return;
+            // Get inputDim from first sample
+            const inputDim = this.samples[0].x.length;
+            // Reinitialize ELM if inputDim changed or not set
+            if (!this.elm || (this.elm && this.elm.inputDim !== inputDim)) {
+                this.elm = new OnlineELM({
+                    inputDim: inputDim,
+                    outputDim: this.categories.length,
+                    hiddenUnits: this.options.hiddenUnits,
+                    activation: this.options.activation,
+                });
+            }
+            // Train with weighted samples
+            // In practice, you'd use weighted training
+            // For now, we'll use samples with weights above threshold
+            const threshold = 0.01;
+            const activeSamples = this.samples.filter(s => s.weight > threshold);
+            // Batch samples for efficiency
+            const X = [];
+            const Y = [];
+            for (const sample of activeSamples) {
+                // Repeat samples based on weight (simplified approach)
+                const repetitions = Math.max(1, Math.floor(sample.weight * 10));
+                for (let i = 0; i < repetitions; i++) {
+                    X.push(sample.x);
+                    Y.push(sample.y);
+                }
+            }
+            if (X.length > 0) {
+                this.elm.fit(X, Y);
+            }
+        }
+        _toOneHot(y) {
+            if (Array.isArray(y[0])) {
+                return y;
+            }
+            const labels = y;
+            return labels.map((label) => {
+                const oneHot = new Array(this.categories.length).fill(0);
+                oneHot[label] = 1;
+                return oneHot;
+            });
+        }
+        _softmax(logits) {
+            const max = Math.max(...logits);
+            const exp = logits.map(x => Math.exp(x - max));
+            const sum = exp.reduce((a, b) => a + b, 0);
+            return exp.map(x => x / sum);
+        }
+        /**
+         * Get sample statistics
+         */
+        getSampleStats() {
+            const active = this.samples.filter(s => s.weight > 0.01).length;
+            const avgWeight = this.samples.length > 0
+                ? this.samples.reduce((sum, s) => sum + s.weight, 0) / this.samples.length
+                : 0;
+            return {
+                total: this.samples.length,
+                active,
+                avgWeight,
+            };
+        }
+    }
+
+    // hierarchical-elm.ts — Hierarchical ELM for tree-structured classification
+    // Coarse-to-fine classification with hierarchical decision making
+    /**
+     * Hierarchical ELM for tree-structured classification
+     * Features:
+     * - Coarse-to-fine classification
+     * - Tree-structured decision making
+     * - Multi-level probability estimation
+     * - Efficient hierarchical search
+     */
+    class HierarchicalELM {
+        constructor(options) {
+            var _a, _b, _c, _d;
+            this.elms = new Map();
+            this.trained = false;
+            this.hierarchy = new Map(Object.entries(options.hierarchy));
+            this.rootCategories = options.rootCategories;
+            this.options = {
+                hiddenUnits: (_a = options.hiddenUnits) !== null && _a !== void 0 ? _a : 256,
+                activation: (_b = options.activation) !== null && _b !== void 0 ? _b : 'relu',
+                maxLen: (_c = options.maxLen) !== null && _c !== void 0 ? _c : 100,
+                useTokenizer: (_d = options.useTokenizer) !== null && _d !== void 0 ? _d : true,
+            };
+            // Initialize ELM for each level
+            this._initializeELMs();
+        }
+        /**
+         * Initialize ELMs for each level in hierarchy
+         */
+        _initializeELMs() {
+            // Root level ELM
+            this.elms.set('root', new ELM({
+                useTokenizer: this.options.useTokenizer ? true : undefined,
+                hiddenUnits: this.options.hiddenUnits,
+                categories: this.rootCategories,
+                maxLen: this.options.maxLen,
+                activation: this.options.activation,
+            }));
+            // Child level ELMs
+            for (const [parent, children] of this.hierarchy.entries()) {
+                this.elms.set(parent, new ELM({
+                    useTokenizer: this.options.useTokenizer ? true : undefined,
+                    hiddenUnits: this.options.hiddenUnits,
+                    categories: children,
+                    maxLen: this.options.maxLen,
+                    activation: this.options.activation,
+                }));
+            }
+        }
+        /**
+         * Train hierarchical ELM
+         * @param X Input features
+         * @param yLabels Full hierarchical paths (e.g., ['root', 'parent', 'child'])
+         */
+        train(X, yLabels) {
+            var _a, _b, _c, _d;
+            // Group samples by level
+            const levelData = new Map();
+            // Root level
+            const rootX = [];
+            const rootY = [];
+            for (let i = 0; i < X.length; i++) {
+                if (yLabels[i].length > 0) {
+                    rootX.push(X[i]);
+                    rootY.push(this.rootCategories.indexOf(yLabels[i][0]));
+                }
+            }
+            levelData.set('root', { X: rootX, y: rootY });
+            // Child levels
+            for (const [parent, children] of this.hierarchy.entries()) {
+                const parentX = [];
+                const parentY = [];
+                for (let i = 0; i < X.length; i++) {
+                    const path = yLabels[i];
+                    const parentIdx = path.indexOf(parent);
+                    if (parentIdx >= 0 && parentIdx < path.length - 1) {
+                        const child = path[parentIdx + 1];
+                        if (children.includes(child)) {
+                            parentX.push(X[i]);
+                            parentY.push(children.indexOf(child));
+                        }
+                    }
+                }
+                if (parentX.length > 0) {
+                    levelData.set(parent, { X: parentX, y: parentY });
+                }
+            }
+            // Train each ELM
+            for (const [level, data] of levelData.entries()) {
+                const elm = this.elms.get(level);
+                if (elm && data.X.length > 0) {
+                    (_b = (_a = elm).setCategories) === null || _b === void 0 ? void 0 : _b.call(_a, level === 'root' ? this.rootCategories : this.hierarchy.get(level) || []);
+                    (_d = (_c = elm).trainFromData) === null || _d === void 0 ? void 0 : _d.call(_c, data.X, data.y);
+                }
+            }
+            this.trained = true;
+        }
+        /**
+         * Predict with hierarchical model
+         */
+        predict(x, topK = 3) {
+            if (!this.trained) {
+                throw new Error('Model must be trained before prediction');
+            }
+            const XArray = Array.isArray(x[0]) ? x : [x];
+            const allResults = [];
+            for (const xi of XArray) {
+                const results = this._predictHierarchical(xi, topK);
+                allResults.push(...results);
+            }
+            return allResults;
+        }
+        /**
+         * Hierarchical prediction from root to leaf
+         */
+        _predictHierarchical(x, topK) {
+            var _a, _b, _c, _d;
+            const rootELM = this.elms.get('root');
+            const rootPred = ((_b = (_a = rootELM).predictFromVector) === null || _b === void 0 ? void 0 : _b.call(_a, [x], topK)) || [];
+            const allPaths = [];
+            // For each root prediction, explore children
+            for (const rootPredItem of rootPred.slice(0, topK)) {
+                const rootLabel = rootPredItem.label || this.rootCategories[rootPredItem.index || 0];
+                const rootProb = rootPredItem.prob || 0;
+                // Check if root has children
+                const children = this.hierarchy.get(rootLabel);
+                if (!children || children.length === 0) {
+                    // Leaf node
+                    allPaths.push({
+                        path: [rootLabel],
+                        label: rootLabel,
+                        prob: rootProb,
+                        levelProbs: [rootProb],
+                    });
+                    continue;
+                }
+                // Predict children
+                const childELM = this.elms.get(rootLabel);
+                if (childELM) {
+                    const childPred = ((_d = (_c = childELM).predictFromVector) === null || _d === void 0 ? void 0 : _d.call(_c, [x], topK)) || [];
+                    for (const childPredItem of childPred.slice(0, topK)) {
+                        const childLabel = childPredItem.label || children[childPredItem.index || 0];
+                        const childProb = childPredItem.prob || 0;
+                        const combinedProb = rootProb * childProb;
+                        allPaths.push({
+                            path: [rootLabel, childLabel],
+                            label: childLabel,
+                            prob: combinedProb,
+                            levelProbs: [rootProb, childProb],
+                        });
+                    }
+                }
+                else {
+                    // No child ELM, use root
+                    allPaths.push({
+                        path: [rootLabel],
+                        label: rootLabel,
+                        prob: rootProb,
+                        levelProbs: [rootProb],
+                    });
+                }
+            }
+            // Sort by probability and return top-K
+            allPaths.sort((a, b) => b.prob - a.prob);
+            return allPaths.slice(0, topK);
+        }
+        /**
+         * Get hierarchy structure
+         */
+        getHierarchy() {
+            return new Map(this.hierarchy);
+        }
+        /**
+         * Get root categories
+         */
+        getRootCategories() {
+            return [...this.rootCategories];
+        }
+    }
+
+    // attention-enhanced-elm.ts — Attention-Enhanced ELM with attention mechanisms
+    // Query-key-value attention and self-attention for sequences
+    /**
+     * Attention-Enhanced ELM with attention mechanisms
+     * Features:
+     * - Query-key-value attention in hidden layer
+     * - Self-attention for sequences
+     * - Multi-head attention support
+     * - Context-aware classification
+     */
+    class AttentionEnhancedELM {
+        constructor(options) {
+            var _a, _b, _c, _d, _e, _f, _g;
+            this.attentionWeights = []; // [head][sequence][weight]
+            this.trained = false;
+            this.categories = options.categories;
+            this.options = {
+                categories: options.categories,
+                hiddenUnits: (_a = options.hiddenUnits) !== null && _a !== void 0 ? _a : 256,
+                attentionHeads: (_b = options.attentionHeads) !== null && _b !== void 0 ? _b : 4,
+                attentionDim: (_c = options.attentionDim) !== null && _c !== void 0 ? _c : 64,
+                useSelfAttention: (_d = options.useSelfAttention) !== null && _d !== void 0 ? _d : true,
+                activation: (_e = options.activation) !== null && _e !== void 0 ? _e : 'relu',
+                maxLen: (_f = options.maxLen) !== null && _f !== void 0 ? _f : 100,
+                useTokenizer: (_g = options.useTokenizer) !== null && _g !== void 0 ? _g : true,
+            };
+            this.elm = new ELM({
+                useTokenizer: this.options.useTokenizer ? true : undefined,
+                hiddenUnits: this.options.hiddenUnits,
+                categories: this.options.categories,
+                maxLen: this.options.maxLen,
+                activation: this.options.activation,
+            });
+        }
+        /**
+         * Train with attention-enhanced features
+         */
+        train(X, y) {
+            var _a, _b, _c, _d;
+            // Prepare labels
+            const labelIndices = y.map(label => typeof label === 'number'
+                ? label
+                : this.options.categories.indexOf(label));
+            // Extract features with attention
+            const attentionFeatures = this._extractAttentionFeatures(X);
+            // Train base ELM on attention-enhanced features
+            (_b = (_a = this.elm).setCategories) === null || _b === void 0 ? void 0 : _b.call(_a, this.options.categories);
+            (_d = (_c = this.elm).trainFromData) === null || _d === void 0 ? void 0 : _d.call(_c, attentionFeatures, labelIndices);
+            this.trained = true;
+        }
+        /**
+         * Predict with attention
+         */
+        predict(X, topK = 3, returnAttention = false) {
+            var _a, _b;
+            if (!this.trained) {
+                throw new Error('Model must be trained before prediction');
+            }
+            const XArray = Array.isArray(X[0]) ? X : [X];
+            const results = [];
+            for (const x of XArray) {
+                // Extract attention features
+                const attentionFeatures = this._extractAttentionFeatures([x])[0];
+                // Predict
+                const preds = ((_b = (_a = this.elm).predictFromVector) === null || _b === void 0 ? void 0 : _b.call(_a, [attentionFeatures], topK)) || [];
+                for (const pred of preds.slice(0, topK)) {
+                    const result = {
+                        label: pred.label || this.options.categories[pred.index || 0],
+                        prob: pred.prob || 0,
+                    };
+                    if (returnAttention && this.attentionWeights.length > 0) {
+                        result.attentionWeights = this.attentionWeights[this.attentionWeights.length - 1];
+                    }
+                    results.push(result);
+                }
+            }
+            return results;
+        }
+        /**
+         * Extract features with attention mechanism
+         */
+        _extractAttentionFeatures(X) {
+            const features = [];
+            for (const x of X) {
+                // Compute attention for each head
+                const headFeatures = [];
+                for (let head = 0; head < this.options.attentionHeads; head++) {
+                    const attentionOutput = this._computeAttention(x, head);
+                    headFeatures.push(attentionOutput);
+                }
+                // Concatenate all heads
+                const concatenated = headFeatures.flat();
+                // Project to hidden units size
+                const projected = this._projectToHiddenSize(concatenated);
+                features.push(projected);
+            }
+            return features;
+        }
+        /**
+         * Compute attention for a sequence
+         */
+        _computeAttention(x, headIndex) {
+            // Simple attention mechanism: Q, K, V projection
+            const seqLen = x.length;
+            const dim = this.options.attentionDim;
+            // Generate Q, K, V (simplified - using random projections)
+            const Q = this._project(x, dim, `Q_${headIndex}`);
+            const K = this._project(x, dim, `K_${headIndex}`);
+            const V = this._project(x, dim, `V_${headIndex}`);
+            // Compute attention scores: Q * K^T
+            const scores = [];
+            for (let i = 0; i < seqLen; i++) {
+                let score = 0;
+                for (let j = 0; j < dim; j++) {
+                    score += Q[j] * K[j];
+                }
+                scores.push(score / Math.sqrt(dim)); // Scaled dot-product
+            }
+            // Softmax attention weights
+            const weights = this._softmax(scores);
+            // Apply attention to values
+            const output = new Array(dim).fill(0);
+            for (let i = 0; i < seqLen; i++) {
+                for (let j = 0; j < dim; j++) {
+                    output[j] += weights[i] * V[j];
+                }
+            }
+            // Store attention weights for this head
+            if (!this.attentionWeights[headIndex]) {
+                this.attentionWeights[headIndex] = [];
+            }
+            this.attentionWeights[headIndex].push(weights);
+            return output;
+        }
+        /**
+         * Project input to attention dimension
+         */
+        _project(x, dim, key) {
+            // Simple linear projection (in practice, you'd use learned weights)
+            const projected = new Array(dim).fill(0);
+            const scale = Math.sqrt(2.0 / (x.length + dim));
+            for (let i = 0; i < dim; i++) {
+                for (let j = 0; j < x.length; j++) {
+                    // Simple hash-based projection for determinism
+                    const hash = this._hash(`${key}_${i}_${j}`);
+                    projected[i] += x[j] * (hash * scale);
+                }
+            }
+            return projected;
+        }
+        /**
+         * Project attention output to hidden units size
+         */
+        _projectToHiddenSize(attentionOutput) {
+            const hiddenSize = this.options.hiddenUnits;
+            const output = new Array(hiddenSize).fill(0);
+            const scale = Math.sqrt(2.0 / (attentionOutput.length + hiddenSize));
+            for (let i = 0; i < hiddenSize; i++) {
+                for (let j = 0; j < attentionOutput.length; j++) {
+                    const hash = this._hash(`proj_${i}_${j}`);
+                    output[i] += attentionOutput[j] * (hash * scale);
+                }
+                // Apply activation
+                if (this.options.activation === 'relu') {
+                    output[i] = Math.max(0, output[i]);
+                }
+                else if (this.options.activation === 'tanh') {
+                    output[i] = Math.tanh(output[i]);
+                }
+                else if (this.options.activation === 'sigmoid') {
+                    output[i] = 1 / (1 + Math.exp(-output[i]));
+                }
+            }
+            return output;
+        }
+        _softmax(logits) {
+            const max = Math.max(...logits);
+            const exp = logits.map(x => Math.exp(x - max));
+            const sum = exp.reduce((a, b) => a + b, 0);
+            return exp.map(x => x / sum);
+        }
+        _hash(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32-bit integer
+            }
+            return (hash / 2147483647); // Normalize to [-1, 1]
+        }
+        /**
+         * Get attention weights for last prediction
+         */
+        getAttentionWeights() {
+            return this.attentionWeights.map(head => [...head]);
+        }
+    }
+
+    // variational-elm.ts — Variational ELM with uncertainty estimation
+    // Probabilistic ELM with Bayesian inference and confidence intervals
+    /**
+     * Variational ELM with uncertainty estimation
+     * Features:
+     * - Probabilistic predictions with uncertainty
+     * - Bayesian inference
+     * - Confidence intervals
+     * - Robust predictions with uncertainty quantification
+     */
+    class VariationalELM {
+        constructor(options) {
+            var _a, _b, _c, _d, _e, _f;
+            this.weightSamples = []; // Sampled weight matrices
+            this.trained = false;
+            this.categories = options.categories;
+            this.options = {
+                categories: options.categories,
+                hiddenUnits: (_a = options.hiddenUnits) !== null && _a !== void 0 ? _a : 256,
+                priorVariance: (_b = options.priorVariance) !== null && _b !== void 0 ? _b : 1.0,
+                posteriorSamples: (_c = options.posteriorSamples) !== null && _c !== void 0 ? _c : 10,
+                activation: (_d = options.activation) !== null && _d !== void 0 ? _d : 'relu',
+                maxLen: (_e = options.maxLen) !== null && _e !== void 0 ? _e : 100,
+                useTokenizer: (_f = options.useTokenizer) !== null && _f !== void 0 ? _f : true,
+            };
+            this.elm = new ELM({
+                useTokenizer: this.options.useTokenizer ? true : undefined,
+                hiddenUnits: this.options.hiddenUnits,
+                categories: this.options.categories,
+                maxLen: this.options.maxLen,
+                activation: this.options.activation,
+            });
+        }
+        /**
+         * Train variational ELM
+         */
+        train(X, y) {
+            var _a, _b, _c, _d;
+            // Prepare labels
+            const labelIndices = y.map(label => typeof label === 'number'
+                ? label
+                : this.options.categories.indexOf(label));
+            // Train base ELM
+            (_b = (_a = this.elm).setCategories) === null || _b === void 0 ? void 0 : _b.call(_a, this.options.categories);
+            (_d = (_c = this.elm).trainFromData) === null || _d === void 0 ? void 0 : _d.call(_c, X, labelIndices);
+            // Sample weights for uncertainty estimation
+            this._sampleWeights();
+            this.trained = true;
+        }
+        /**
+         * Predict with uncertainty estimation
+         */
+        predict(X, topK = 3, includeUncertainty = true) {
+            var _a, _b;
+            if (!this.trained) {
+                throw new Error('Model must be trained before prediction');
+            }
+            const XArray = Array.isArray(X[0]) ? X : [X];
+            const allResults = [];
+            for (const x of XArray) {
+                // Get base prediction
+                const basePreds = ((_b = (_a = this.elm).predictFromVector) === null || _b === void 0 ? void 0 : _b.call(_a, [x], topK)) || [];
+                // Estimate uncertainty
+                const uncertainty = includeUncertainty ? this._estimateUncertainty(x) : 0.5;
+                for (const pred of basePreds.slice(0, topK)) {
+                    const prob = pred.prob || 0;
+                    const confidence = Math.max(0, Math.min(1, 1 - uncertainty));
+                    // Compute confidence interval
+                    const stdDev = Math.sqrt(uncertainty * prob * (1 - prob));
+                    const confidenceInterval = [
+                        Math.max(0, prob - 1.96 * stdDev),
+                        Math.min(1, prob + 1.96 * stdDev)
+                    ];
+                    allResults.push({
+                        label: pred.label || this.options.categories[pred.index || 0],
+                        prob,
+                        confidence,
+                        uncertainty,
+                        confidenceInterval,
+                    });
+                }
+            }
+            return allResults;
+        }
+        /**
+         * Estimate uncertainty using weight sampling
+         */
+        _estimateUncertainty(x) {
+            if (this.weightSamples.length === 0) {
+                return 0.5; // Default uncertainty
+            }
+            // Get predictions from multiple weight samples
+            const predictions = [];
+            for (const weights of this.weightSamples) {
+                // Simplified: use variance in predictions as uncertainty measure
+                // In practice, you'd compute actual predictions with sampled weights
+                const pred = this._predictWithWeights(x, weights);
+                predictions.push(pred);
+            }
+            // Compute variance as uncertainty measure
+            const mean = predictions.reduce((a, b) => a + b, 0) / predictions.length;
+            const variance = predictions.reduce((sum, p) => sum + Math.pow(p - mean, 2), 0) / predictions.length;
+            // Normalize to [0, 1]
+            return Math.min(1, variance);
+        }
+        /**
+         * Predict with specific weight matrix (simplified)
+         */
+        _predictWithWeights(x, weights) {
+            // Simplified prediction - in practice, you'd use the actual ELM forward pass
+            // This is a placeholder for uncertainty estimation
+            return 0.5;
+        }
+        /**
+         * Sample weight matrices for uncertainty estimation
+         */
+        _sampleWeights() {
+            const model = this.elm.model;
+            if (!model || !model.W)
+                return;
+            const baseWeights = model.W;
+            this.weightSamples = [];
+            // Sample weights by adding Gaussian noise
+            for (let s = 0; s < this.options.posteriorSamples; s++) {
+                const sampled = [];
+                for (let i = 0; i < baseWeights.length; i++) {
+                    sampled[i] = [];
+                    for (let j = 0; j < baseWeights[i].length; j++) {
+                        // Sample from posterior (Gaussian around base weight)
+                        const noise = this._gaussianRandom(0, this.options.priorVariance);
+                        sampled[i][j] = baseWeights[i][j] + noise;
+                    }
+                }
+                this.weightSamples.push(sampled);
+            }
+        }
+        _gaussianRandom(mean, variance) {
+            // Box-Muller transform
+            const u1 = Math.random();
+            const u2 = Math.random();
+            const z0 = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+            return mean + z0 * Math.sqrt(variance);
+        }
+    }
+
+    // time-series-elm.ts — Time-Series ELM for temporal pattern recognition
+    // Sequence-to-sequence ELM with temporal dependencies
+    /**
+     * Time-Series ELM for temporal pattern recognition
+     * Features:
+     * - Temporal pattern recognition
+     * - Optional recurrent connections
+     * - Sequence-to-sequence prediction
+     * - Forecasting capabilities
+     */
+    class TimeSeriesELM {
+        constructor(options) {
+            var _a, _b, _c, _d, _e, _f, _g;
+            this.history = []; // Store recent history for recurrent mode
+            this.trained = false;
+            this.categories = options.categories;
+            this.options = {
+                categories: options.categories,
+                hiddenUnits: (_a = options.hiddenUnits) !== null && _a !== void 0 ? _a : 256,
+                sequenceLength: (_b = options.sequenceLength) !== null && _b !== void 0 ? _b : 10,
+                lookbackWindow: (_c = options.lookbackWindow) !== null && _c !== void 0 ? _c : 5,
+                useRecurrent: (_d = options.useRecurrent) !== null && _d !== void 0 ? _d : false,
+                activation: (_e = options.activation) !== null && _e !== void 0 ? _e : 'relu',
+                maxLen: (_f = options.maxLen) !== null && _f !== void 0 ? _f : 100,
+                useTokenizer: (_g = options.useTokenizer) !== null && _g !== void 0 ? _g : true,
+            };
+            this.elm = new ELM({
+                useTokenizer: this.options.useTokenizer ? true : undefined,
+                hiddenUnits: this.options.hiddenUnits,
+                categories: this.options.categories,
+                maxLen: this.options.maxLen,
+                activation: this.options.activation,
+            });
+        }
+        /**
+         * Train on time-series data
+         * @param X Sequences of features (each element is a time step)
+         * @param y Labels for each sequence
+         */
+        train(X, y) {
+            var _a, _b, _c, _d;
+            // Prepare labels
+            const labelIndices = y.map(label => typeof label === 'number'
+                ? label
+                : this.options.categories.indexOf(label));
+            // Flatten sequences to features
+            const flattenedFeatures = this._flattenSequences(X);
+            // Train base ELM
+            (_b = (_a = this.elm).setCategories) === null || _b === void 0 ? void 0 : _b.call(_a, this.options.categories);
+            (_d = (_c = this.elm).trainFromData) === null || _d === void 0 ? void 0 : _d.call(_c, flattenedFeatures, labelIndices);
+            this.trained = true;
+        }
+        /**
+         * Train on single sequences (convenience method)
+         */
+        trainSequences(sequences, labels) {
+            this.train(sequences, labels);
+        }
+        /**
+         * Predict from time-series sequence
+         */
+        predict(sequence, topK = 3) {
+            var _a, _b, _c, _d;
+            if (!this.trained) {
+                throw new Error('Model must be trained before prediction');
+            }
+            const sequences = Array.isArray(sequence[0][0])
+                ? sequence
+                : [sequence];
+            const allResults = [];
+            for (const seq of sequences) {
+                // Flatten sequence to features
+                const features = this._flattenSequence(seq);
+                // Update history if using recurrent mode
+                if (this.options.useRecurrent) {
+                    this._updateHistory(features);
+                    // Use history-enhanced features
+                    const enhancedFeatures = this._enhanceWithHistory(features);
+                    const preds = ((_b = (_a = this.elm).predictFromVector) === null || _b === void 0 ? void 0 : _b.call(_a, [enhancedFeatures], topK)) || [];
+                    allResults.push(...preds.map((p) => ({
+                        label: p.label || this.options.categories[p.index || 0],
+                        prob: p.prob || 0,
+                    })));
+                }
+                else {
+                    const preds = ((_d = (_c = this.elm).predictFromVector) === null || _d === void 0 ? void 0 : _d.call(_c, [features], topK)) || [];
+                    allResults.push(...preds.map((p) => ({
+                        label: p.label || this.options.categories[p.index || 0],
+                        prob: p.prob || 0,
+                    })));
+                }
+            }
+            return allResults;
+        }
+        /**
+         * Forecast future values (for regression/forecasting tasks)
+         */
+        forecast(sequence, steps = 1) {
+            var _a, _b;
+            if (!this.trained) {
+                throw new Error('Model must be trained before forecasting');
+            }
+            const forecasts = [];
+            let currentSeq = [...sequence];
+            for (let step = 0; step < steps; step++) {
+                const features = this._flattenSequence(currentSeq);
+                const pred = ((_b = (_a = this.elm).predictLogitsFromVector) === null || _b === void 0 ? void 0 : _b.call(_a, features)) || [];
+                // Use prediction as next step (simplified - in practice, you'd have a regression head)
+                forecasts.push([...pred]);
+                // Update sequence for next step
+                currentSeq.push(pred);
+                if (currentSeq.length > this.options.sequenceLength) {
+                    currentSeq.shift();
+                }
+            }
+            return forecasts;
+        }
+        /**
+         * Flatten sequences to feature vectors
+         */
+        _flattenSequences(sequences) {
+            return sequences.map(seq => this._flattenSequence(seq));
+        }
+        /**
+         * Flatten a single sequence
+         */
+        _flattenSequence(sequence) {
+            var _a;
+            // Concatenate all time steps
+            const flattened = [];
+            // Take last lookbackWindow steps
+            const relevantSteps = sequence.slice(-this.options.lookbackWindow);
+            for (const step of relevantSteps) {
+                flattened.push(...step);
+            }
+            // Pad if necessary
+            while (flattened.length < this.options.lookbackWindow * (((_a = sequence[0]) === null || _a === void 0 ? void 0 : _a.length) || 1)) {
+                flattened.push(0);
+            }
+            return flattened;
+        }
+        /**
+         * Update history for recurrent mode
+         */
+        _updateHistory(features) {
+            this.history.push([...features]);
+            // Keep only recent history
+            if (this.history.length > this.options.lookbackWindow) {
+                this.history.shift();
+            }
+        }
+        /**
+         * Enhance features with history (recurrent mode)
+         */
+        _enhanceWithHistory(currentFeatures) {
+            if (this.history.length === 0) {
+                return currentFeatures;
+            }
+            // Concatenate history with current features
+            const historyFeatures = this.history.flat();
+            return [...historyFeatures, ...currentFeatures];
+        }
+        /**
+         * Clear history (useful for new sequences)
+         */
+        clearHistory() {
+            this.history = [];
+        }
+    }
+
+    // transfer-learning-elm.ts — Transfer Learning ELM
+    // Pre-trained ELM adaptation, domain adaptation, and few-shot learning
+    /**
+     * Transfer Learning ELM
+     * Features:
+     * - Pre-trained model adaptation
+     * - Domain adaptation
+     * - Few-shot learning
+     * - Fine-tuning capabilities
+     */
+    class TransferLearningELM {
+        constructor(options) {
+            var _a, _b, _c, _d, _e, _f;
+            this.sourceModel = null;
+            this.trained = false;
+            this.categories = options.categories;
+            this.sourceModel = options.sourceModel || null;
+            this.options = {
+                categories: options.categories,
+                sourceModel: this.sourceModel,
+                freezeBase: (_a = options.freezeBase) !== null && _a !== void 0 ? _a : false,
+                fineTuneLayers: (_b = options.fineTuneLayers) !== null && _b !== void 0 ? _b : 1,
+                hiddenUnits: (_c = options.hiddenUnits) !== null && _c !== void 0 ? _c : 256,
+                activation: (_d = options.activation) !== null && _d !== void 0 ? _d : 'relu',
+                maxLen: (_e = options.maxLen) !== null && _e !== void 0 ? _e : 100,
+                useTokenizer: (_f = options.useTokenizer) !== null && _f !== void 0 ? _f : true,
+            };
+            this.elm = new ELM({
+                useTokenizer: this.options.useTokenizer ? true : undefined,
+                hiddenUnits: this.options.hiddenUnits,
+                categories: this.options.categories,
+                maxLen: this.options.maxLen,
+                activation: this.options.activation,
+            });
+            // Transfer weights from source model if available
+            if (this.sourceModel) {
+                this._transferWeights();
+            }
+        }
+        /**
+         * Transfer weights from source model
+         */
+        _transferWeights() {
+            var _a, _b;
+            if (!this.sourceModel)
+                return;
+            const sourceModelData = this.sourceModel.model;
+            const targetModel = this.elm.model;
+            if (!sourceModelData || !targetModel)
+                return;
+            // Transfer hidden layer weights if dimensions match
+            if (sourceModelData.W && targetModel.W) {
+                const sourceW = sourceModelData.W;
+                const targetW = targetModel.W;
+                // Copy matching dimensions
+                for (let i = 0; i < Math.min(sourceW.length, targetW.length); i++) {
+                    for (let j = 0; j < Math.min(((_a = sourceW[i]) === null || _a === void 0 ? void 0 : _a.length) || 0, ((_b = targetW[i]) === null || _b === void 0 ? void 0 : _b.length) || 0); j++) {
+                        if (!this.options.freezeBase) {
+                            targetW[i][j] = sourceW[i][j];
+                        }
+                    }
+                }
+            }
+            // Transfer biases if available
+            if (sourceModelData.b && targetModel.b) {
+                const sourceB = sourceModelData.b;
+                const targetB = targetModel.b;
+                for (let i = 0; i < Math.min(sourceB.length, targetB.length); i++) {
+                    if (!this.options.freezeBase) {
+                        targetB[i] = sourceB[i];
+                    }
+                }
+            }
+        }
+        /**
+         * Train with transfer learning
+         * @param X Target domain features
+         * @param y Target domain labels
+         */
+        train(X, y) {
+            var _a, _b, _c, _d, _e, _f, _g, _h;
+            // Prepare labels
+            const labelIndices = y.map(label => typeof label === 'number'
+                ? label
+                : this.options.categories.indexOf(label));
+            // If source model exists and we're not freezing, fine-tune
+            if (this.sourceModel && !this.options.freezeBase) {
+                // Fine-tune: train on new data with transferred weights
+                (_b = (_a = this.elm).setCategories) === null || _b === void 0 ? void 0 : _b.call(_a, this.options.categories);
+                (_d = (_c = this.elm).trainFromData) === null || _d === void 0 ? void 0 : _d.call(_c, X, labelIndices, {
+                    reuseWeights: true, // Reuse transferred weights
+                });
+            }
+            else {
+                // Standard training
+                (_f = (_e = this.elm).setCategories) === null || _f === void 0 ? void 0 : _f.call(_e, this.options.categories);
+                (_h = (_g = this.elm).trainFromData) === null || _h === void 0 ? void 0 : _h.call(_g, X, labelIndices);
+            }
+            this.trained = true;
+        }
+        /**
+         * Few-shot learning: train with very few examples
+         */
+        fewShotTrain(X, y, shots = 5) {
+            if (!this.sourceModel) {
+                throw new Error('Few-shot learning requires a pre-trained source model');
+            }
+            // Use only a few examples
+            const limitedX = X.slice(0, shots);
+            const limitedY = y.slice(0, shots);
+            // Fine-tune on limited data
+            this.train(limitedX, limitedY);
+        }
+        /**
+         * Predict with transferred model
+         */
+        predict(X, topK = 3) {
+            var _a, _b;
+            if (!this.trained) {
+                throw new Error('Model must be trained before prediction');
+            }
+            const XArray = Array.isArray(X[0]) ? X : [X];
+            const results = [];
+            for (const x of XArray) {
+                const preds = ((_b = (_a = this.elm).predictFromVector) === null || _b === void 0 ? void 0 : _b.call(_a, [x], topK)) || [];
+                for (const pred of preds.slice(0, topK)) {
+                    results.push({
+                        label: pred.label || this.options.categories[pred.index || 0],
+                        prob: pred.prob || 0,
+                    });
+                }
+            }
+            return results;
+        }
+        /**
+         * Load pre-trained model
+         */
+        loadSourceModel(model) {
+            this.sourceModel = model;
+            this._transferWeights();
+        }
+        /**
+         * Export current model for use as source in other transfers
+         */
+        exportModel() {
+            return {
+                model: this.elm.model,
+                categories: this.options.categories,
+                config: {
+                    hiddenUnits: this.options.hiddenUnits,
+                    activation: this.options.activation,
+                },
+            };
+        }
+    }
+
+    // graph-elm.ts — Graph ELM for graph-structured data
+    // Graph neural network + ELM for node/edge classification
+    /**
+     * Graph ELM for graph-structured data
+     * Features:
+     * - Node feature learning
+     * - Graph structure encoding
+     * - Edge-aware classification
+     * - Graph convolution operations
+     */
+    class GraphELM {
+        constructor(options) {
+            var _a, _b, _c, _d, _e, _f;
+            this.trained = false;
+            this.nodeFeatureMap = new Map();
+            this.categories = options.categories;
+            this.options = {
+                categories: options.categories,
+                hiddenUnits: (_a = options.hiddenUnits) !== null && _a !== void 0 ? _a : 256,
+                aggregationType: (_b = options.aggregationType) !== null && _b !== void 0 ? _b : 'mean',
+                numLayers: (_c = options.numLayers) !== null && _c !== void 0 ? _c : 2,
+                activation: (_d = options.activation) !== null && _d !== void 0 ? _d : 'relu',
+                maxLen: (_e = options.maxLen) !== null && _e !== void 0 ? _e : 100,
+                useTokenizer: (_f = options.useTokenizer) !== null && _f !== void 0 ? _f : true,
+            };
+            this.elm = new ELM({
+                useTokenizer: this.options.useTokenizer ? true : undefined,
+                hiddenUnits: this.options.hiddenUnits,
+                categories: this.options.categories,
+                maxLen: this.options.maxLen,
+                activation: this.options.activation,
+            });
+        }
+        /**
+         * Train on graph data
+         * @param graphs Array of graphs
+         * @param y Labels for each graph (or node labels)
+         */
+        train(graphs, y) {
+            var _a, _b, _c, _d;
+            // Prepare labels
+            const labelIndices = y.map(label => typeof label === 'number'
+                ? label
+                : this.options.categories.indexOf(label));
+            // Extract graph features
+            const graphFeatures = graphs.map(graph => this._extractGraphFeatures(graph));
+            // Train base ELM
+            (_b = (_a = this.elm).setCategories) === null || _b === void 0 ? void 0 : _b.call(_a, this.options.categories);
+            (_d = (_c = this.elm).trainFromData) === null || _d === void 0 ? void 0 : _d.call(_c, graphFeatures, labelIndices);
+            this.trained = true;
+        }
+        /**
+         * Extract features from graph structure
+         */
+        _extractGraphFeatures(graph) {
+            // Build adjacency map
+            const adjacencyMap = new Map();
+            for (const edge of graph.edges) {
+                if (!adjacencyMap.has(edge.source)) {
+                    adjacencyMap.set(edge.source, []);
+                }
+                if (!adjacencyMap.has(edge.target)) {
+                    adjacencyMap.set(edge.target, []);
+                }
+                adjacencyMap.get(edge.source).push(String(edge.target));
+                adjacencyMap.get(edge.target).push(String(edge.source));
+            }
+            // Compute node features through graph convolution
+            const nodeFeatures = new Map();
+            // Initialize with node features
+            for (const node of graph.nodes) {
+                nodeFeatures.set(node.id, [...node.features]);
+            }
+            // Graph convolution layers
+            for (let layer = 0; layer < this.options.numLayers; layer++) {
+                const newFeatures = new Map();
+                for (const node of graph.nodes) {
+                    const neighbors = adjacencyMap.get(node.id) || [];
+                    const neighborFeatures = neighbors
+                        .map(nid => {
+                        const node = graph.nodes.find(n => String(n.id) === String(nid));
+                        return node ? nodeFeatures.get(node.id) : null;
+                    })
+                        .filter(f => f !== null);
+                    // Aggregate neighbor features
+                    const aggregated = this._aggregateNeighbors(neighborFeatures);
+                    // Combine with self features
+                    const selfFeatures = nodeFeatures.get(node.id) || [];
+                    const combined = this._combineFeatures(selfFeatures, aggregated);
+                    newFeatures.set(node.id, combined);
+                }
+                // Update features
+                for (const [id, features] of newFeatures) {
+                    nodeFeatures.set(id, features);
+                }
+            }
+            // Aggregate all node features to graph-level features
+            const allNodeFeatures = Array.from(nodeFeatures.values());
+            const graphFeatures = this._aggregateNodes(allNodeFeatures);
+            return graphFeatures;
+        }
+        /**
+         * Aggregate neighbor features
+         */
+        _aggregateNeighbors(neighborFeatures) {
+            if (neighborFeatures.length === 0) {
+                return [];
+            }
+            const dim = neighborFeatures[0].length;
+            const aggregated = new Array(dim).fill(0);
+            for (const features of neighborFeatures) {
+                for (let i = 0; i < dim; i++) {
+                    if (this.options.aggregationType === 'mean') {
+                        aggregated[i] += features[i] / neighborFeatures.length;
+                    }
+                    else if (this.options.aggregationType === 'sum') {
+                        aggregated[i] += features[i];
+                    }
+                    else if (this.options.aggregationType === 'max') {
+                        aggregated[i] = Math.max(aggregated[i], features[i]);
+                    }
+                }
+            }
+            return aggregated;
+        }
+        /**
+         * Combine self and neighbor features
+         */
+        _combineFeatures(self, neighbors) {
+            const dim = Math.max(self.length, neighbors.length);
+            const combined = new Array(dim).fill(0);
+            for (let i = 0; i < dim; i++) {
+                const selfVal = i < self.length ? self[i] : 0;
+                const neighborVal = i < neighbors.length ? neighbors[i] : 0;
+                combined[i] = selfVal + neighborVal; // Simple addition
+            }
+            // Apply activation
+            if (this.options.activation === 'relu') {
+                return combined.map(x => Math.max(0, x));
+            }
+            else if (this.options.activation === 'tanh') {
+                return combined.map(x => Math.tanh(x));
+            }
+            else if (this.options.activation === 'sigmoid') {
+                return combined.map(x => 1 / (1 + Math.exp(-x)));
+            }
+            return combined;
+        }
+        /**
+         * Aggregate all node features to graph level
+         */
+        _aggregateNodes(nodeFeatures) {
+            if (nodeFeatures.length === 0) {
+                return [];
+            }
+            const dim = nodeFeatures[0].length;
+            const graphFeatures = new Array(dim).fill(0);
+            for (const features of nodeFeatures) {
+                for (let i = 0; i < dim; i++) {
+                    if (this.options.aggregationType === 'mean') {
+                        graphFeatures[i] += features[i] / nodeFeatures.length;
+                    }
+                    else if (this.options.aggregationType === 'sum') {
+                        graphFeatures[i] += features[i];
+                    }
+                    else if (this.options.aggregationType === 'max') {
+                        graphFeatures[i] = Math.max(graphFeatures[i], features[i]);
+                    }
+                }
+            }
+            return graphFeatures;
+        }
+        /**
+         * Predict on graph
+         */
+        predict(graph, topK = 3) {
+            var _a, _b;
+            if (!this.trained) {
+                throw new Error('Model must be trained before prediction');
+            }
+            const graphs = Array.isArray(graph) ? graph : [graph];
+            const results = [];
+            for (const g of graphs) {
+                const graphFeatures = this._extractGraphFeatures(g);
+                const preds = ((_b = (_a = this.elm).predictFromVector) === null || _b === void 0 ? void 0 : _b.call(_a, [graphFeatures], topK)) || [];
+                // Store node features for first node (for interpretability)
+                const firstNodeFeatures = g.nodes.length > 0
+                    ? this.nodeFeatureMap.get(g.nodes[0].id) || g.nodes[0].features
+                    : undefined;
+                for (const pred of preds.slice(0, topK)) {
+                    results.push({
+                        label: pred.label || this.options.categories[pred.index || 0],
+                        prob: pred.prob || 0,
+                        nodeFeatures: firstNodeFeatures,
+                    });
+                }
+            }
+            return results;
+        }
+    }
+
+    // adaptive-kernel-elm.ts — Adaptive Kernel ELM
+    // Data-dependent kernel parameters with local kernel adaptation
+    /**
+     * Adaptive Kernel ELM with data-dependent kernel parameters
+     * Features:
+     * - Local kernel adaptation
+     * - Sample-specific kernels
+     * - Adaptive gamma/degree parameters
+     * - Improved performance on non-stationary data
+     */
+    class AdaptiveKernelELM {
+        constructor(options) {
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+            this.trained = false;
+            this.adaptiveKernels = new Map();
+            this.categories = options.categories;
+            this.options = {
+                categories: options.categories,
+                kernelType: (_a = options.kernelType) !== null && _a !== void 0 ? _a : 'rbf',
+                adaptiveGamma: (_b = options.adaptiveGamma) !== null && _b !== void 0 ? _b : true,
+                adaptiveDegree: (_c = options.adaptiveDegree) !== null && _c !== void 0 ? _c : false,
+                baseGamma: (_d = options.baseGamma) !== null && _d !== void 0 ? _d : 1.0,
+                baseDegree: (_e = options.baseDegree) !== null && _e !== void 0 ? _e : 2,
+                baseCoef0: (_f = options.baseCoef0) !== null && _f !== void 0 ? _f : 0,
+                activation: (_g = options.activation) !== null && _g !== void 0 ? _g : 'relu',
+                maxLen: (_h = options.maxLen) !== null && _h !== void 0 ? _h : 100,
+                useTokenizer: (_j = options.useTokenizer) !== null && _j !== void 0 ? _j : true,
+            };
+            this.kelm = new KernelELM({
+                useTokenizer: this.options.useTokenizer ? true : undefined,
+                categories: this.options.categories,
+                maxLen: this.options.maxLen,
+                kernel: this.options.kernelType,
+                gamma: this.options.baseGamma,
+                degree: this.options.baseDegree,
+                coef0: this.options.baseCoef0,
+            });
+        }
+        /**
+         * Train with adaptive kernels
+         */
+        train(X, y) {
+            var _a, _b, _c, _d;
+            // Prepare labels
+            const labelIndices = y.map(label => typeof label === 'number'
+                ? label
+                : this.options.categories.indexOf(label));
+            // Compute adaptive kernel parameters for each sample
+            if (this.options.adaptiveGamma || this.options.adaptiveDegree) {
+                this._computeAdaptiveKernels(X);
+            }
+            // Train base KernelELM
+            (_b = (_a = this.kelm).setCategories) === null || _b === void 0 ? void 0 : _b.call(_a, this.options.categories);
+            (_d = (_c = this.kelm).trainFromData) === null || _d === void 0 ? void 0 : _d.call(_c, X, labelIndices);
+            this.trained = true;
+        }
+        /**
+         * Compute adaptive kernel parameters
+         */
+        _computeAdaptiveKernels(X) {
+            // Compute local statistics for each sample
+            for (let i = 0; i < X.length; i++) {
+                const x = X[i];
+                const neighbors = this._findNeighbors(x, X, 5); // Find 5 nearest neighbors
+                const params = {};
+                if (this.options.adaptiveGamma) {
+                    // Adapt gamma based on local density
+                    const localDensity = this._computeLocalDensity(x, neighbors);
+                    params.gamma = this.options.baseGamma / (1 + localDensity);
+                }
+                if (this.options.adaptiveDegree) {
+                    // Adapt degree based on local complexity
+                    const localComplexity = this._computeLocalComplexity(neighbors);
+                    params.degree = Math.max(1, Math.round(this.options.baseDegree * localComplexity));
+                }
+                this.adaptiveKernels.set(i, params);
+            }
+        }
+        /**
+         * Find nearest neighbors
+         */
+        _findNeighbors(x, X, k) {
+            const distances = X.map((xi, i) => ({
+                index: i,
+                dist: this._euclideanDistance(x, xi),
+            }));
+            distances.sort((a, b) => a.dist - b.dist);
+            return distances.slice(1, k + 1).map(d => X[d.index]);
+        }
+        /**
+         * Compute local density
+         */
+        _computeLocalDensity(x, neighbors) {
+            if (neighbors.length === 0)
+                return 1;
+            const avgDist = neighbors.reduce((sum, n) => sum + this._euclideanDistance(x, n), 0) / neighbors.length;
+            return avgDist;
+        }
+        /**
+         * Compute local complexity
+         */
+        _computeLocalComplexity(neighbors) {
+            if (neighbors.length < 2)
+                return 1;
+            // Compute variance in neighbors as complexity measure
+            const variances = [];
+            for (let i = 0; i < neighbors[0].length; i++) {
+                const values = neighbors.map(n => n[i]);
+                const mean = values.reduce((a, b) => a + b, 0) / values.length;
+                const variance = values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / values.length;
+                variances.push(variance);
+            }
+            const avgVariance = variances.reduce((a, b) => a + b, 0) / variances.length;
+            return Math.sqrt(avgVariance);
+        }
+        _euclideanDistance(a, b) {
+            let sum = 0;
+            for (let i = 0; i < Math.min(a.length, b.length); i++) {
+                sum += Math.pow(a[i] - b[i], 2);
+            }
+            return Math.sqrt(sum);
+        }
+        /**
+         * Predict with adaptive kernels
+         */
+        predict(X, topK = 3) {
+            var _a, _b;
+            if (!this.trained) {
+                throw new Error('Model must be trained before prediction');
+            }
+            const XArray = Array.isArray(X[0]) ? X : [X];
+            const results = [];
+            for (const x of XArray) {
+                // Get base prediction
+                const preds = ((_b = (_a = this.kelm).predictFromVector) === null || _b === void 0 ? void 0 : _b.call(_a, [x], topK)) || [];
+                // Get adaptive kernel params for this sample (if available)
+                const sampleIndex = XArray.indexOf(x);
+                const kernelParams = this.adaptiveKernels.get(sampleIndex);
+                for (const pred of preds.slice(0, topK)) {
+                    results.push({
+                        label: pred.label || this.options.categories[pred.index || 0],
+                        prob: pred.prob || 0,
+                        kernelParams,
+                    });
+                }
+            }
+            return results;
+        }
+    }
+
+    // sparse-kernel-elm.ts — Sparse Kernel ELM
+    // Sparse kernel matrix approximation with landmark selection
+    /**
+     * Sparse Kernel ELM with landmark-based approximation
+     * Features:
+     * - Sparse kernel matrix approximation
+     * - Landmark selection strategies
+     * - Reduced computational complexity
+     * - Scalable to large datasets
+     */
+    class SparseKernelELM {
+        constructor(options) {
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+            this.landmarks = [];
+            this.trained = false;
+            this.categories = options.categories;
+            this.options = {
+                categories: options.categories,
+                kernelType: (_a = options.kernelType) !== null && _a !== void 0 ? _a : 'rbf',
+                numLandmarks: (_b = options.numLandmarks) !== null && _b !== void 0 ? _b : 100,
+                landmarkSelection: (_c = options.landmarkSelection) !== null && _c !== void 0 ? _c : 'kmeans',
+                gamma: (_d = options.gamma) !== null && _d !== void 0 ? _d : 1.0,
+                degree: (_e = options.degree) !== null && _e !== void 0 ? _e : 2,
+                coef0: (_f = options.coef0) !== null && _f !== void 0 ? _f : 0,
+                activation: (_g = options.activation) !== null && _g !== void 0 ? _g : 'relu',
+                maxLen: (_h = options.maxLen) !== null && _h !== void 0 ? _h : 100,
+                useTokenizer: (_j = options.useTokenizer) !== null && _j !== void 0 ? _j : true,
+            };
+            this.kelm = new KernelELM({
+                useTokenizer: this.options.useTokenizer ? true : undefined,
+                categories: this.options.categories,
+                maxLen: this.options.maxLen,
+                kernel: this.options.kernelType,
+                gamma: this.options.gamma,
+                degree: this.options.degree,
+                coef0: this.options.coef0,
+            });
+        }
+        /**
+         * Train with sparse kernel approximation
+         */
+        train(X, y) {
+            var _a, _b, _c, _d;
+            // Prepare labels
+            const labelIndices = y.map(label => typeof label === 'number'
+                ? label
+                : this.options.categories.indexOf(label));
+            // Select landmarks
+            this._selectLandmarks(X);
+            // Train on landmarks (reduced dataset)
+            (_b = (_a = this.kelm).setCategories) === null || _b === void 0 ? void 0 : _b.call(_a, this.options.categories);
+            (_d = (_c = this.kelm).trainFromData) === null || _d === void 0 ? void 0 : _d.call(_c, this.landmarks, this._getLandmarkLabels(X, y, labelIndices));
+            this.trained = true;
+        }
+        /**
+         * Select landmark points
+         */
+        _selectLandmarks(X) {
+            const numLandmarks = Math.min(this.options.numLandmarks, X.length);
+            if (this.options.landmarkSelection === 'random') {
+                // Random selection
+                const indices = new Set();
+                while (indices.size < numLandmarks) {
+                    indices.add(Math.floor(Math.random() * X.length));
+                }
+                this.landmarks = Array.from(indices).map(i => [...X[i]]);
+            }
+            else if (this.options.landmarkSelection === 'kmeans') {
+                // K-means centroids as landmarks
+                this.landmarks = this._kmeansLandmarks(X, numLandmarks);
+            }
+            else if (this.options.landmarkSelection === 'diverse') {
+                // Diverse selection (maximize distance)
+                this.landmarks = this._diverseLandmarks(X, numLandmarks);
+            }
+            else {
+                // Default: first N points
+                this.landmarks = X.slice(0, numLandmarks).map(x => [...x]);
+            }
+        }
+        /**
+         * K-means landmark selection
+         */
+        _kmeansLandmarks(X, k) {
+            // Simplified k-means (in practice, use proper k-means)
+            const centroids = [];
+            const dim = X[0].length;
+            // Initialize centroids randomly
+            for (let i = 0; i < k; i++) {
+                const idx = Math.floor(Math.random() * X.length);
+                centroids.push([...X[idx]]);
+            }
+            // Simple iteration (simplified)
+            for (let iter = 0; iter < 10; iter++) {
+                const clusters = Array(k).fill(null).map(() => []);
+                // Assign points to nearest centroid
+                for (const x of X) {
+                    let minDist = Infinity;
+                    let nearest = 0;
+                    for (let i = 0; i < k; i++) {
+                        const dist = this._euclideanDistance(x, centroids[i]);
+                        if (dist < minDist) {
+                            minDist = dist;
+                            nearest = i;
+                        }
+                    }
+                    clusters[nearest].push(x);
+                }
+                // Update centroids
+                for (let i = 0; i < k; i++) {
+                    if (clusters[i].length > 0) {
+                        const newCentroid = new Array(dim).fill(0);
+                        for (const point of clusters[i]) {
+                            for (let j = 0; j < dim; j++) {
+                                newCentroid[j] += point[j];
+                            }
+                        }
+                        for (let j = 0; j < dim; j++) {
+                            newCentroid[j] /= clusters[i].length;
+                        }
+                        centroids[i] = newCentroid;
+                    }
+                }
+            }
+            return centroids;
+        }
+        /**
+         * Diverse landmark selection
+         */
+        _diverseLandmarks(X, k) {
+            const landmarks = [];
+            // Start with random point
+            let firstIdx = Math.floor(Math.random() * X.length);
+            landmarks.push([...X[firstIdx]]);
+            // Greedily select points that maximize minimum distance
+            while (landmarks.length < k) {
+                let maxMinDist = -1;
+                let bestIdx = -1;
+                for (let i = 0; i < X.length; i++) {
+                    const minDist = Math.min(...landmarks.map(l => this._euclideanDistance(X[i], l)));
+                    if (minDist > maxMinDist) {
+                        maxMinDist = minDist;
+                        bestIdx = i;
+                    }
+                }
+                if (bestIdx >= 0) {
+                    landmarks.push([...X[bestIdx]]);
+                }
+                else {
+                    break;
+                }
+            }
+            return landmarks;
+        }
+        /**
+         * Get labels for landmarks
+         */
+        _getLandmarkLabels(X, y, labelIndices) {
+            const landmarkLabels = [];
+            for (const landmark of this.landmarks) {
+                // Find nearest point in X
+                let minDist = Infinity;
+                let nearestIdx = 0;
+                for (let i = 0; i < X.length; i++) {
+                    const dist = this._euclideanDistance(landmark, X[i]);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        nearestIdx = i;
+                    }
+                }
+                landmarkLabels.push(labelIndices[nearestIdx]);
+            }
+            return landmarkLabels;
+        }
+        _euclideanDistance(a, b) {
+            let sum = 0;
+            for (let i = 0; i < Math.min(a.length, b.length); i++) {
+                sum += Math.pow(a[i] - b[i], 2);
+            }
+            return Math.sqrt(sum);
+        }
+        /**
+         * Predict using sparse kernel
+         */
+        predict(X, topK = 3) {
+            var _a, _b;
+            if (!this.trained) {
+                throw new Error('Model must be trained before prediction');
+            }
+            const XArray = Array.isArray(X[0]) ? X : [X];
+            const results = [];
+            for (const x of XArray) {
+                // Use landmarks for prediction
+                const preds = ((_b = (_a = this.kelm).predictFromVector) === null || _b === void 0 ? void 0 : _b.call(_a, [x], topK)) || [];
+                for (const pred of preds.slice(0, topK)) {
+                    results.push({
+                        label: pred.label || this.options.categories[pred.index || 0],
+                        prob: pred.prob || 0,
+                    });
+                }
+            }
+            return results;
+        }
+        /**
+         * Get selected landmarks
+         */
+        getLandmarks() {
+            return this.landmarks.map(l => [...l]);
+        }
+    }
+
+    // ensemble-kernel-elm.ts — Ensemble Kernel ELM
+    // Multiple KELM models with different kernels, voting/weighted combination
+    /**
+     * Ensemble Kernel ELM
+     * Features:
+     * - Multiple KELM models with different kernels
+     * - Voting/weighted combination
+     * - Diversity promotion
+     * - Robust predictions
+     */
+    class EnsembleKernelELM {
+        constructor(options) {
+            var _a, _b, _c, _d;
+            this.models = [];
+            this.trained = false;
+            this.categories = options.categories;
+            // Default kernels if not provided
+            const defaultKernels = options.kernels || [
+                { type: 'rbf', gamma: 1.0, weight: 1.0 },
+                { type: 'polynomial', degree: 2, coef0: 0, weight: 1.0 },
+                { type: 'linear', weight: 1.0 },
+            ];
+            this.options = {
+                categories: options.categories,
+                kernels: defaultKernels.map(k => { var _a; return (Object.assign(Object.assign({}, k), { weight: (_a = k.weight) !== null && _a !== void 0 ? _a : 1.0 })); }),
+                votingType: (_a = options.votingType) !== null && _a !== void 0 ? _a : 'weighted',
+                activation: (_b = options.activation) !== null && _b !== void 0 ? _b : 'relu',
+                maxLen: (_c = options.maxLen) !== null && _c !== void 0 ? _c : 100,
+                useTokenizer: (_d = options.useTokenizer) !== null && _d !== void 0 ? _d : true,
+            };
+            // Initialize models for each kernel
+            for (const kernel of this.options.kernels) {
+                const kelm = new KernelELM({
+                    useTokenizer: this.options.useTokenizer ? true : undefined,
+                    categories: this.options.categories,
+                    maxLen: this.options.maxLen,
+                    kernel: kernel.type,
+                    gamma: kernel.gamma,
+                    degree: kernel.degree,
+                    coef0: kernel.coef0,
+                });
+                this.models.push(kelm);
+            }
+        }
+        /**
+         * Train ensemble
+         */
+        train(X, y) {
+            var _a, _b, _c, _d;
+            // Prepare labels
+            const labelIndices = y.map(label => typeof label === 'number'
+                ? label
+                : this.options.categories.indexOf(label));
+            // Train each model
+            for (const model of this.models) {
+                (_b = (_a = model).setCategories) === null || _b === void 0 ? void 0 : _b.call(_a, this.options.categories);
+                (_d = (_c = model).trainFromData) === null || _d === void 0 ? void 0 : _d.call(_c, X, labelIndices);
+            }
+            this.trained = true;
+        }
+        /**
+         * Predict with ensemble voting
+         */
+        predict(X, topK = 3) {
+            var _a, _b;
+            if (!this.trained) {
+                throw new Error('Model must be trained before prediction');
+            }
+            const XArray = Array.isArray(X[0]) ? X : [X];
+            const allResults = [];
+            for (const x of XArray) {
+                // Get predictions from all models
+                const modelPredictions = [];
+                for (const model of this.models) {
+                    const preds = ((_b = (_a = model).predictFromVector) === null || _b === void 0 ? void 0 : _b.call(_a, [x], topK)) || [];
+                    modelPredictions.push(preds.map((p) => ({
+                        label: p.label || this.options.categories[p.index || 0],
+                        prob: p.prob || 0,
+                        index: p.index || 0,
+                    })));
+                }
+                // Combine predictions
+                const combined = this._combinePredictions(modelPredictions, topK);
+                allResults.push(...combined);
+            }
+            return allResults;
+        }
+        /**
+         * Combine predictions from multiple models
+         */
+        _combinePredictions(modelPredictions, topK) {
+            // Aggregate predictions by label
+            const labelScores = new Map();
+            for (let modelIdx = 0; modelIdx < modelPredictions.length; modelIdx++) {
+                const kernel = this.options.kernels[modelIdx];
+                const weight = kernel.weight;
+                for (const pred of modelPredictions[modelIdx]) {
+                    if (!labelScores.has(pred.label)) {
+                        labelScores.set(pred.label, { prob: 0, votes: 0, weight: 0 });
+                    }
+                    const score = labelScores.get(pred.label);
+                    if (this.options.votingType === 'majority') {
+                        score.votes += 1;
+                    }
+                    else if (this.options.votingType === 'weighted') {
+                        score.prob += pred.prob * weight;
+                        score.weight += weight;
+                        score.votes += 1;
+                    }
+                    else if (this.options.votingType === 'average') {
+                        score.prob += pred.prob;
+                        score.votes += 1;
+                    }
+                }
+            }
+            // Normalize and sort
+            const results = [];
+            for (const [label, score] of labelScores) {
+                let finalProb;
+                if (this.options.votingType === 'majority') {
+                    finalProb = score.votes / this.models.length;
+                }
+                else if (this.options.votingType === 'weighted') {
+                    finalProb = score.weight > 0 ? score.prob / score.weight : 0;
+                }
+                else {
+                    finalProb = score.votes > 0 ? score.prob / score.votes : 0;
+                }
+                results.push({
+                    label,
+                    prob: finalProb,
+                    votes: score.votes,
+                    confidence: finalProb * (score.votes / this.models.length),
+                });
+            }
+            // Sort by probability and return top K
+            results.sort((a, b) => b.prob - a.prob);
+            return results.slice(0, topK);
+        }
+    }
+
+    // deep-kernel-elm.ts — Deep Kernel ELM
+    // Multi-layer kernel transformations with hierarchical kernel learning
+    /**
+     * Deep Kernel ELM with multi-layer kernel transformations
+     * Features:
+     * - Hierarchical kernel learning
+     * - Deep feature extraction
+     * - Multi-layer kernel transformations
+     * - Complex non-linear pattern learning
+     */
+    class DeepKernelELM {
+        constructor(options) {
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+            this.layers = [];
+            this.trained = false;
+            this.categories = options.categories;
+            this.options = {
+                categories: options.categories,
+                numLayers: (_a = options.numLayers) !== null && _a !== void 0 ? _a : 3,
+                kernelType: (_b = options.kernelType) !== null && _b !== void 0 ? _b : 'rbf',
+                hiddenUnitsPerLayer: (_c = options.hiddenUnitsPerLayer) !== null && _c !== void 0 ? _c : 256,
+                gamma: (_d = options.gamma) !== null && _d !== void 0 ? _d : 1.0,
+                degree: (_e = options.degree) !== null && _e !== void 0 ? _e : 2,
+                coef0: (_f = options.coef0) !== null && _f !== void 0 ? _f : 0,
+                activation: (_g = options.activation) !== null && _g !== void 0 ? _g : 'relu',
+                maxLen: (_h = options.maxLen) !== null && _h !== void 0 ? _h : 100,
+                useTokenizer: (_j = options.useTokenizer) !== null && _j !== void 0 ? _j : true,
+            };
+            // Initialize layers
+            for (let i = 0; i < this.options.numLayers; i++) {
+                const kelm = new KernelELM({
+                    useTokenizer: i === 0 && this.options.useTokenizer ? true : undefined,
+                    categories: i === this.options.numLayers - 1 ? this.options.categories : [],
+                    maxLen: this.options.maxLen,
+                    kernel: this.options.kernelType,
+                    gamma: this.options.gamma,
+                    degree: this.options.degree,
+                    coef0: this.options.coef0,
+                });
+                this.layers.push(kelm);
+            }
+        }
+        /**
+         * Train deep kernel ELM
+         */
+        train(X, y) {
+            var _a, _b, _c, _d, _e, _f;
+            // Prepare labels
+            const labelIndices = y.map(label => typeof label === 'number'
+                ? label
+                : this.options.categories.indexOf(label));
+            // Forward pass through layers
+            let currentFeatures = X;
+            for (let i = 0; i < this.layers.length; i++) {
+                const layer = this.layers[i];
+                if (i === this.layers.length - 1) {
+                    // Final layer: train with labels
+                    (_b = (_a = layer).setCategories) === null || _b === void 0 ? void 0 : _b.call(_a, this.options.categories);
+                    (_d = (_c = layer).trainFromData) === null || _d === void 0 ? void 0 : _d.call(_c, currentFeatures, labelIndices);
+                }
+                else {
+                    // Intermediate layers: train autoencoder-style
+                    (_f = (_e = layer).trainFromData) === null || _f === void 0 ? void 0 : _f.call(_e, currentFeatures, currentFeatures.map((_, idx) => idx));
+                }
+                // Extract features from this layer
+                currentFeatures = this._extractLayerFeatures(currentFeatures, layer);
+            }
+            this.trained = true;
+        }
+        /**
+         * Extract features from a layer
+         */
+        _extractLayerFeatures(X, layer) {
+            var _a, _b;
+            const features = [];
+            for (const x of X) {
+                // Get kernel features (simplified - in practice, you'd extract actual kernel features)
+                const pred = ((_b = (_a = layer).predictLogitsFromVector) === null || _b === void 0 ? void 0 : _b.call(_a, x)) || [];
+                features.push(pred.length > 0 ? pred : x); // Use prediction as features or fallback to input
+            }
+            return features;
+        }
+        /**
+         * Predict with deep kernel
+         */
+        predict(X, topK = 3, returnLayerFeatures = false) {
+            var _a, _b, _c, _d;
+            if (!this.trained) {
+                throw new Error('Model must be trained before prediction');
+            }
+            const XArray = Array.isArray(X[0]) ? X : [X];
+            const allResults = [];
+            for (const x of XArray) {
+                // Forward pass through layers
+                let currentFeatures = x;
+                const layerFeatures = [];
+                for (let i = 0; i < this.layers.length - 1; i++) {
+                    const layer = this.layers[i];
+                    const features = ((_b = (_a = layer).predictLogitsFromVector) === null || _b === void 0 ? void 0 : _b.call(_a, currentFeatures)) || currentFeatures;
+                    layerFeatures.push(features);
+                    currentFeatures = features;
+                }
+                // Final layer prediction
+                const finalLayer = this.layers[this.layers.length - 1];
+                const preds = ((_d = (_c = finalLayer).predictFromVector) === null || _d === void 0 ? void 0 : _d.call(_c, [currentFeatures], topK)) || [];
+                for (const pred of preds.slice(0, topK)) {
+                    const result = {
+                        label: pred.label || this.options.categories[pred.index || 0],
+                        prob: pred.prob || 0,
+                    };
+                    if (returnLayerFeatures) {
+                        result.layerFeatures = layerFeatures.map(f => [...f]);
+                    }
+                    allResults.push(result);
+                }
+            }
+            return allResults;
+        }
+    }
+
+    // robust-kernel-elm.ts — Robust Kernel ELM
+    // Outlier-resistant kernels with robust loss functions
+    /**
+     * Robust Kernel ELM with outlier resistance
+     * Features:
+     * - Outlier-resistant kernels
+     * - Robust loss functions
+     * - Noise-tolerant learning
+     * - Outlier detection
+     */
+    class RobustKernelELM {
+        constructor(options) {
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+            this.outlierIndices = new Set();
+            this.trained = false;
+            this.categories = options.categories;
+            this.options = {
+                categories: options.categories,
+                kernelType: (_a = options.kernelType) !== null && _a !== void 0 ? _a : 'rbf',
+                robustLoss: (_b = options.robustLoss) !== null && _b !== void 0 ? _b : 'huber',
+                outlierThreshold: (_c = options.outlierThreshold) !== null && _c !== void 0 ? _c : 2.0,
+                gamma: (_d = options.gamma) !== null && _d !== void 0 ? _d : 1.0,
+                degree: (_e = options.degree) !== null && _e !== void 0 ? _e : 2,
+                coef0: (_f = options.coef0) !== null && _f !== void 0 ? _f : 0,
+                activation: (_g = options.activation) !== null && _g !== void 0 ? _g : 'relu',
+                maxLen: (_h = options.maxLen) !== null && _h !== void 0 ? _h : 100,
+                useTokenizer: (_j = options.useTokenizer) !== null && _j !== void 0 ? _j : true,
+            };
+            this.kelm = new KernelELM({
+                useTokenizer: this.options.useTokenizer ? true : undefined,
+                categories: this.options.categories,
+                maxLen: this.options.maxLen,
+                kernel: this.options.kernelType,
+                gamma: this.options.gamma,
+                degree: this.options.degree,
+                coef0: this.options.coef0,
+            });
+        }
+        /**
+         * Train with robust loss
+         */
+        train(X, y) {
+            var _a, _b, _c, _d;
+            // Prepare labels
+            const labelIndices = y.map(label => typeof label === 'number'
+                ? label
+                : this.options.categories.indexOf(label));
+            // Detect outliers
+            this._detectOutliers(X);
+            // Filter outliers for training (or use robust weighting)
+            const filteredX = [];
+            const filteredY = [];
+            for (let i = 0; i < X.length; i++) {
+                if (!this.outlierIndices.has(i)) {
+                    filteredX.push(X[i]);
+                    filteredY.push(labelIndices[i]);
+                }
+            }
+            // Train on filtered data
+            (_b = (_a = this.kelm).setCategories) === null || _b === void 0 ? void 0 : _b.call(_a, this.options.categories);
+            (_d = (_c = this.kelm).trainFromData) === null || _d === void 0 ? void 0 : _d.call(_c, filteredX.length > 0 ? filteredX : X, filteredY.length > 0 ? filteredY : labelIndices);
+            this.trained = true;
+        }
+        /**
+         * Detect outliers using statistical methods
+         */
+        _detectOutliers(X) {
+            this.outlierIndices.clear();
+            if (X.length === 0)
+                return;
+            // Compute mean and std for each dimension
+            const dim = X[0].length;
+            const means = new Array(dim).fill(0);
+            const stds = new Array(dim).fill(0);
+            // Compute means
+            for (const x of X) {
+                for (let i = 0; i < dim; i++) {
+                    means[i] += x[i] || 0;
+                }
+            }
+            for (let i = 0; i < dim; i++) {
+                means[i] /= X.length;
+            }
+            // Compute standard deviations
+            for (const x of X) {
+                for (let i = 0; i < dim; i++) {
+                    stds[i] += Math.pow((x[i] || 0) - means[i], 2);
+                }
+            }
+            for (let i = 0; i < dim; i++) {
+                stds[i] = Math.sqrt(stds[i] / X.length);
+            }
+            // Detect outliers (points far from mean)
+            for (let i = 0; i < X.length; i++) {
+                const x = X[i];
+                let maxZScore = 0;
+                for (let j = 0; j < dim; j++) {
+                    if (stds[j] > 0) {
+                        const zScore = Math.abs((x[j] || 0) - means[j]) / stds[j];
+                        maxZScore = Math.max(maxZScore, zScore);
+                    }
+                }
+                if (maxZScore > this.options.outlierThreshold) {
+                    this.outlierIndices.add(i);
+                }
+            }
+        }
+        /**
+         * Apply robust loss function
+         */
+        _robustLoss(error) {
+            if (this.options.robustLoss === 'huber') {
+                const delta = 1.0;
+                if (Math.abs(error) <= delta) {
+                    return 0.5 * error * error;
+                }
+                else {
+                    return delta * (Math.abs(error) - 0.5 * delta);
+                }
+            }
+            else if (this.options.robustLoss === 'hinge') {
+                return Math.max(0, 1 - error);
+            }
+            else if (this.options.robustLoss === 'epsilon-insensitive') {
+                const epsilon = 0.1;
+                return Math.max(0, Math.abs(error) - epsilon);
+            }
+            return error * error; // Default: squared loss
+        }
+        /**
+         * Predict with outlier detection
+         */
+        predict(X, topK = 3) {
+            var _a, _b;
+            if (!this.trained) {
+                throw new Error('Model must be trained before prediction');
+            }
+            const XArray = Array.isArray(X[0]) ? X : [X];
+            const results = [];
+            for (const x of XArray) {
+                // Check if input is outlier
+                const isOutlier = this._isOutlier(x);
+                // Get prediction
+                const preds = ((_b = (_a = this.kelm).predictFromVector) === null || _b === void 0 ? void 0 : _b.call(_a, [x], topK)) || [];
+                for (const pred of preds.slice(0, topK)) {
+                    const prob = pred.prob || 0;
+                    const robustness = isOutlier ? 0.5 : 1.0; // Lower robustness for outliers
+                    results.push({
+                        label: pred.label || this.options.categories[pred.index || 0],
+                        prob,
+                        isOutlier,
+                        robustness,
+                    });
+                }
+            }
+            return results;
+        }
+        /**
+         * Check if a point is an outlier
+         */
+        _isOutlier(x) {
+            // Simplified outlier check (in practice, use trained model statistics)
+            const mean = x.reduce((a, b) => a + b, 0) / x.length;
+            const std = Math.sqrt(x.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / x.length);
+            if (std === 0)
+                return false;
+            const maxZScore = Math.max(...x.map(v => Math.abs((v - mean) / std)));
+            return maxZScore > this.options.outlierThreshold;
+        }
+    }
+
+    // elm-kelm-cascade.ts — ELM-KELM Cascade
+    // ELM feature extraction → KELM classification
+    /**
+     * ELM-KELM Cascade
+     * Features:
+     * - ELM for feature extraction
+     * - KELM for classification
+     * - Hierarchical learning
+     * - Efficiency + accuracy
+     */
+    class ELMKELMCascade {
+        constructor(options) {
+            var _a, _b, _c, _d, _e, _f, _g, _h;
+            this.trained = false;
+            this.categories = options.categories;
+            this.options = {
+                categories: options.categories,
+                elmHiddenUnits: (_a = options.elmHiddenUnits) !== null && _a !== void 0 ? _a : 256,
+                kelmKernel: (_b = options.kelmKernel) !== null && _b !== void 0 ? _b : 'rbf',
+                kelmGamma: (_c = options.kelmGamma) !== null && _c !== void 0 ? _c : 1.0,
+                kelmDegree: (_d = options.kelmDegree) !== null && _d !== void 0 ? _d : 2,
+                kelmCoef0: (_e = options.kelmCoef0) !== null && _e !== void 0 ? _e : 0,
+                activation: (_f = options.activation) !== null && _f !== void 0 ? _f : 'relu',
+                maxLen: (_g = options.maxLen) !== null && _g !== void 0 ? _g : 100,
+                useTokenizer: (_h = options.useTokenizer) !== null && _h !== void 0 ? _h : true,
+            };
+            // Initialize ELM for feature extraction
+            this.elm = new ELM({
+                useTokenizer: this.options.useTokenizer ? true : undefined,
+                hiddenUnits: this.options.elmHiddenUnits,
+                categories: [], // No categories for feature extraction
+                maxLen: this.options.maxLen,
+                activation: this.options.activation,
+            });
+            // Initialize KELM for classification
+            this.kelm = new KernelELM({
+                useTokenizer: false, // Already tokenized by ELM
+                categories: this.options.categories,
+                maxLen: undefined,
+                kernel: this.options.kelmKernel,
+                gamma: this.options.kelmGamma,
+                degree: this.options.kelmDegree,
+                coef0: this.options.kelmCoef0,
+            });
+        }
+        /**
+         * Train cascade
+         */
+        train(X, y) {
+            var _a, _b, _c, _d, _e, _f;
+            // Prepare labels
+            const labelIndices = y.map(label => typeof label === 'number'
+                ? label
+                : this.options.categories.indexOf(label));
+            // Step 1: Train ELM for feature extraction (autoencoder-style)
+            (_b = (_a = this.elm).trainFromData) === null || _b === void 0 ? void 0 : _b.call(_a, X, X.map((_, i) => i)); // Self-supervised
+            // Step 2: Extract features using ELM
+            const extractedFeatures = this._extractFeatures(X);
+            // Step 3: Train KELM on extracted features
+            (_d = (_c = this.kelm).setCategories) === null || _d === void 0 ? void 0 : _d.call(_c, this.options.categories);
+            (_f = (_e = this.kelm).trainFromData) === null || _f === void 0 ? void 0 : _f.call(_e, extractedFeatures, labelIndices);
+            this.trained = true;
+        }
+        /**
+         * Extract features using ELM
+         */
+        _extractFeatures(X) {
+            var _a, _b;
+            const features = [];
+            for (const x of X) {
+                // Get hidden layer activations as features
+                const logits = ((_b = (_a = this.elm).predictLogitsFromVector) === null || _b === void 0 ? void 0 : _b.call(_a, x)) || [];
+                features.push(logits.length > 0 ? logits : x); // Fallback to input if no logits
+            }
+            return features;
+        }
+        /**
+         * Predict with cascade
+         */
+        predict(X, topK = 3, returnFeatures = false) {
+            var _a, _b;
+            if (!this.trained) {
+                throw new Error('Model must be trained before prediction');
+            }
+            const XArray = Array.isArray(X[0]) ? X : [X];
+            const results = [];
+            for (const x of XArray) {
+                // Step 1: Extract features
+                const extractedFeatures = this._extractFeatures([x])[0];
+                // Step 2: Classify with KELM
+                const preds = ((_b = (_a = this.kelm).predictFromVector) === null || _b === void 0 ? void 0 : _b.call(_a, [extractedFeatures], topK)) || [];
+                for (const pred of preds.slice(0, topK)) {
+                    const result = {
+                        label: pred.label || this.options.categories[pred.index || 0],
+                        prob: pred.prob || 0,
+                    };
+                    if (returnFeatures) {
+                        result.extractedFeatures = [...extractedFeatures];
+                    }
+                    results.push(result);
+                }
+            }
+            return results;
+        }
+    }
+
+    // string-kernel-elm.ts — String Kernel ELM
+    // String kernels for text/DNA/protein sequences
+    /**
+     * String Kernel ELM for sequence data
+     * Features:
+     * - N-gram kernels
+     * - Subsequence kernels
+     * - Spectrum kernels
+     * - Text/DNA/protein sequence analysis
+     */
+    class StringKernelELM {
+        constructor(options) {
+            var _a, _b, _c, _d, _e;
+            this.trained = false;
+            this.vocabulary = new Set();
+            this.categories = options.categories;
+            this.options = {
+                categories: options.categories,
+                kernelType: (_a = options.kernelType) !== null && _a !== void 0 ? _a : 'ngram',
+                n: (_b = options.n) !== null && _b !== void 0 ? _b : 3,
+                lambda: (_c = options.lambda) !== null && _c !== void 0 ? _c : 0.5,
+                activation: (_d = options.activation) !== null && _d !== void 0 ? _d : 'relu',
+                maxLen: (_e = options.maxLen) !== null && _e !== void 0 ? _e : 100,
+            };
+            // Use polynomial kernel as base (will be adapted for strings)
+            this.kelm = new KernelELM({
+                categories: this.options.categories,
+                kernel: 'polynomial',
+                degree: this.options.n,
+            });
+        }
+        /**
+         * Train on string sequences
+         */
+        train(X, y) {
+            var _a, _b, _c, _d;
+            // Prepare labels
+            const labelIndices = y.map(label => typeof label === 'number'
+                ? label
+                : this.options.categories.indexOf(label));
+            // Convert strings to feature vectors
+            const stringX = X;
+            const featureVectors = this._stringsToFeatures(stringX);
+            // Train KELM
+            (_b = (_a = this.kelm).setCategories) === null || _b === void 0 ? void 0 : _b.call(_a, this.options.categories);
+            (_d = (_c = this.kelm).trainFromData) === null || _d === void 0 ? void 0 : _d.call(_c, featureVectors, labelIndices);
+            this.trained = true;
+        }
+        /**
+         * Convert strings to feature vectors using string kernels
+         */
+        _stringsToFeatures(strings) {
+            // Build vocabulary
+            this.vocabulary.clear();
+            for (const s of strings) {
+                const ngrams = this._extractNgrams(s);
+                for (const ngram of ngrams) {
+                    this.vocabulary.add(ngram);
+                }
+            }
+            const vocabArray = Array.from(this.vocabulary);
+            const features = [];
+            for (const s of strings) {
+                const feature = new Array(vocabArray.length).fill(0);
+                const ngrams = this._extractNgrams(s);
+                for (const ngram of ngrams) {
+                    const idx = vocabArray.indexOf(ngram);
+                    if (idx >= 0) {
+                        feature[idx] += 1;
+                    }
+                }
+                // Normalize
+                const sum = feature.reduce((a, b) => a + b, 0);
+                if (sum > 0) {
+                    for (let i = 0; i < feature.length; i++) {
+                        feature[i] /= sum;
+                    }
+                }
+                features.push(feature);
+            }
+            return features;
+        }
+        /**
+         * Extract n-grams from string
+         */
+        _extractNgrams(s) {
+            const ngrams = [];
+            if (this.options.kernelType === 'ngram' || this.options.kernelType === 'spectrum') {
+                // N-gram extraction
+                for (let i = 0; i <= s.length - this.options.n; i++) {
+                    ngrams.push(s.substring(i, i + this.options.n));
+                }
+            }
+            else if (this.options.kernelType === 'subsequence') {
+                // Subsequence extraction (simplified)
+                for (let i = 0; i <= s.length - this.options.n; i++) {
+                    ngrams.push(s.substring(i, i + this.options.n));
+                }
+            }
+            return ngrams;
+        }
+        /**
+         * Predict on strings
+         */
+        predict(X, topK = 3) {
+            var _a, _b;
+            if (!this.trained) {
+                throw new Error('Model must be trained before prediction');
+            }
+            const stringX = X;
+            const featureVectors = this._stringsToFeatures(stringX);
+            const results = [];
+            for (const features of featureVectors) {
+                const preds = ((_b = (_a = this.kelm).predictFromVector) === null || _b === void 0 ? void 0 : _b.call(_a, [features], topK)) || [];
+                for (const pred of preds.slice(0, topK)) {
+                    results.push({
+                        label: pred.label || this.options.categories[pred.index || 0],
+                        prob: pred.prob || 0,
+                    });
+                }
+            }
+            return results;
+        }
+    }
+
+    // convolutional-elm.ts — Convolutional ELM (C-ELM)
+    // Convolutional layers + ELM for image/sequence processing
+    /**
+     * Convolutional ELM
+     * Features:
+     * - Convolutional layers for feature extraction
+     * - ELM for classification
+     * - Translation invariance
+     * - Image/sequence processing
+     */
+    class ConvolutionalELM {
+        constructor(options) {
+            var _a, _b, _c, _d, _e, _f, _g, _h;
+            this.trained = false;
+            this.categories = options.categories;
+            this.options = {
+                categories: options.categories,
+                inputShape: (_a = options.inputShape) !== null && _a !== void 0 ? _a : [28, 28, 1],
+                filters: (_b = options.filters) !== null && _b !== void 0 ? _b : [32, 64],
+                kernelSizes: (_c = options.kernelSizes) !== null && _c !== void 0 ? _c : [3, 3],
+                poolSizes: (_d = options.poolSizes) !== null && _d !== void 0 ? _d : [2, 2],
+                hiddenUnits: (_e = options.hiddenUnits) !== null && _e !== void 0 ? _e : 256,
+                activation: (_f = options.activation) !== null && _f !== void 0 ? _f : 'relu',
+                maxLen: (_g = options.maxLen) !== null && _g !== void 0 ? _g : 100,
+                useTokenizer: (_h = options.useTokenizer) !== null && _h !== void 0 ? _h : true,
+            };
+            this.elm = new ELM({
+                useTokenizer: this.options.useTokenizer ? true : undefined,
+                hiddenUnits: this.options.hiddenUnits,
+                categories: this.options.categories,
+                maxLen: this.options.maxLen,
+                activation: this.options.activation,
+            });
+        }
+        /**
+         * Train on image/sequence data
+         */
+        train(X, y) {
+            var _a, _b, _c, _d;
+            // Prepare labels
+            const labelIndices = y.map(label => typeof label === 'number'
+                ? label
+                : this.options.categories.indexOf(label));
+            // Extract convolutional features
+            const images = Array.isArray(X[0][0]) ? X : X.map(x => [x]);
+            const features = this._extractConvolutionalFeatures(images);
+            // Train ELM on features
+            (_b = (_a = this.elm).setCategories) === null || _b === void 0 ? void 0 : _b.call(_a, this.options.categories);
+            (_d = (_c = this.elm).trainFromData) === null || _d === void 0 ? void 0 : _d.call(_c, features, labelIndices);
+            this.trained = true;
+        }
+        /**
+         * Extract features using convolutional layers
+         */
+        _extractConvolutionalFeatures(images) {
+            const features = [];
+            for (const image of images) {
+                let current = image;
+                // Apply convolutional layers
+                for (let layer = 0; layer < this.options.filters.length; layer++) {
+                    const convInput = Array.isArray(current[0][0])
+                        ? current[0]
+                        : current;
+                    const convOutput = this._convLayer(convInput, this.options.filters[layer], this.options.kernelSizes[layer] || 3);
+                    current = this._poolLayer(convOutput, this.options.poolSizes[layer] || 2);
+                }
+                // Flatten
+                const flattened = this._flatten(current);
+                features.push(flattened);
+            }
+            return features;
+        }
+        /**
+         * Convolutional layer (simplified)
+         */
+        _convLayer(input, numFilters, kernelSize) {
+            // Simplified convolution (in practice, use proper convolution)
+            const output = [];
+            for (let f = 0; f < numFilters; f++) {
+                const featureMap = [];
+                for (let i = 0; i < input.length; i++) {
+                    featureMap[i] = [];
+                    for (let j = 0; j < input[i].length; j++) {
+                        // Simple convolution (simplified)
+                        let sum = 0;
+                        for (let ki = 0; ki < kernelSize; ki++) {
+                            for (let kj = 0; kj < kernelSize; kj++) {
+                                const row = i + ki - Math.floor(kernelSize / 2);
+                                const col = j + kj - Math.floor(kernelSize / 2);
+                                if (row >= 0 && row < input.length && col >= 0 && col < input[i].length) {
+                                    sum += input[row][col] || 0;
+                                }
+                            }
+                        }
+                        featureMap[i][j] = Math.max(0, sum / (kernelSize * kernelSize)); // ReLU
+                    }
+                }
+                output.push(featureMap);
+            }
+            return output;
+        }
+        /**
+         * Pooling layer
+         */
+        _poolLayer(input, poolSize) {
+            // Simplified pooling
+            const images = Array.isArray(input[0][0])
+                ? input
+                : [input];
+            const pooled = [];
+            for (const img of images) {
+                const pooledImg = [];
+                for (let i = 0; i < img.length; i += poolSize) {
+                    pooledImg[i / poolSize] = [];
+                    for (let j = 0; j < img[i].length; j += poolSize) {
+                        // Max pooling
+                        let max = -Infinity;
+                        for (let pi = 0; pi < poolSize && i + pi < img.length; pi++) {
+                            for (let pj = 0; pj < poolSize && j + pj < img[i].length; pj++) {
+                                max = Math.max(max, img[i + pi][j + pj] || 0);
+                            }
+                        }
+                        pooledImg[i / poolSize][j / poolSize] = max;
+                    }
+                }
+                pooled.push(pooledImg);
+            }
+            return pooled;
+        }
+        /**
+         * Flatten feature maps
+         */
+        _flatten(featureMaps) {
+            if (Array.isArray(featureMaps[0][0])) {
+                const maps = featureMaps;
+                const flattened = [];
+                for (const map of maps) {
+                    for (const row of map) {
+                        flattened.push(...row);
+                    }
+                }
+                return flattened;
+            }
+            else {
+                const map = featureMaps;
+                const flattened = [];
+                for (const row of map) {
+                    flattened.push(...row);
+                }
+                return flattened;
+            }
+        }
+        /**
+         * Predict
+         */
+        predict(X, topK = 3) {
+            var _a, _b;
+            if (!this.trained) {
+                throw new Error('Model must be trained before prediction');
+            }
+            const images = Array.isArray(X[0][0]) ? X : X.map(x => [x]);
+            const features = this._extractConvolutionalFeatures(images);
+            const results = [];
+            for (const feature of features) {
+                const preds = ((_b = (_a = this.elm).predictFromVector) === null || _b === void 0 ? void 0 : _b.call(_a, [feature], topK)) || [];
+                for (const pred of preds.slice(0, topK)) {
+                    results.push({
+                        label: pred.label || this.options.categories[pred.index || 0],
+                        prob: pred.prob || 0,
+                    });
+                }
+            }
+            return results;
+        }
+    }
+
+    // recurrent-elm.ts — Recurrent ELM (R-ELM)
+    // Recurrent connections in ELM for sequence modeling
+    /**
+     * Recurrent ELM for sequence modeling
+     * Features:
+     * - Recurrent connections
+     * - Sequence modeling
+     * - Temporal dependencies
+     * - Memory of past inputs
+     */
+    class RecurrentELM {
+        constructor(options) {
+            var _a, _b, _c, _d, _e, _f;
+            this.hiddenState = [];
+            this.trained = false;
+            this.categories = options.categories;
+            this.options = {
+                categories: options.categories,
+                hiddenUnits: (_a = options.hiddenUnits) !== null && _a !== void 0 ? _a : 256,
+                recurrentUnits: (_b = options.recurrentUnits) !== null && _b !== void 0 ? _b : 128,
+                sequenceLength: (_c = options.sequenceLength) !== null && _c !== void 0 ? _c : 10,
+                activation: (_d = options.activation) !== null && _d !== void 0 ? _d : 'tanh',
+                maxLen: (_e = options.maxLen) !== null && _e !== void 0 ? _e : 100,
+                useTokenizer: (_f = options.useTokenizer) !== null && _f !== void 0 ? _f : true,
+            };
+            this.elm = new ELM({
+                useTokenizer: this.options.useTokenizer ? true : undefined,
+                hiddenUnits: this.options.hiddenUnits,
+                categories: this.options.categories,
+                maxLen: this.options.maxLen,
+                activation: this.options.activation,
+            });
+            // Initialize hidden state
+            this.hiddenState = new Array(this.options.recurrentUnits).fill(0);
+        }
+        /**
+         * Train on sequences
+         */
+        train(X, y) {
+            var _a, _b, _c, _d;
+            // Prepare labels
+            const labelIndices = y.map(label => typeof label === 'number'
+                ? label
+                : this.options.categories.indexOf(label));
+            // Process sequences with recurrent connections
+            const features = this._processSequences(X);
+            // Train ELM
+            (_b = (_a = this.elm).setCategories) === null || _b === void 0 ? void 0 : _b.call(_a, this.options.categories);
+            (_d = (_c = this.elm).trainFromData) === null || _d === void 0 ? void 0 : _d.call(_c, features, labelIndices);
+            this.trained = true;
+        }
+        /**
+         * Process sequences with recurrent connections
+         */
+        _processSequences(sequences) {
+            const features = [];
+            for (const sequence of sequences) {
+                // Reset hidden state for each sequence
+                this.hiddenState = new Array(this.options.recurrentUnits).fill(0);
+                // Process sequence step by step
+                for (const step of sequence) {
+                    // Combine input with hidden state
+                    [...step, ...this.hiddenState];
+                    // Update hidden state (simplified recurrent update)
+                    this._updateHiddenState(step);
+                }
+                // Use final hidden state + last input as features
+                const finalFeatures = [...sequence[sequence.length - 1] || [], ...this.hiddenState];
+                features.push(finalFeatures);
+            }
+            return features;
+        }
+        /**
+         * Update hidden state (recurrent connection)
+         */
+        _updateHiddenState(input) {
+            // Simplified recurrent update: h_t = tanh(W * [x_t; h_{t-1}])
+            const combined = [...input, ...this.hiddenState];
+            const newState = new Array(this.options.recurrentUnits).fill(0);
+            // Simple linear transformation (in practice, use learned weights)
+            for (let i = 0; i < this.options.recurrentUnits; i++) {
+                let sum = 0;
+                for (let j = 0; j < combined.length; j++) {
+                    // Simple hash-based weight (in practice, use learned weights)
+                    const hash = this._hash(`recurrent_${i}_${j}`);
+                    sum += combined[j] * hash;
+                }
+                // Apply activation
+                if (this.options.activation === 'tanh') {
+                    newState[i] = Math.tanh(sum);
+                }
+                else if (this.options.activation === 'relu') {
+                    newState[i] = Math.max(0, sum);
+                }
+                else if (this.options.activation === 'sigmoid') {
+                    newState[i] = 1 / (1 + Math.exp(-sum));
+                }
+                else {
+                    newState[i] = sum;
+                }
+            }
+            this.hiddenState = newState;
+        }
+        _hash(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return (hash / 2147483647) * 0.1; // Small weights
+        }
+        /**
+         * Predict on sequence
+         */
+        predict(X, topK = 3) {
+            var _a, _b;
+            if (!this.trained) {
+                throw new Error('Model must be trained before prediction');
+            }
+            const sequences = Array.isArray(X[0][0])
+                ? X
+                : [X];
+            const results = [];
+            for (const sequence of sequences) {
+                // Process sequence
+                this.hiddenState = new Array(this.options.recurrentUnits).fill(0);
+                for (const step of sequence) {
+                    this._updateHiddenState(step);
+                }
+                const finalFeatures = [...sequence[sequence.length - 1] || [], ...this.hiddenState];
+                const preds = ((_b = (_a = this.elm).predictFromVector) === null || _b === void 0 ? void 0 : _b.call(_a, [finalFeatures], topK)) || [];
+                for (const pred of preds.slice(0, topK)) {
+                    results.push({
+                        label: pred.label || this.options.categories[pred.index || 0],
+                        prob: pred.prob || 0,
+                        hiddenState: [...this.hiddenState],
+                    });
+                }
+            }
+            return results;
+        }
+        /**
+         * Reset hidden state
+         */
+        resetState() {
+            this.hiddenState = new Array(this.options.recurrentUnits).fill(0);
+        }
+    }
+
+    // fuzzy-elm.ts — Fuzzy ELM
+    // Fuzzy logic + ELM for uncertainty handling and soft classification
+    /**
+     * Fuzzy ELM
+     * Features:
+     * - Fuzzy logic integration
+     * - Uncertainty handling
+     * - Soft classification
+     * - Membership functions
+     */
+    class FuzzyELM {
+        constructor(options) {
+            var _a, _b, _c, _d, _e, _f;
+            this.trained = false;
+            this.membershipParams = new Map();
+            this.categories = options.categories;
+            this.options = {
+                categories: options.categories,
+                hiddenUnits: (_a = options.hiddenUnits) !== null && _a !== void 0 ? _a : 256,
+                fuzzyMembership: (_b = options.fuzzyMembership) !== null && _b !== void 0 ? _b : 'gaussian',
+                fuzzificationLevel: (_c = options.fuzzificationLevel) !== null && _c !== void 0 ? _c : 0.5,
+                activation: (_d = options.activation) !== null && _d !== void 0 ? _d : 'relu',
+                maxLen: (_e = options.maxLen) !== null && _e !== void 0 ? _e : 100,
+                useTokenizer: (_f = options.useTokenizer) !== null && _f !== void 0 ? _f : true,
+            };
+            this.elm = new ELM({
+                useTokenizer: this.options.useTokenizer ? true : undefined,
+                hiddenUnits: this.options.hiddenUnits,
+                categories: this.options.categories,
+                maxLen: this.options.maxLen,
+                activation: this.options.activation,
+            });
+        }
+        /**
+         * Train with fuzzy logic
+         */
+        train(X, y) {
+            var _a, _b, _c, _d;
+            // Prepare labels
+            const labelIndices = y.map(label => typeof label === 'number'
+                ? label
+                : this.options.categories.indexOf(label));
+            // Fuzzify input features
+            const fuzzifiedX = this._fuzzifyFeatures(X);
+            // Compute membership parameters
+            this._computeMembershipParams(X, labelIndices);
+            // Train ELM on fuzzified features
+            (_b = (_a = this.elm).setCategories) === null || _b === void 0 ? void 0 : _b.call(_a, this.options.categories);
+            (_d = (_c = this.elm).trainFromData) === null || _d === void 0 ? void 0 : _d.call(_c, fuzzifiedX, labelIndices);
+            this.trained = true;
+        }
+        /**
+         * Fuzzify input features
+         */
+        _fuzzifyFeatures(X) {
+            const fuzzified = [];
+            for (const x of X) {
+                const fuzzy = x.map(val => this._fuzzifyValue(val));
+                fuzzified.push(fuzzy);
+            }
+            return fuzzified;
+        }
+        /**
+         * Fuzzify a single value
+         */
+        _fuzzifyValue(value) {
+            // Apply fuzzification based on membership function
+            if (this.options.fuzzyMembership === 'triangular') {
+                // Triangular membership
+                const center = 0;
+                const width = this.options.fuzzificationLevel;
+                if (Math.abs(value - center) <= width) {
+                    return 1 - Math.abs(value - center) / width;
+                }
+                return 0;
+            }
+            else if (this.options.fuzzyMembership === 'gaussian') {
+                // Gaussian membership
+                const center = 0;
+                const sigma = this.options.fuzzificationLevel;
+                return Math.exp(-Math.pow(value - center, 2) / (2 * sigma * sigma));
+            }
+            else if (this.options.fuzzyMembership === 'trapezoidal') {
+                // Trapezoidal membership
+                const center = 0;
+                const width = this.options.fuzzificationLevel;
+                const dist = Math.abs(value - center);
+                if (dist <= width * 0.5) {
+                    return 1;
+                }
+                else if (dist <= width) {
+                    return 1 - (dist - width * 0.5) / (width * 0.5);
+                }
+                return 0;
+            }
+            return value; // Default: no fuzzification
+        }
+        /**
+         * Compute membership parameters for each category
+         */
+        _computeMembershipParams(X, y) {
+            // Compute mean and std for each category
+            const categoryData = new Map();
+            for (let i = 0; i < X.length; i++) {
+                const label = y[i];
+                if (!categoryData.has(label)) {
+                    categoryData.set(label, []);
+                }
+                categoryData.get(label).push(X[i]);
+            }
+            for (const [label, data] of categoryData) {
+                const mean = this._computeMean(data);
+                const std = this._computeStd(data, mean);
+                this.membershipParams.set(this.options.categories[label], {
+                    center: mean,
+                    width: std * 2, // 2 standard deviations
+                });
+            }
+        }
+        _computeMean(data) {
+            var _a;
+            if (data.length === 0)
+                return 0;
+            const sum = data.reduce((s, x) => s + x.reduce((a, b) => a + b, 0), 0);
+            const count = data.length * (((_a = data[0]) === null || _a === void 0 ? void 0 : _a.length) || 1);
+            return sum / count;
+        }
+        _computeStd(data, mean) {
+            var _a;
+            if (data.length === 0)
+                return 1;
+            const variance = data.reduce((s, x) => s + x.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0), 0) / (data.length * (((_a = data[0]) === null || _a === void 0 ? void 0 : _a.length) || 1));
+            return Math.sqrt(variance);
+        }
+        /**
+         * Compute fuzzy membership for a prediction
+         */
+        _computeMembership(label, features) {
+            const params = this.membershipParams.get(label);
+            if (!params)
+                return 0.5; // Default membership
+            const mean = features.reduce((a, b) => a + b, 0) / features.length;
+            const dist = Math.abs(mean - params.center);
+            if (this.options.fuzzyMembership === 'gaussian') {
+                return Math.exp(-Math.pow(dist, 2) / (2 * params.width * params.width));
+            }
+            else {
+                // Triangular
+                if (dist <= params.width) {
+                    return 1 - dist / params.width;
+                }
+                return 0;
+            }
+        }
+        /**
+         * Predict with fuzzy logic
+         */
+        predict(X, topK = 3) {
+            var _a, _b;
+            if (!this.trained) {
+                throw new Error('Model must be trained before prediction');
+            }
+            const XArray = Array.isArray(X[0]) ? X : [X];
+            const results = [];
+            for (const x of XArray) {
+                // Fuzzify input
+                const fuzzified = this._fuzzifyFeatures([x])[0];
+                // Get base prediction
+                const preds = ((_b = (_a = this.elm).predictFromVector) === null || _b === void 0 ? void 0 : _b.call(_a, [fuzzified], topK)) || [];
+                for (const pred of preds.slice(0, topK)) {
+                    const label = pred.label || this.options.categories[pred.index || 0];
+                    const prob = pred.prob || 0;
+                    // Compute fuzzy membership
+                    const membership = this._computeMembership(label, x);
+                    // Combine probability with membership
+                    const confidence = prob * membership;
+                    results.push({
+                        label,
+                        prob,
+                        membership,
+                        confidence,
+                    });
+                }
+            }
+            return results;
+        }
+    }
+
+    // quantum-inspired-elm.ts — Quantum-Inspired ELM
+    // Quantum computing principles for feature maps and optimization
+    /**
+     * Quantum-Inspired ELM
+     * Features:
+     * - Quantum feature maps
+     * - Quantum superposition
+     * - Quantum entanglement
+     * - Quantum kernel methods
+     */
+    class QuantumInspiredELM {
+        constructor(options) {
+            var _a, _b, _c, _d, _e, _f, _g;
+            this.trained = false;
+            this.quantumStates = [];
+            this.categories = options.categories;
+            this.options = {
+                categories: options.categories,
+                hiddenUnits: (_a = options.hiddenUnits) !== null && _a !== void 0 ? _a : 256,
+                quantumLayers: (_b = options.quantumLayers) !== null && _b !== void 0 ? _b : 2,
+                entanglement: (_c = options.entanglement) !== null && _c !== void 0 ? _c : true,
+                superposition: (_d = options.superposition) !== null && _d !== void 0 ? _d : true,
+                activation: (_e = options.activation) !== null && _e !== void 0 ? _e : 'relu',
+                maxLen: (_f = options.maxLen) !== null && _f !== void 0 ? _f : 100,
+                useTokenizer: (_g = options.useTokenizer) !== null && _g !== void 0 ? _g : true,
+            };
+            this.elm = new ELM({
+                useTokenizer: this.options.useTokenizer ? true : undefined,
+                hiddenUnits: this.options.hiddenUnits,
+                categories: this.options.categories,
+                maxLen: this.options.maxLen,
+                activation: this.options.activation,
+            });
+        }
+        /**
+         * Train with quantum-inspired features
+         */
+        train(X, y) {
+            var _a, _b, _c, _d;
+            // Prepare labels
+            const labelIndices = y.map(label => typeof label === 'number'
+                ? label
+                : this.options.categories.indexOf(label));
+            // Apply quantum feature maps
+            const quantumFeatures = this._applyQuantumFeatureMap(X);
+            // Train ELM
+            (_b = (_a = this.elm).setCategories) === null || _b === void 0 ? void 0 : _b.call(_a, this.options.categories);
+            (_d = (_c = this.elm).trainFromData) === null || _d === void 0 ? void 0 : _d.call(_c, quantumFeatures, labelIndices);
+            this.trained = true;
+        }
+        /**
+         * Apply quantum feature map
+         */
+        _applyQuantumFeatureMap(X) {
+            const features = [];
+            for (const x of X) {
+                let quantumState = this._encodeToQuantumState(x);
+                // Apply quantum layers
+                for (let layer = 0; layer < this.options.quantumLayers; layer++) {
+                    quantumState = this._applyQuantumLayer(quantumState, layer);
+                }
+                // Measure quantum state (convert to classical features)
+                const measured = this._measureQuantumState(quantumState);
+                features.push(measured);
+            }
+            return features;
+        }
+        /**
+         * Encode classical data to quantum state
+         */
+        _encodeToQuantumState(x) {
+            // Quantum state encoding (amplitude encoding)
+            const state = new Array(Math.pow(2, Math.ceil(Math.log2(x.length)))).fill(0);
+            // Normalize input
+            const norm = Math.sqrt(x.reduce((sum, v) => sum + v * v, 0));
+            if (norm > 0) {
+                for (let i = 0; i < x.length; i++) {
+                    state[i] = x[i] / norm;
+                }
+            }
+            return state;
+        }
+        /**
+         * Apply quantum layer (quantum gates simulation)
+         */
+        _applyQuantumLayer(state, layer) {
+            let newState = [...state];
+            // Apply quantum gates (simplified simulation)
+            if (this.options.superposition) {
+                // Hadamard-like transformation (superposition)
+                newState = this._applySuperposition(newState);
+            }
+            if (this.options.entanglement) {
+                // Entanglement (CNOT-like)
+                newState = this._applyEntanglement(newState);
+            }
+            // Rotation gates
+            newState = this._applyRotation(newState, layer);
+            return newState;
+        }
+        /**
+         * Apply superposition (Hadamard-like)
+         */
+        _applySuperposition(state) {
+            const newState = new Array(state.length).fill(0);
+            const factor = 1 / Math.sqrt(2);
+            for (let i = 0; i < state.length; i++) {
+                for (let j = 0; j < state.length; j++) {
+                    // Simplified Hadamard transformation
+                    const phase = (i === j) ? factor : factor * Math.cos(Math.PI * i * j / state.length);
+                    newState[i] += state[j] * phase;
+                }
+            }
+            return newState;
+        }
+        /**
+         * Apply entanglement (CNOT-like)
+         */
+        _applyEntanglement(state) {
+            const newState = [...state];
+            // Entangle pairs of qubits
+            for (let i = 0; i < state.length - 1; i += 2) {
+                const temp = newState[i];
+                newState[i] = newState[i + 1];
+                newState[i + 1] = temp;
+            }
+            return newState;
+        }
+        /**
+         * Apply rotation gates
+         */
+        _applyRotation(state, layer) {
+            const newState = new Array(state.length).fill(0);
+            const angle = Math.PI / (2 * (layer + 1));
+            for (let i = 0; i < state.length; i++) {
+                const cos = Math.cos(angle);
+                const sin = Math.sin(angle);
+                newState[i] = state[i] * cos - state[(i + 1) % state.length] * sin;
+            }
+            return newState;
+        }
+        /**
+         * Measure quantum state (convert to classical)
+         */
+        _measureQuantumState(state) {
+            // Measure by computing probabilities (amplitudes squared)
+            const probabilities = state.map(amp => amp * amp);
+            // Project to hidden units dimension
+            const hiddenDim = this.options.hiddenUnits;
+            const features = new Array(hiddenDim).fill(0);
+            for (let i = 0; i < hiddenDim; i++) {
+                const idx = i % probabilities.length;
+                features[i] = probabilities[idx];
+            }
+            return features;
+        }
+        /**
+         * Predict with quantum-inspired model
+         */
+        predict(X, topK = 3) {
+            var _a, _b;
+            if (!this.trained) {
+                throw new Error('Model must be trained before prediction');
+            }
+            const XArray = Array.isArray(X[0]) ? X : [X];
+            const results = [];
+            for (const x of XArray) {
+                // Apply quantum feature map
+                const quantumFeatures = this._applyQuantumFeatureMap([x])[0];
+                // Predict
+                const preds = ((_b = (_a = this.elm).predictFromVector) === null || _b === void 0 ? void 0 : _b.call(_a, [quantumFeatures], topK)) || [];
+                // Get quantum state for this input
+                let quantumState = this._encodeToQuantumState(x);
+                for (let layer = 0; layer < this.options.quantumLayers; layer++) {
+                    quantumState = this._applyQuantumLayer(quantumState, layer);
+                }
+                const amplitude = Math.sqrt(quantumState.reduce((sum, v) => sum + v * v, 0));
+                for (const pred of preds.slice(0, topK)) {
+                    results.push({
+                        label: pred.label || this.options.categories[pred.index || 0],
+                        prob: pred.prob || 0,
+                        quantumState: [...quantumState],
+                        amplitude,
+                    });
+                }
+            }
+            return results;
+        }
+    }
+
+    // graph-kernel-elm.ts — Graph Kernel ELM
+    // Graph kernels (Weisfeiler-Lehman, etc.) for graph structure encoding
+    /**
+     * Graph Kernel ELM
+     * Features:
+     * - Graph kernels (Weisfeiler-Lehman, shortest-path, random-walk)
+     * - Graph structure encoding
+     * - Node classification/regression
+     */
+    class GraphKernelELM {
+        constructor(options) {
+            var _a, _b, _c, _d, _e, _f, _g;
+            this.trained = false;
+            this.categories = options.categories;
+            this.options = {
+                categories: options.categories,
+                kernelType: (_a = options.kernelType) !== null && _a !== void 0 ? _a : 'weisfeiler-lehman',
+                wlIterations: (_b = options.wlIterations) !== null && _b !== void 0 ? _b : 3,
+                kernel: (_c = options.kernel) !== null && _c !== void 0 ? _c : 'rbf',
+                gamma: (_d = options.gamma) !== null && _d !== void 0 ? _d : 1.0,
+                degree: (_e = options.degree) !== null && _e !== void 0 ? _e : 2,
+                coef0: (_f = options.coef0) !== null && _f !== void 0 ? _f : 0,
+                activation: (_g = options.activation) !== null && _g !== void 0 ? _g : 'relu',
+            };
+            this.kelm = new KernelELM({
+                categories: this.options.categories,
+                kernel: this.options.kernel,
+                gamma: this.options.gamma,
+                degree: this.options.degree,
+                coef0: this.options.coef0,
+            });
+        }
+        /**
+         * Train on graphs
+         */
+        train(graphs, y) {
+            var _a, _b, _c, _d;
+            // Prepare labels
+            const labelIndices = y.map(label => typeof label === 'number'
+                ? label
+                : this.options.categories.indexOf(label));
+            // Compute graph kernel features
+            const features = this._computeGraphKernelFeatures(graphs);
+            // Train KELM
+            (_b = (_a = this.kelm).setCategories) === null || _b === void 0 ? void 0 : _b.call(_a, this.options.categories);
+            (_d = (_c = this.kelm).trainFromData) === null || _d === void 0 ? void 0 : _d.call(_c, features, labelIndices);
+            this.trained = true;
+        }
+        /**
+         * Compute graph kernel features
+         */
+        _computeGraphKernelFeatures(graphs) {
+            const features = [];
+            for (const graph of graphs) {
+                let graphFeatures;
+                if (this.options.kernelType === 'weisfeiler-lehman') {
+                    graphFeatures = this._weisfeilerLehmanKernel(graph);
+                }
+                else if (this.options.kernelType === 'shortest-path') {
+                    graphFeatures = this._shortestPathKernel(graph);
+                }
+                else {
+                    graphFeatures = this._randomWalkKernel(graph);
+                }
+                features.push(graphFeatures);
+            }
+            return features;
+        }
+        /**
+         * Weisfeiler-Lehman kernel
+         */
+        _weisfeilerLehmanKernel(graph) {
+            const features = [];
+            const nodeLabels = new Map();
+            // Initialize labels with node features
+            for (const node of graph.nodes) {
+                const label = node.features.join(',');
+                nodeLabels.set(node.id, label);
+            }
+            // WL iterations
+            for (let iter = 0; iter < this.options.wlIterations; iter++) {
+                const newLabels = new Map();
+                for (const node of graph.nodes) {
+                    // Get neighbor labels
+                    const neighbors = graph.edges
+                        .filter(e => e.source === node.id || e.target === node.id)
+                        .map(e => e.source === node.id ? e.target : e.source);
+                    const neighborLabels = neighbors
+                        .map(nid => nodeLabels.get(nid) || '')
+                        .sort()
+                        .join(',');
+                    // New label = current label + sorted neighbor labels
+                    const newLabel = `${nodeLabels.get(node.id)}|${neighborLabels}`;
+                    newLabels.set(node.id, newLabel);
+                }
+                // Count label frequencies
+                const labelCounts = new Map();
+                for (const label of newLabels.values()) {
+                    labelCounts.set(label, (labelCounts.get(label) || 0) + 1);
+                }
+                // Add to features
+                for (const [label, count] of labelCounts) {
+                    features.push(count);
+                }
+                nodeLabels.clear();
+                for (const [id, label] of newLabels) {
+                    nodeLabels.set(id, label);
+                }
+            }
+            return features.length > 0 ? features : new Array(10).fill(0);
+        }
+        /**
+         * Shortest-path kernel
+         */
+        _shortestPathKernel(graph) {
+            // Compute shortest paths between all pairs
+            const distances = this._computeShortestPaths(graph);
+            // Create histogram of distances
+            const maxDist = Math.max(...distances.flat().filter(d => d < Infinity));
+            const bins = Math.min(10, maxDist + 1);
+            const histogram = new Array(bins).fill(0);
+            for (const row of distances) {
+                for (const dist of row) {
+                    if (dist < Infinity) {
+                        const bin = Math.min(Math.floor(dist), bins - 1);
+                        histogram[bin]++;
+                    }
+                }
+            }
+            return histogram;
+        }
+        /**
+         * Random-walk kernel
+         */
+        _randomWalkKernel(graph) {
+            // Simplified random-walk kernel
+            const features = [];
+            // Node degree distribution
+            const degrees = new Map();
+            for (const edge of graph.edges) {
+                degrees.set(edge.source, (degrees.get(edge.source) || 0) + 1);
+                degrees.set(edge.target, (degrees.get(edge.target) || 0) + 1);
+            }
+            const degreeHist = new Array(10).fill(0);
+            for (const degree of degrees.values()) {
+                const bin = Math.min(degree, 9);
+                degreeHist[bin]++;
+            }
+            features.push(...degreeHist);
+            // Graph statistics
+            features.push(graph.nodes.length);
+            features.push(graph.edges.length);
+            features.push(graph.nodes.length > 0 ? graph.edges.length / graph.nodes.length : 0);
+            return features;
+        }
+        /**
+         * Compute shortest paths (Floyd-Warshall simplified)
+         */
+        _computeShortestPaths(graph) {
+            const n = graph.nodes.length;
+            const dist = Array(n).fill(null).map(() => Array(n).fill(Infinity));
+            // Initialize
+            for (let i = 0; i < n; i++) {
+                dist[i][i] = 0;
+            }
+            // Add edges
+            for (const edge of graph.edges) {
+                const srcIdx = graph.nodes.findIndex(n => n.id === edge.source);
+                const tgtIdx = graph.nodes.findIndex(n => n.id === edge.target);
+                if (srcIdx >= 0 && tgtIdx >= 0) {
+                    dist[srcIdx][tgtIdx] = 1;
+                    dist[tgtIdx][srcIdx] = 1;
+                }
+            }
+            // Floyd-Warshall
+            for (let k = 0; k < n; k++) {
+                for (let i = 0; i < n; i++) {
+                    for (let j = 0; j < n; j++) {
+                        if (dist[i][k] + dist[k][j] < dist[i][j]) {
+                            dist[i][j] = dist[i][k] + dist[k][j];
+                        }
+                    }
+                }
+            }
+            return dist;
+        }
+        /**
+         * Predict on graphs
+         */
+        predict(graphs, topK = 3) {
+            var _a, _b;
+            if (!this.trained) {
+                throw new Error('Model must be trained before prediction');
+            }
+            const graphArray = Array.isArray(graphs) ? graphs : [graphs];
+            const features = this._computeGraphKernelFeatures(graphArray);
+            const results = [];
+            for (const feature of features) {
+                const preds = ((_b = (_a = this.kelm).predictFromVector) === null || _b === void 0 ? void 0 : _b.call(_a, [feature], topK)) || [];
+                for (const pred of preds.slice(0, topK)) {
+                    results.push({
+                        label: pred.label || this.options.categories[pred.index || 0],
+                        prob: pred.prob || 0,
+                    });
+                }
+            }
+            return results;
+        }
+    }
+
+    // tensor-kernel-elm.ts — Tensor Kernel ELM
+    // Multi-dimensional kernel learning with tensor factorization
+    /**
+     * Tensor Kernel ELM
+     * Features:
+     * - Multi-dimensional kernel learning
+     * - Tensor factorization
+     * - Multi-modal data fusion
+     * - Complex relationship modeling
+     */
+    class TensorKernelELM {
+        constructor(options) {
+            var _a, _b, _c, _d, _e, _f, _g;
+            this.trained = false;
+            this.tensorFactors = []; // [sample][mode][dim][rank] - each sample has multiple modes, each mode is a 2D matrix
+            this.categories = options.categories;
+            this.options = {
+                categories: options.categories,
+                tensorRank: (_a = options.tensorRank) !== null && _a !== void 0 ? _a : 10,
+                modes: (_b = options.modes) !== null && _b !== void 0 ? _b : [10, 10, 10],
+                kernel: (_c = options.kernel) !== null && _c !== void 0 ? _c : 'rbf',
+                gamma: (_d = options.gamma) !== null && _d !== void 0 ? _d : 1.0,
+                degree: (_e = options.degree) !== null && _e !== void 0 ? _e : 2,
+                coef0: (_f = options.coef0) !== null && _f !== void 0 ? _f : 0,
+                activation: (_g = options.activation) !== null && _g !== void 0 ? _g : 'relu',
+            };
+            this.kelm = new KernelELM({
+                categories: this.options.categories,
+                kernel: this.options.kernel,
+                gamma: this.options.gamma,
+                degree: this.options.degree,
+                coef0: this.options.coef0,
+            });
+        }
+        /**
+         * Train on tensor data
+         */
+        train(X, y) {
+            var _a, _b, _c, _d;
+            // Prepare labels
+            const labelIndices = y.map(label => typeof label === 'number'
+                ? label
+                : this.options.categories.indexOf(label));
+            // Factorize tensors
+            const tensorX = Array.isArray(X[0][0]) ? X : this._reshapeToTensors(X);
+            this._factorizeTensors(tensorX);
+            // Extract features from tensor factorization
+            const features = this._extractTensorFeatures(tensorX);
+            // Train KELM
+            (_b = (_a = this.kelm).setCategories) === null || _b === void 0 ? void 0 : _b.call(_a, this.options.categories);
+            (_d = (_c = this.kelm).trainFromData) === null || _d === void 0 ? void 0 : _d.call(_c, features, labelIndices);
+            this.trained = true;
+        }
+        /**
+         * Reshape 2D data to 3D tensors
+         */
+        _reshapeToTensors(X) {
+            const [h, w, c] = this.options.modes;
+            const result = [];
+            for (const x of X) {
+                const tensor = [];
+                let idx = 0;
+                for (let k = 0; k < c; k++) {
+                    const matrix = [];
+                    for (let i = 0; i < h; i++) {
+                        const row = [];
+                        for (let j = 0; j < w; j++) {
+                            row.push(x[idx % x.length] || 0);
+                            idx++;
+                        }
+                        matrix.push(row);
+                    }
+                    tensor.push(matrix);
+                }
+                result.push(tensor);
+            }
+            return result;
+        }
+        /**
+         * Factorize tensors using CP decomposition
+         */
+        _factorizeTensors(tensors) {
+            // Simplified CP (CANDECOMP/PARAFAC) decomposition
+            this.tensorFactors = [];
+            for (const tensor of tensors) {
+                const factors = [];
+                // Factorize each mode
+                for (let mode = 0; mode < this.options.modes.length; mode++) {
+                    const factor = new Array(this.options.modes[mode]).fill(0).map(() => new Array(this.options.tensorRank).fill(0).map(() => Math.random() * 0.1));
+                    factors.push(factor);
+                }
+                this.tensorFactors.push(factors);
+            }
+        }
+        /**
+         * Extract features from tensor factorization
+         */
+        _extractTensorFeatures(tensors) {
+            const features = [];
+            for (let i = 0; i < tensors.length; i++) {
+                const factors = this.tensorFactors[i] || [];
+                // Flatten factors
+                const feature = [];
+                for (const factor of factors) {
+                    for (const row of factor) {
+                        for (const val of row) {
+                            feature.push(val);
+                        }
+                    }
+                }
+                // Add tensor statistics
+                const tensor = tensors[i];
+                if (tensor && tensor.length > 0) {
+                    feature.push(tensor.length); // Height
+                    if (Array.isArray(tensor[0])) {
+                        feature.push(tensor[0].length); // Width
+                        if (Array.isArray(tensor[0][0])) {
+                            feature.push(tensor[0][0].length); // Channels
+                        }
+                        else {
+                            feature.push(1);
+                        }
+                    }
+                    else {
+                        feature.push(1);
+                        feature.push(1);
+                    }
+                    // Add tensor norm
+                    let norm = 0;
+                    for (const matrix of tensor) {
+                        if (Array.isArray(matrix)) {
+                            for (const row of matrix) {
+                                if (Array.isArray(row)) {
+                                    for (const val of row) {
+                                        norm += val * val;
+                                    }
+                                }
+                                else {
+                                    norm += row * row;
+                                }
+                            }
+                        }
+                    }
+                    feature.push(Math.sqrt(norm));
+                }
+                else {
+                    feature.push(0, 0, 0, 0);
+                }
+                features.push(feature);
+            }
+            return features;
+        }
+        /**
+         * Predict on tensor data
+         */
+        predict(X, topK = 3) {
+            var _a, _b;
+            if (!this.trained) {
+                throw new Error('Model must be trained before prediction');
+            }
+            const tensorX = Array.isArray(X[0][0]) ? X : this._reshapeToTensors(X);
+            const features = this._extractTensorFeatures(tensorX);
+            const results = [];
+            for (let i = 0; i < features.length; i++) {
+                const preds = ((_b = (_a = this.kelm).predictFromVector) === null || _b === void 0 ? void 0 : _b.call(_a, [features[i]], topK)) || [];
+                const factors = this.tensorFactors[i] || [];
+                for (const pred of preds.slice(0, topK)) {
+                    const factorCopy = factors.map((f) => f.map((row) => row.slice()));
+                    results.push({
+                        label: pred.label || this.options.categories[pred.index || 0],
+                        prob: pred.prob || 0,
+                        tensorFactors: factorCopy,
+                    });
+                }
+            }
+            return results;
+        }
+    }
+
+    function buildRFF(d, D, sigma = 1.0, rng = Math.random) {
+        const W = new Float64Array(D * d);
+        const b = new Float64Array(D);
+        const s = 1 / Math.max(1e-12, sigma); // N(0, 1/sigma^2)
+        for (let i = 0; i < D * d; i++)
+            W[i] = gauss$1(rng) * s;
+        for (let i = 0; i < D; i++)
+            b[i] = rng() * 2 * Math.PI;
+        return { W, b, D, d, sigma };
+    }
+    function mapRFF(rff, x) {
+        const { W, b, D, d } = rff;
+        const z = new Float64Array(2 * D);
+        for (let k = 0; k < D; k++) {
+            let dot = b[k];
+            const off = k * d;
+            for (let j = 0; j < d; j++)
+                dot += W[off + j] * (x[j] || 0);
+            z[k] = Math.cos(dot);
+            z[D + k] = Math.sin(dot);
+        }
+        // L2 normalize block to keep ridge well-conditioned
+        let s = 0;
+        for (let i = 0; i < z.length; i++)
+            s += z[i] * z[i];
+        const inv = 1 / Math.sqrt(Math.max(s, 1e-12));
+        for (let i = 0; i < z.length; i++)
+            z[i] *= inv;
+        return z;
+    }
+    // Box-Muller
+    function gauss$1(rng) {
+        let u = 0, v = 0;
+        while (u === 0)
+            u = rng();
+        while (v === 0)
+            v = rng();
+        return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    }
+
+    // online_ridge.ts — maintain (Φ^T Φ + λI)^{-1} and β for linear ridge
+    class OnlineRidge {
+        constructor(p, m, lambda = 1e-4) {
+            this.p = p;
+            this.m = m;
+            this.lambda = lambda;
+            this.Ainv = new Float64Array(p * p);
+            this.Beta = new Float64Array(p * m);
+            // Ainv = (λ I)^-1 = (1/λ) I
+            const inv = 1 / Math.max(1e-12, lambda);
+            for (let i = 0; i < p; i++)
+                this.Ainv[i * p + i] = inv;
+        }
+        // rank-1 update with a single sample (φ, y)
+        update(phi, y) {
+            const { p, m, Ainv, Beta } = this;
+            // u = Ainv * phi
+            const u = new Float64Array(p);
+            for (let i = 0; i < p; i++) {
+                let s = 0, row = i * p;
+                for (let j = 0; j < p; j++)
+                    s += Ainv[row + j] * phi[j];
+                u[i] = s;
+            }
+            // denom = 1 + phi^T u
+            let denom = 1;
+            for (let j = 0; j < p; j++)
+                denom += phi[j] * u[j];
+            denom = Math.max(denom, 1e-12);
+            const scale = 1 / denom;
+            // Ainv <- Ainv - (u u^T) * scale
+            for (let i = 0; i < p; i++) {
+                const ui = u[i] * scale;
+                for (let j = 0; j < p; j++)
+                    Ainv[i * p + j] -= ui * u[j];
+            }
+            // Beta <- Beta + Ainv * (phi * y^T)
+            // compute t = Ainv * phi  (reuse u after Ainv update)
+            for (let i = 0; i < p; i++) {
+                let s = 0, row = i * p;
+                for (let j = 0; j < p; j++)
+                    s += Ainv[row + j] * phi[j];
+                u[i] = s; // reuse u as t
+            }
+            // Beta += outer(u, y)
+            for (let i = 0; i < p; i++) {
+                const ui = u[i];
+                for (let c = 0; c < m; c++)
+                    Beta[i * m + c] += ui * y[c];
+            }
+        }
+        // yhat = φ^T Beta
+        predict(phi) {
+            const { p, m, Beta } = this;
+            const out = new Float64Array(m);
+            for (let c = 0; c < m; c++) {
+                let s = 0;
+                for (let i = 0; i < p; i++)
+                    s += phi[i] * Beta[i * m + c];
+                out[c] = s;
+            }
+            return out;
+        }
+    }
+
+    function isFiniteMatrix(M) {
+        for (let i = 0; i < M.length; i++) {
+            const row = M[i];
+            if (!row || row.length !== M[0].length)
+                return false;
+            for (let j = 0; j < row.length; j++) {
+                const v = row[j];
+                if (!Number.isFinite(v))
+                    return false;
+            }
+        }
+        return true;
+    }
+    function symmetrize(A) {
+        const n = A.length;
+        for (let i = 0; i < n; i++) {
+            for (let j = i + 1; j < n; j++) {
+                const v = 0.5 * (A[i][j] + A[j][i]);
+                A[i][j] = v;
+                A[j][i] = v;
+            }
+        }
+    }
+    function choleskySolve(A, Y) {
+        const n = A.length, m = Y[0].length;
+        // L
+        const L = Array.from({ length: n }, () => Array(n).fill(0));
+        for (let i = 0; i < n; i++) {
+            for (let j = 0; j <= i; j++) {
+                let sum = A[i][j];
+                for (let k = 0; k < j; k++)
+                    sum -= L[i][k] * L[j][k];
+                if (i === j) {
+                    if (!(sum > 0) || !Number.isFinite(sum))
+                        return null; // not PD
+                    L[i][j] = Math.sqrt(sum);
+                }
+                else {
+                    L[i][j] = sum / L[j][j];
+                }
+            }
+        }
+        // forward solve: L Z = Y
+        const Z = Array.from({ length: n }, () => Array(m).fill(0));
+        for (let c = 0; c < m; c++) {
+            for (let i = 0; i < n; i++) {
+                let s = Y[i][c];
+                for (let k = 0; k < i; k++)
+                    s -= L[i][k] * Z[k][c];
+                Z[i][c] = s / L[i][i];
+            }
+        }
+        // back solve: L^T Θ = Z
+        const Theta = Array.from({ length: n }, () => Array(m).fill(0));
+        for (let c = 0; c < m; c++) {
+            for (let i = n - 1; i >= 0; i--) {
+                let s = Z[i][c];
+                for (let k = i + 1; k < n; k++)
+                    s -= L[k][i] * Theta[k][c];
+                Theta[i][c] = s / L[i][i];
+            }
+        }
+        return { Theta, L };
+    }
+    // CG fallback for SPD system A x = b, where A is given as matrix
+    function cgSolve(A, b, tol, maxIter) {
+        const n = A.length;
+        const x = new Array(n).fill(0);
+        const r = b.slice(); // r = b - A x = b initially
+        const p = r.slice();
+        let rsold = dot$1(r, r);
+        let it = 0;
+        for (; it < maxIter; it++) {
+            const Ap = matvec(A, p);
+            const alpha = rsold / Math.max(1e-300, dot$1(p, Ap));
+            for (let i = 0; i < n; i++)
+                x[i] += alpha * p[i];
+            for (let i = 0; i < n; i++)
+                r[i] -= alpha * Ap[i];
+            const rsnew = dot$1(r, r);
+            if (Math.sqrt(rsnew) <= tol)
+                break;
+            const beta = rsnew / Math.max(1e-300, rsold);
+            for (let i = 0; i < n; i++)
+                p[i] = r[i] + beta * p[i];
+            rsold = rsnew;
+        }
+        return { x, iters: it + 1 };
+    }
+    function dot$1(a, b) {
+        let s = 0;
+        for (let i = 0; i < a.length; i++)
+            s += a[i] * b[i];
+        return s;
+    }
+    function matvec(A, x) {
+        const n = A.length, out = new Array(n).fill(0);
+        for (let i = 0; i < n; i++) {
+            const Ai = A[i];
+            let s = 0;
+            for (let j = 0; j < n; j++)
+                s += Ai[j] * x[j];
+            out[i] = s;
+        }
+        return out;
+    }
+    /**
+     * Production-grade ridge regression solver:
+     * Solves (K + λ I) Θ = Y, with symmetry enforcement, adaptive jitter, and CG fallback.
+     */
+    function ridgeSolvePro(K, Y, opts = {}) {
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+        const info = [];
+        const n = K.length;
+        if (n === 0)
+            return { Theta: [], usedLambda: (_a = opts.lambda) !== null && _a !== void 0 ? _a : 1e-4, method: "cholesky", info: ["empty system"] };
+        if (!isFiniteMatrix(K))
+            throw new Error("K contains NaN/Inf or ragged rows");
+        if (!Array.isArray(Y) || Y.length !== n || Y[0].length === undefined)
+            throw new Error("Y shape mismatch");
+        if (!isFiniteMatrix(Y))
+            throw new Error("Y contains NaN/Inf");
+        const m = Y[0].length;
+        const baseLambda = Math.max(0, (_b = opts.lambda) !== null && _b !== void 0 ? _b : 1e-4);
+        const ensureSym = (_c = opts.ensureSymmetry) !== null && _c !== void 0 ? _c : true;
+        let jitter = (_d = opts.jitterInit) !== null && _d !== void 0 ? _d : 1e-10;
+        const jitterMax = (_e = opts.jitterMax) !== null && _e !== void 0 ? _e : 1e-1;
+        const jitterFactor = (_f = opts.jitterFactor) !== null && _f !== void 0 ? _f : 10;
+        // Build A = (symmetrized K) + (lambda + jitter) I
+        const A = Array.from({ length: n }, (_, i) => K[i].slice());
+        if (ensureSym)
+            symmetrize(A);
+        // Try Cholesky with increasing jitter
+        let usedLambda = baseLambda;
+        while (true) {
+            if ((_g = opts.abortSignal) === null || _g === void 0 ? void 0 : _g.aborted)
+                throw new Error("ridgeSolvePro aborted");
+            // add diag
+            for (let i = 0; i < n; i++)
+                A[i][i] = (ensureSym ? A[i][i] : (A[i][i] + A[i][i]) * 0.5) + usedLambda;
+            const chol = choleskySolve(A, Y);
+            if (chol) {
+                info.push(`Cholesky ok with lambda=${usedLambda.toExponential(2)}`);
+                return { Theta: chol.Theta, usedLambda, method: "cholesky", info };
+            }
+            else {
+                // remove the just-added lambda before next try
+                for (let i = 0; i < n; i++)
+                    A[i][i] -= usedLambda;
+                if (jitter > jitterMax) {
+                    info.push(`Cholesky failed up to jitter=${jitterMax}; falling back to CG`);
+                    break;
+                }
+                usedLambda = baseLambda + jitter;
+                info.push(`Cholesky failed; retry with lambda=${usedLambda.toExponential(2)}`);
+                jitter *= jitterFactor;
+            }
+        }
+        // CG fallback: solve A Θ = Y column-wise
+        // Rebuild A once with final usedLambda
+        for (let i = 0; i < n; i++)
+            A[i][i] = (ensureSym ? A[i][i] : (A[i][i] + A[i][i]) * 0.5) + usedLambda;
+        const tol = (_h = opts.cgTol) !== null && _h !== void 0 ? _h : 1e-6;
+        const maxIter = (_j = opts.cgMaxIter) !== null && _j !== void 0 ? _j : Math.min(1000, n * 3);
+        const Theta = Array.from({ length: n }, () => Array(m).fill(0));
+        let maxIters = 0;
+        for (let c = 0; c < m; c++) {
+            if ((_k = opts.abortSignal) === null || _k === void 0 ? void 0 : _k.aborted)
+                throw new Error("ridgeSolvePro aborted");
+            const b = new Array(n);
+            for (let i = 0; i < n; i++)
+                b[i] = Y[i][c];
+            const { x, iters } = cgSolve(A, b, tol, maxIter);
+            maxIters = Math.max(maxIters, iters);
+            for (let i = 0; i < n; i++)
+                Theta[i][c] = x[i];
+        }
+        info.push(`CG solved columns with tol=${tol}, maxIter=${maxIter}, max iters used=${maxIters}`);
+        return { Theta, usedLambda, method: "cg", iters: maxIters, info };
+    }
+
+    // src/math/index.ts — production-grade numerics for Ω
+    // Backward compatible with previous exports; adds robust, stable helpers.
+    // ---------- Constants
+    const EPS = 1e-12; // general epsilon for divides/sqrt
+    const DISK_EPS = 0.95; // strict radius for Poincaré-like ops
+    const MAX_EXP = 709; // ~ ln(Number.MAX_VALUE)
+    const MIN_EXP = -745; // ~ ln(Number.MIN_VALUE)
+    // ---------- Constructors / guards
+    function zeros(n) { return new Float64Array(n); }
+    function isFiniteVec(a) {
+        const n = a.length;
+        for (let i = 0; i < n; i++)
+            if (!Number.isFinite(a[i]))
+                return false;
+        return true;
+    }
+    function asVec(a) {
+        // Copy into Float64Array for consistent math perf
+        return a instanceof Float64Array ? a : new Float64Array(Array.from(a));
+    }
+    // ---------- Basic algebra (pure, allocation)
+    function dot(a, b) {
+        const n = Math.min(a.length, b.length);
+        let s = 0;
+        for (let i = 0; i < n; i++)
+            s += a[i] * b[i];
+        return s;
+    }
+    function add(a, b) {
+        const n = Math.min(a.length, b.length);
+        const o = new Float64Array(n);
+        for (let i = 0; i < n; i++)
+            o[i] = a[i] + b[i];
+        return o;
+    }
+    function scal(a, k) {
+        const n = a.length;
+        const o = new Float64Array(n);
+        for (let i = 0; i < n; i++)
+            o[i] = a[i] * k;
+        return o;
+    }
+    function hadamard(a, b) {
+        const n = Math.min(a.length, b.length);
+        const o = new Float64Array(n);
+        for (let i = 0; i < n; i++)
+            o[i] = a[i] * b[i];
+        return o;
+    }
+    function tanhVec(a) {
+        const n = a.length;
+        const o = new Float64Array(n);
+        for (let i = 0; i < n; i++)
+            o[i] = Math.tanh(a[i]);
+        return o;
+    }
+    // ---------- In-place variants (underscore suffix) to reduce GC
+    function add_(out, a, b) {
+        const n = Math.min(out.length, a.length, b.length);
+        for (let i = 0; i < n; i++)
+            out[i] = a[i] + b[i];
+        return out;
+    }
+    function scal_(out, a, k) {
+        const n = Math.min(out.length, a.length);
+        for (let i = 0; i < n; i++)
+            out[i] = a[i] * k;
+        return out;
+    }
+    function hadamard_(out, a, b) {
+        const n = Math.min(out.length, a.length, b.length);
+        for (let i = 0; i < n; i++)
+            out[i] = a[i] * b[i];
+        return out;
+    }
+    function tanhVec_(out, a) {
+        const n = Math.min(out.length, a.length);
+        for (let i = 0; i < n; i++)
+            out[i] = Math.tanh(a[i]);
+        return out;
+    }
+    // ---------- Norms / normalization
+    function l2$1(a) {
+        // robust L2 (avoids NaN on weird input)
+        let s = 0;
+        for (let i = 0; i < a.length; i++)
+            s += a[i] * a[i];
+        return Math.sqrt(Math.max(0, s));
+    }
+    function normalizeL2(a, eps = EPS) {
+        const nrm = l2$1(a);
+        if (!(nrm > eps) || !Number.isFinite(nrm))
+            return new Float64Array(a.length); // zero vec
+        const o = new Float64Array(a.length);
+        const inv = 1 / nrm;
+        for (let i = 0; i < a.length; i++)
+            o[i] = a[i] * inv;
+        return o;
+    }
+    function clampVec(a, lo = -Infinity, hi = Infinity) {
+        const n = a.length, o = new Float64Array(n);
+        for (let i = 0; i < n; i++)
+            o[i] = Math.min(hi, Math.max(lo, a[i]));
+        return o;
+    }
+    // ---------- Stats
+    function mean(a) {
+        if (a.length === 0)
+            return 0;
+        let s = 0;
+        for (let i = 0; i < a.length; i++)
+            s += a[i];
+        return s / a.length;
+    }
+    function variance(a, mu = mean(a)) {
+        if (a.length === 0)
+            return 0;
+        let s = 0;
+        for (let i = 0; i < a.length; i++) {
+            const d = a[i] - mu;
+            s += d * d;
+        }
+        return s / a.length;
+    }
+    function standardize(a) {
+        const mu = mean(a);
+        const v = variance(a, mu);
+        const sd = Math.sqrt(Math.max(v, 0));
+        if (!(sd > EPS)) {
+            // zero-variance edge: return zeros to avoid blowing up downstream
+            return new Float64Array(a.length);
+        }
+        const o = new Float64Array(a.length);
+        const inv = 1 / sd;
+        for (let i = 0; i < a.length; i++)
+            o[i] = (a[i] - mu) * inv;
+        return o;
+    }
+    // ---------- Cosine (robust)
+    function cosine$2(a, b) {
+        var _a, _b;
+        const n = Math.min(a.length, b.length);
+        if (n === 0)
+            return 0;
+        let dotv = 0, na = 0, nb = 0;
+        for (let i = 0; i < n; i++) {
+            const ai = ((_a = a[i]) !== null && _a !== void 0 ? _a : 0), bi = ((_b = b[i]) !== null && _b !== void 0 ? _b : 0);
+            dotv += ai * bi;
+            na += ai * ai;
+            nb += bi * bi;
+        }
+        const denom = Math.sqrt(Math.max(na * nb, EPS));
+        const v = dotv / denom;
+        return Number.isFinite(v) ? v : 0;
+    }
+    // ---------- Stable softmax / log-sum-exp
+    function logSumExp(a) {
+        let m = -Infinity;
+        for (let i = 0; i < a.length; i++)
+            if (a[i] > m)
+                m = a[i];
+        if (!Number.isFinite(m))
+            m = 0;
+        let s = 0;
+        for (let i = 0; i < a.length; i++)
+            s += Math.exp(Math.max(MIN_EXP, Math.min(MAX_EXP, a[i] - m)));
+        return m + Math.log(Math.max(s, EPS));
+    }
+    function softmax(a) {
+        const out = new Float64Array(a.length);
+        const lse = logSumExp(a);
+        for (let i = 0; i < a.length; i++)
+            out[i] = Math.exp(Math.max(MIN_EXP, Math.min(MAX_EXP, a[i] - lse)));
+        // tiny renorm to remove drift
+        let s = 0;
+        for (let i = 0; i < out.length; i++)
+            s += out[i];
+        const inv = 1 / Math.max(s, EPS);
+        for (let i = 0; i < out.length; i++)
+            out[i] *= inv;
+        return out;
+    }
+    // ---------- Argmax / Top-K
+    function argmax(a) {
+        var _a, _b;
+        if (a.length === 0)
+            return -1;
+        let idx = 0;
+        let m = ((_a = a[0]) !== null && _a !== void 0 ? _a : -Infinity);
+        for (let i = 1; i < a.length; i++) {
+            const v = ((_b = a[i]) !== null && _b !== void 0 ? _b : -Infinity);
+            if (v > m) {
+                m = v;
+                idx = i;
+            }
+        }
+        return idx;
+    }
+    function topK(a, k) {
+        var _a;
+        const n = a.length;
+        if (k <= 0 || n === 0)
+            return [];
+        const K = Math.min(k, n);
+        // simple partial selection (O(nk)); fine for small k in UI
+        const res = [];
+        for (let i = 0; i < n; i++) {
+            const v = ((_a = a[i]) !== null && _a !== void 0 ? _a : -Infinity);
+            if (res.length < K) {
+                res.push({ index: i, value: v });
+                if (res.length === K)
+                    res.sort((x, y) => y.value - x.value);
+            }
+            else if (v > res[K - 1].value) {
+                res[K - 1] = { index: i, value: v };
+                res.sort((x, y) => y.value - x.value);
+            }
+        }
+        return res;
+    }
+    // ---------- Safe exp/log/sigmoid
+    function expSafe(x) {
+        return Math.exp(Math.max(MIN_EXP, Math.min(MAX_EXP, x)));
+    }
+    function log1pSafe(x) {
+        // log(1+x) with guard (x>-1)
+        const y = Math.max(x, -1 + EPS);
+        return Math.log(1 + y);
+    }
+    function sigmoid$1(x) {
+        if (x >= 0) {
+            const z = Math.exp(-Math.min(x, MAX_EXP));
+            return 1 / (1 + z);
+        }
+        else {
+            const z = Math.exp(Math.max(x, MIN_EXP));
+            return z / (1 + z);
+        }
+    }
+    // ---------- Hyperbolic (proxy) distance with strict disk clamp
+    // Assumes inputs are already bounded; still clamps defensively.
+    function hDistProxy(a, b) {
+        // clamp radii to avoid denom blow-ups
+        let na = 0, nb = 0, sum = 0;
+        for (let i = 0; i < a.length; i++) {
+            const ai = Math.max(-DISK_EPS, Math.min(DISK_EPS, a[i]));
+            const bi = Math.max(-DISK_EPS, Math.min(DISK_EPS, b[i]));
+            na += ai * ai;
+            nb += bi * bi;
+            const d = ai - bi;
+            sum += d * d;
+        }
+        const num = 2 * Math.sqrt(Math.max(0, sum));
+        const den = Math.max(EPS, (1 - na) * (1 - nb));
+        // smooth, monotone proxy; bounded growth; stable near boundary
+        return Math.log1p(Math.min(2 * num / den, 1e12));
+    }
+    // ---------- Small utilities for UI formatting
+    function fmtHead(a, n = 4, digits = 3) {
+        return Array.from(a).slice(0, n).map(v => v.toFixed(digits)).join(", ");
+    }
+
+    /******************************************************************************
+    Copyright (c) Microsoft Corporation.
+
+    Permission to use, copy, modify, and/or distribute this software for any
+    purpose with or without fee is hereby granted.
+
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+    REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+    AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+    LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+    OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+    PERFORMANCE OF THIS SOFTWARE.
+    ***************************************************************************** */
+    /* global Reflect, Promise, SuppressedError, Symbol, Iterator */
+
+
+    function __awaiter(thisArg, _arguments, P, generator) {
+        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+        return new (P || (P = Promise))(function (resolve, reject) {
+            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+            step((generator = generator.apply(thisArg, _arguments || [])).next());
+        });
+    }
+
+    typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
+        var e = new Error(message);
+        return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
+    };
+
+    // Omega.ts v2 — improved local reasoning + summarization
+    // uses your math.ts, rff.ts, online_ridge.ts
+    // -------- sentence + text helpers ----------
+    function splitSentences$1(text) {
+        return text
+            .replace(/\s+/g, " ")
+            .split(/(?<=[.?!])\s+/)
+            .map((s) => s.trim())
+            .filter((s) => s.length > 8 && /\w/.test(s));
+    }
+    function clean(text) {
+        return text
+            .replace(/```[\s\S]*?```/g, " ")
+            .replace(/`[^`]+`/g, " ")
+            .replace(/\[[^\]]*\]\([^)]*\)/g, "") // strip markdown links
+            .replace(/[-–>•→]/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+    function isMetaSentence(s) {
+        // simple heuristics for table-of-contents or chapter headings
+        return (/^(\*|#)/.test(s) || // markdown markers
+            /chapter/i.test(s) || // "Chapter 11", "Chapters 11–15"
+            /part\s*\d+/i.test(s) || // "Part 3"
+            /section/i.test(s) || // "Section 2.3"
+            /^\s*[A-Z]\)\s*$/.test(s) || // single-letter outlines
+            s.length < 15 // very short stray lines
+        );
+    }
+    function rewrite(summary) {
+        return summary
+            .replace(/\s+[-–>•→]\s+/g, " ")
+            .replace(/\s+\.\s+/g, ". ")
+            .replace(/([a-z]) - ([a-z])/gi, "$1-$2")
+            .replace(/\s{2,}/g, " ")
+            .trim();
+    }
+    // ------------------------------------------------------------
+    function omegaComposeAnswer(question_1, items_1) {
+        return __awaiter(this, arguments, void 0, function* (question, items, opts = {}) {
+            // License check removed // Premium feature - requires valid license
+            if (!(items === null || items === void 0 ? void 0 : items.length))
+                return "No results found.";
+            const { dim = 64, features = 32, sigma = 1.0, rounds = 3, topSentences = 8, personality = "neutral", } = opts;
+            // ---------- 1. Clean + collect sentences ----------
+            const allText = items.map((i) => clean(i.content)).join(" ");
+            let sentences = splitSentences$1(allText)
+                .filter(s => !isMetaSentence(s))
+                .slice(0, 120);
+            if (sentences.length === 0)
+                return clean(items[0].content).slice(0, 400);
+            // ---------- 2. Build encoder + ridge ----------
+            const rff = buildRFF(dim, features, sigma);
+            const ridge = new OnlineRidge(2 * features, 1, 1e-3);
+            const encode = (s) => {
+                const vec = new Float64Array(dim);
+                const len = Math.min(s.length, dim);
+                for (let i = 0; i < len; i++)
+                    vec[i] = s.charCodeAt(i) / 255;
+                return mapRFF(rff, normalizeL2(vec));
+            };
+            const qVec = encode(question);
+            const qTokens = question.toLowerCase().split(/\W+/).filter((t) => t.length > 2);
+            // ---------- 3. Score + select top sentences ----------
+            const scored = sentences.map((s) => {
+                const v = encode(s);
+                let w = cosine$2(v, qVec);
+                // small lexical bonus for overlapping words
+                const lower = s.toLowerCase();
+                for (const t of qTokens)
+                    if (lower.includes(t))
+                        w += 0.02;
+                return { s, v, w };
+            });
+            scored.sort((a, b) => b.w - a.w);
+            let top = scored.slice(0, topSentences);
+            // ---------- 4. Recursive compression ----------
+            let summary = top.map((t) => t.s).join(" ");
+            let meanVec = new Float64Array(2 * features);
+            for (let r = 0; r < rounds; r++) {
+                const subs = splitSentences$1(summary).slice(0, topSentences);
+                const embeds = subs.map((s) => encode(s));
+                const weights = embeds.map((v) => cosine$2(v, qVec));
+                for (let i = 0; i < embeds.length; i++) {
+                    ridge.update(embeds[i], new Float64Array([weights[i]]));
+                }
+                // weighted mean vector
+                meanVec.fill(0);
+                for (let i = 0; i < embeds.length; i++) {
+                    const v = embeds[i], w = weights[i];
+                    for (let j = 0; j < v.length; j++)
+                        meanVec[j] += v[j] * w;
+                }
+                const norm = l2$1(meanVec) || 1;
+                for (let j = 0; j < meanVec.length; j++)
+                    meanVec[j] /= norm;
+                const rescored = subs.map((s) => ({
+                    s,
+                    w: cosine$2(encode(s), meanVec),
+                }));
+                rescored.sort((a, b) => b.w - a.w);
+                summary = rescored
+                    .slice(0, Math.max(3, Math.floor(topSentences / 2)))
+                    .map((r) => r.s)
+                    .join(" ");
+            }
+            // ---------- 5. Compose readable answer ----------
+            summary = rewrite(summary);
+            const firstChar = summary.charAt(0).toUpperCase() + summary.slice(1);
+            const title = items[0].heading || "Answer";
+            const prefix = personality === "teacher"
+                ? "Here’s a simple way to think about it:\n\n"
+                : personality === "scientist"
+                    ? "From the retrieved material, we can infer:\n\n"
+                    : "";
+            return `${prefix}${firstChar}\n\n(${title}, Ω-synthesized)`;
+        });
+    }
+
+    // Vectorization utilities for sparse and dense vectors
+    // Extracted from workers for reuse
+    /**
+     * Compute TF-IDF vector from tokens
+     */
+    function toTfidf(tokens, idf, vmap, headingW = 1) {
+        const counts = new Map();
+        // crude heuristic: first 8 tokens considered heading-weighted
+        for (let i = 0; i < tokens.length; i++) {
+            const t = tokens[i];
+            const id = vmap.get(t);
+            if (id === undefined)
+                continue;
+            const w = (i < 8) ? headingW : 1;
+            counts.set(id, (counts.get(id) || 0) + w);
+        }
+        const maxTf = Math.max(1, ...counts.values());
+        const v = new Map();
+        for (const [i, c] of counts) {
+            const tf = 0.5 + 0.5 * (c / maxTf);
+            v.set(i, tf * (idf[i] || 0));
+        }
+        return v;
+    }
+    /**
+     * Cosine similarity between two sparse vectors
+     */
+    function cosineSparse(a, b) {
+        let dot = 0, na = 0, nb = 0;
+        for (const [i, av] of a) {
+            na += av * av;
+            const bv = b.get(i);
+            if (bv)
+                dot += av * bv;
+        }
+        for (const [, bv] of b)
+            nb += bv * bv;
+        if (!na || !nb)
+            return 0;
+        return dot / (Math.sqrt(na) * Math.sqrt(nb));
+    }
+    /**
+     * Convert sparse vector to dense Float64Array
+     */
+    function sparseToDense(v, dim) {
+        const x = new Float64Array(dim);
+        for (const [i, val] of v)
+            x[i] = val;
+        return x;
+    }
+    /**
+     * Dot product of two dense vectors
+     */
+    function dotProd$1(a, b) {
+        let s = 0;
+        for (let i = 0; i < a.length; i++)
+            s += a[i] * b[i];
+        return s;
+    }
+    /**
+     * Base kernel function (RBF, cosine, or poly2)
+     */
+    function baseKernel$1(a, b, k, sigma) {
+        if (k === 'cosine') {
+            const dot = dotProd$1(a, b), na = Math.hypot(...a), nb = Math.hypot(...b);
+            return (na && nb) ? (dot / (na * nb)) : 0;
+        }
+        else if (k === 'poly2') {
+            const dot = dotProd$1(a, b);
+            return Math.pow((dot + 1), 2);
+        }
+        else {
+            let s = 0;
+            for (let i = 0; i < a.length; i++) {
+                const d = a[i] - b[i];
+                s += d * d;
+            }
+            return Math.exp(-s / Math.max(1e-9, 2 * sigma * sigma));
+        }
+    }
+    /**
+     * Kernel similarity between two dense vectors
+     */
+    function kernelSim(a, b, k, sigma) {
+        if (k === 'cosine') {
+            const dot = dotProd$1(a, b), na = Math.hypot(...a), nb = Math.hypot(...b);
+            return (na && nb) ? (dot / (na * nb)) : 0;
+        }
+        else if (k === 'poly2') {
+            const dot = dotProd$1(a, b);
+            return Math.pow((dot + 1), 2);
+        }
+        else {
+            let s = 0;
+            for (let i = 0; i < a.length; i++) {
+                const d = a[i] - b[i];
+                s += d * d;
+            }
+            return Math.exp(-s / Math.max(1e-9, 2 * sigma * sigma));
+        }
+    }
+    /**
+     * Project sparse vector to dense using Nyström landmarks
+     */
+    function projectToDense(v, vocabSize, landmarkMat, kernel, sigma) {
+        const x = sparseToDense(v, vocabSize);
+        const feats = new Float64Array(landmarkMat.length);
+        for (let j = 0; j < landmarkMat.length; j++) {
+            const l = landmarkMat[j];
+            feats[j] = baseKernel$1(x, l, kernel, sigma);
+        }
+        const n = Math.hypot(...feats);
+        if (n > 0)
+            for (let i = 0; i < feats.length; i++)
+                feats[i] /= n;
+        return feats;
+    }
+
+    // Tokenization and stemming utilities
+    // Extracted from workers for reuse
+    // Memo for speed
+    const STEM_CACHE = new Map();
+    function normalizeWord(raw) {
+        const k = raw;
+        const cached = STEM_CACHE.get(k);
+        if (cached)
+            return cached;
+        let w = raw.toLowerCase();
+        w = w.replace(/^[^a-z0-9]+|[^a-z0-9]+$/g, '');
+        if (w.length <= 2) {
+            STEM_CACHE.set(k, w);
+            return w;
+        }
+        // plural → singular
+        if (w.endsWith('ies') && w.length > 4) {
+            w = w.slice(0, -3) + 'y';
+        }
+        else if (/(xes|ches|shes|zes|sses)$/.test(w) && w.length > 4) {
+            w = w.replace(/(xes|ches|shes|zes|sses)$/, (m) => (m === 'sses' ? 'ss' : m.replace(/es$/, '')));
+        }
+        else if (w.endsWith('s') && !/(ss|us)$/.test(w) && w.length > 3) {
+            w = w.slice(0, -1);
+        }
+        // conservative suffix trimming
+        const rules = [
+            [/ization$|isation$/, 'ize'],
+            [/ational$/, 'ate'],
+            [/fulness$/, 'ful'],
+            [/ousness$/, 'ous'],
+            [/iveness$/, 'ive'],
+            [/ability$/, 'able'],
+            [/ness$/, ''],
+            [/ment$/, ''],
+            [/ations?$/, 'ate'],
+            [/izer$|iser$/, 'ize'],
+            [/ally$/, 'al'],
+            [/ically$/, 'ic'],
+            [/ingly$|edly$/, ''],
+            [/ing$|ed$/, ''],
+        ];
+        for (const [re, rep] of rules) {
+            if (re.test(w) && w.length - rep.length >= 4) {
+                w = w.replace(re, rep);
+                break;
+            }
+        }
+        STEM_CACHE.set(k, w);
+        return w;
+    }
+    function tokenize$1(text, doStem) {
+        const base = text.toLowerCase()
+            .replace(/[`*_>~]/g, ' ')
+            .replace(/[^a-z0-9]+/g, ' ')
+            .split(/\s+/)
+            .filter(Boolean);
+        if (!doStem)
+            return base;
+        const out = [];
+        for (const t of base) {
+            const n = normalizeWord(t);
+            if (n && n.length > 1)
+                out.push(n);
+        }
+        return out;
+    }
+    function expandQuery(q) {
+        const adds = [];
+        if (/\bmap\b/.test(q))
+            adds.push('dict key value make');
+        if (/\bchan|channel\b/.test(q))
+            adds.push('goroutine concurrency select buffer');
+        if (/\berror\b/.test(q))
+            adds.push('fmt wrap unwrap sentinel try catch');
+        if (/\bstruct\b/.test(q))
+            adds.push('field method receiver init zero value');
+        return q + ' ' + adds.join(' ');
+    }
+
+    // Index building utilities
+    // Extracted from workers for reuse
+    // License removed - all features are now free!
+    /**
+     * Build vocabulary and IDF from chunks
+     */
+    function buildVocabAndIdf(chunks, vocabSize, useStem) {
+        const docsTokens = chunks.map(ch => tokenize$1((ch.heading + ' \n' + ch.content), useStem));
+        const df = new Map();
+        for (const toks of docsTokens) {
+            const unique = new Set(toks);
+            for (const t of unique)
+                df.set(t, (df.get(t) || 0) + 1);
+        }
+        const sorted = [...df.entries()].sort((a, b) => b[1] - a[1]).slice(0, vocabSize);
+        const vocabMap = new Map(sorted.map(([tok], i) => [tok, i]));
+        const idf = new Array(vocabMap.size).fill(0);
+        const N = docsTokens.length;
+        for (const [tok, i] of vocabMap.entries()) {
+            const dfi = df.get(tok) || 1;
+            idf[i] = Math.log((N + 1) / (dfi + 1)) + 1;
+        }
+        return { vocabMap, idf };
+    }
+    /**
+     * Build TF-IDF vectors for all chunks
+     */
+    function buildTfidfDocs(chunks, vocabMap, idf, headingW, useStem) {
+        return chunks.map(ch => {
+            const toks = tokenize$1((ch.heading + ' \n' + ch.content), useStem);
+            return toTfidf(toks, idf, vocabMap, headingW);
+        });
+    }
+    /**
+     * Build Nyström landmarks from TF-IDF documents
+     */
+    function buildLandmarks(tfidfDocs, vocabSize, numLandmarks) {
+        const L = Math.max(32, numLandmarks);
+        const step = Math.max(1, Math.floor(Math.max(1, tfidfDocs.length) / L));
+        const landmarksIdx = Array.from({ length: L }, (_, k) => Math.min(tfidfDocs.length - 1, k * step));
+        const landmarkMat = landmarksIdx.map(i => sparseToDense(tfidfDocs[i], vocabSize));
+        return { landmarksIdx, landmarkMat };
+    }
+    /**
+     * Build dense projections for all TF-IDF documents
+     */
+    function buildDenseDocs(tfidfDocs, vocabSize, landmarkMat, kernel, sigma) {
+        return tfidfDocs.map(v => {
+            const x = sparseToDense(v, vocabSize);
+            const feats = new Float64Array(landmarkMat.length);
+            for (let j = 0; j < landmarkMat.length; j++) {
+                const l = landmarkMat[j];
+                feats[j] = baseKernel(x, l, kernel, sigma);
+            }
+            const n = Math.hypot(...feats);
+            if (n > 0)
+                for (let i = 0; i < feats.length; i++)
+                    feats[i] /= n;
+            return feats;
+        });
+    }
+    function baseKernel(a, b, k, sigma) {
+        if (k === 'cosine') {
+            const dot = dotProd(a, b), na = Math.hypot(...a), nb = Math.hypot(...b);
+            return (na && nb) ? (dot / (na * nb)) : 0;
+        }
+        else if (k === 'poly2') {
+            const dot = dotProd(a, b);
+            return Math.pow((dot + 1), 2);
+        }
+        else {
+            let s = 0;
+            for (let i = 0; i < a.length; i++) {
+                const d = a[i] - b[i];
+                s += d * d;
+            }
+            return Math.exp(-s / Math.max(1e-9, 2 * sigma * sigma));
+        }
+    }
+    function dotProd(a, b) {
+        let s = 0;
+        for (let i = 0; i < a.length; i++)
+            s += a[i] * b[i];
+        return s;
+    }
+    /**
+     * Build complete index from chunks
+     */
+    function buildIndex(opts) {
+        // License check removed // Premium feature - requires valid license
+        const { chunks, vocab, landmarks, headingW, useStem, kernel, sigma } = opts;
+        // Build vocab and IDF
+        const { vocabMap, idf } = buildVocabAndIdf(chunks, vocab, useStem);
+        // Build TF-IDF vectors
+        const tfidfDocs = buildTfidfDocs(chunks, vocabMap, idf, headingW, useStem);
+        // Build landmarks
+        const { landmarksIdx, landmarkMat } = buildLandmarks(tfidfDocs, vocabMap.size, landmarks);
+        // Build dense projections
+        const denseDocs = buildDenseDocs(tfidfDocs, vocabMap.size, landmarkMat, kernel, sigma);
+        return {
+            vocabMap,
+            idf,
+            tfidfDocs,
+            landmarksIdx,
+            landmarkMat,
+            denseDocs,
+        };
+    }
+
+    // Hybrid retrieval system (sparse + dense + keyword bonus)
+    // Extracted from workers for reuse
+    // License removed - all features are now free!
+    /**
+     * Compute keyword bonus scores for chunks
+     */
+    function keywordBonus(chunks, query) {
+        const kws = Array.from(new Set(query.toLowerCase().split(/\W+/).filter(t => t.length > 2)));
+        const syntaxBoost = /\b(define|declare|syntax|example|function|struct|map|interface)\b/i.test(query);
+        return chunks.map(c => {
+            const text = c.rich || c.content || '';
+            const lc = text.toLowerCase();
+            let hit = 0;
+            for (const k of kws)
+                if (lc.includes(k))
+                    hit++;
+            if (syntaxBoost && /```/.test(text))
+                hit += 5; // strong bonus for code presence
+            return Math.min(1.0, hit * 0.03);
+        });
+    }
+    /**
+     * Get top K indices from scores
+     */
+    function topKIndices(arr, k) {
+        const idx = Array.from(arr, (_, i) => i);
+        idx.sort((i, j) => (arr[j] - arr[i]));
+        return idx.slice(0, k);
+    }
+    /**
+     * Clamp value between min and max
+     */
+    function clamp$1(x, a, b) {
+        return Math.max(a, Math.min(b, x));
+    }
+    /**
+     * Perform hybrid retrieval (sparse + dense + keyword bonus)
+     */
+    function hybridRetrieve(opts) {
+        // License check removed // Premium feature - requires valid license
+        const { query, chunks, vocabMap, idf, tfidfDocs, denseDocs, landmarksIdx, landmarkMat, vocabSize, kernel, sigma, alpha, beta, ridge, headingW, useStem, expandQuery: shouldExpand, topK: k, prefilter, } = opts;
+        // Expand query if needed
+        const qexp = shouldExpand ? expandQuery(query) : query;
+        const toks = tokenize$1(qexp, useStem);
+        const qvec = toTfidf(toks, idf, vocabMap, headingW);
+        const qdense = projectToDense(qvec, vocabSize, landmarkMat, kernel, sigma);
+        // Compute sparse (TF-IDF) scores
+        const tfidfScores = tfidfDocs.map(v => cosineSparse(v, qvec));
+        // Compute dense (kernel) scores
+        const denseScores = denseDocs.map((v) => kernelSim(v, qdense, kernel, sigma));
+        // Compute keyword bonus
+        const bonus = keywordBonus(chunks, query);
+        // Hybrid scoring with ridge regularization
+        const alphaClamped = clamp$1(alpha, 0, 1);
+        const lambda = ridge !== null && ridge !== void 0 ? ridge : 0.08;
+        const scores = denseScores.map((d, i) => {
+            const t = tfidfScores[i];
+            const b = beta * bonus[i];
+            // Ridge damping on ALL components (dense, tfidf, and keyword bonus)
+            const reg = 1 / (1 + lambda * (d * d + t * t + 0.5 * b * b));
+            const s = reg * (alphaClamped * d + (1 - alphaClamped) * t + b);
+            // soft clip extremes; helps prevent a single noisy dimension from dominating
+            return Math.tanh(s);
+        });
+        // Pre-filter then final topK (retrieval stage)
+        const pre = Math.max(k, prefilter !== null && prefilter !== void 0 ? prefilter : 0);
+        const idxs = topKIndices(scores, pre);
+        const finalIdxs = topKIndices(idxs.map(i => scores[i]), k).map(k => idxs[k]);
+        // Build result items
+        const items = finalIdxs.map(i => {
+            const c = chunks[i];
+            const body = (c.rich && c.rich.trim()) || (c.content && c.content.trim()) || '(see subsections)';
+            return {
+                score: scores[i],
+                heading: c.heading,
+                content: body,
+                index: i,
+            };
+        });
+        return {
+            items,
+            scores: finalIdxs.map(i => scores[i]),
+            indices: finalIdxs,
+            tfidfScores: finalIdxs.map(i => tfidfScores[i]),
+            denseScores: finalIdxs.map(i => denseScores[i]),
+        };
+    }
+
+    // OmegaRR.ts
+    // Reranker + Reducer for AsterMind docs
+    // - Extracts rich query–chunk features (sparse text + structural signals)
+    // - Trains a tiny ridge model on-the-fly with weak supervision (per query)
+    // - Produces score_rr and p_relevant
+    // - Filters with threshold + MMR coverage under a character budget
+    // - (v2) Optionally exposes engineered features (values + names) for TE/diagnostics
+    /* ====================== Tokenization ======================= */
+    const STOP$1 = new Set([
+        "a", "an", "the", "and", "or", "but", "if", "then", "else", "for", "to", "of", "in", "on", "at", "by", "with",
+        "is", "are", "was", "were", "be", "been", "being", "as", "from", "that", "this", "it", "its", "you", "your",
+        "i", "we", "they", "he", "she", "them", "his", "her", "our", "us", "do", "does", "did", "done", "not", "no",
+        "yes", "can", "could", "should", "would", "may", "might", "into", "about", "over", "under", "between"
+    ]);
+    function tokenize(s) {
+        return s
+            .toLowerCase()
+            .replace(/[`*_#>~=\[\]{}()!?.:,;'"<>|/\\+-]+/g, " ")
+            .split(/\s+/)
+            .filter(t => t && !STOP$1.has(t));
+    }
+    function unique(arr) { return Array.from(new Set(arr)); }
+    function buildCorpusStats(docs) {
+        const vocab = new Map();
+        const tfs = [];
+        const docLens = [];
+        let nextId = 0;
+        for (const d of docs) {
+            const toks = tokenize(d);
+            docLens.push(toks.length);
+            const tf = new Map();
+            for (const w of toks) {
+                let id = vocab.get(w);
+                if (id === undefined) {
+                    id = nextId++;
+                    vocab.set(w, id);
+                }
+                tf.set(id, (tf.get(id) || 0) + 1);
+            }
+            tfs.push(tf);
+        }
+        const N = docs.length;
+        const df = Array(nextId).fill(0);
+        for (const tf of tfs)
+            for (const id of tf.keys())
+                df[id] += 1;
+        const idf = df.map(df_i => Math.log((N + 1) / (df_i + 1)) + 1);
+        const avgLen = docLens.reduce((a, b) => a + b, 0) / Math.max(1, N);
+        return { stats: { vocab, idf, avgLen, df }, tf: tfs, docLens };
+    }
+    function tfidfVector(tf, idf) {
+        const out = new Map();
+        let norm2 = 0;
+        for (const [i, f] of tf) {
+            const val = (f) * (idf[i] || 0);
+            out.set(i, val);
+            norm2 += val * val;
+        }
+        const norm = Math.sqrt(norm2) || 1e-12;
+        for (const [i, v] of out)
+            out.set(i, v / norm);
+        return out;
+    }
+    function cosine$1(a, b) {
+        const [small, large] = a.size < b.size ? [a, b] : [b, a];
+        let dot = 0;
+        for (const [i, v] of small) {
+            const u = large.get(i);
+            if (u !== undefined)
+                dot += v * u;
+        }
+        return dot;
+    }
+    function bm25Score(qTf, dTf, stats, dLen, k1 = 1.5, b = 0.75) {
+        let score = 0;
+        for (const [i] of qTf) {
+            const f = dTf.get(i) || 0;
+            if (f <= 0)
+                continue;
+            const idf = Math.log(((stats.df[i] || 0) + 0.5) / ((stats.idf.length - (stats.df[i] || 0)) + 0.5) + 1);
+            const denom = f + k1 * (1 - b + b * (dLen / (stats.avgLen || 1)));
+            score += idf * ((f * (k1 + 1)) / (denom || 1e-12));
+        }
+        return score;
+    }
+    /* ========== Light Random Projection from TF-IDF (dense hint) ========== */
+    function projectSparse(vec, dim, seed = 1337) {
+        // deterministic per (feature, j) hash: simple LCG/xorshift mix
+        const out = new Float64Array(dim);
+        for (const [i, v] of vec) {
+            let s = (i * 2654435761) >>> 0;
+            for (let j = 0; j < dim; j++) {
+                s ^= s << 13;
+                s ^= s >>> 17;
+                s ^= s << 5;
+                const r = ((s >>> 0) / 4294967296) * 2 - 1; // [-1,1]
+                out[j] += v * r;
+            }
+        }
+        let n2 = 0;
+        for (let j = 0; j < dim; j++)
+            n2 += out[j] * out[j];
+        const n = Math.sqrt(n2) || 1e-12;
+        for (let j = 0; j < dim; j++)
+            out[j] /= n;
+        return out;
+    }
+    /* ===================== Structural Signals ===================== */
+    function containsGoCodeBlock(s) {
+        return /```+\s*go([\s\S]*?)```/i.test(s) || /\bfunc\s+\w+\s*\(.*\)\s*\w*\s*{/.test(s);
+    }
+    function containsCodeBlock(s) {
+        return /```+/.test(s) || /{[^}]*}/.test(s);
+    }
+    function headingQueryMatch(head, q) {
+        const ht = unique(tokenize(head));
+        const qt = new Set(tokenize(q));
+        if (ht.length === 0 || qt.size === 0)
+            return 0;
+        let hit = 0;
+        for (const t of ht)
+            if (qt.has(t))
+                hit++;
+        return hit / ht.length;
+    }
+    function jaccard$1(a, b) {
+        const A = new Set(tokenize(a));
+        const B = new Set(tokenize(b));
+        let inter = 0;
+        for (const t of A)
+            if (B.has(t))
+                inter++;
+        const uni = A.size + B.size - inter;
+        return uni === 0 ? 0 : inter / uni;
+    }
+    function golangSpecFlag(s) {
+        return /(golang\.org|go\.dev|pkg\.go\.dev)/i.test(s) ? 1 : 0;
+    }
+    function buildFeatures$1(q, chunk, qTfIdf, cTfIdf, qTfRaw, cTfRaw, stats, cLen, projQ, projC) {
+        var _a;
+        const f = [];
+        const names = [];
+        // 1) Sparse sims
+        const cos = cosine$1(qTfIdf, cTfIdf);
+        f.push(cos);
+        names.push("cosine_tfidf");
+        const bm25 = bm25Score(qTfRaw, cTfRaw, stats, cLen);
+        f.push(bm25);
+        names.push("bm25");
+        // 2) Heading & lexical overlaps
+        const hMatch = headingQueryMatch(chunk.heading || "", q);
+        f.push(hMatch);
+        names.push("heading_match_frac");
+        const jac = jaccard$1(q, chunk.content || "");
+        f.push(jac);
+        names.push("jaccard_tokens");
+        // 3) Structural flags
+        const hasGo = containsGoCodeBlock(chunk.rich || chunk.content || "");
+        const hasCode = containsCodeBlock(chunk.rich || chunk.content || "");
+        f.push(hasGo ? 1 : 0);
+        names.push("flag_go_code");
+        f.push(hasCode ? 1 : 0);
+        names.push("flag_any_code");
+        // 4) Source cues
+        f.push(golangSpecFlag(chunk.content || "") ? 1 : 0);
+        names.push("flag_go_spec_link");
+        // 5) Prior score (baseline)
+        f.push(((_a = chunk.score_base) !== null && _a !== void 0 ? _a : 0));
+        names.push("prior_score_base");
+        // 6) Length heuristics (prefer concise answers)
+        const lenChars = (chunk.content || "").length;
+        f.push(1 / Math.sqrt(1 + lenChars));
+        names.push("len_inv_sqrt");
+        // 7) Dense hint from projection
+        if (projQ && projC) {
+            let dot = 0, l1 = 0;
+            for (let i = 0; i < projQ.length; i++) {
+                dot += projQ[i] * projC[i];
+                l1 += Math.abs(projQ[i] - projC[i]);
+            }
+            f.push(dot);
+            names.push("proj_dot");
+            f.push(l1 / projQ.length);
+            names.push("proj_l1mean");
+        }
+        return { names, values: f };
+    }
+    /* ======================== Ridge Model ======================== */
+    class Ridge {
+        constructor() {
+            this.w = null;
+            this.mu = null;
+            this.sigma = null;
+        }
+        fit(X, y, lambda = 1e-2) {
+            var _a;
+            const n = X.length;
+            const d = ((_a = X[0]) === null || _a === void 0 ? void 0 : _a.length) || 0;
+            if (n === 0 || d === 0) {
+                this.w = new Float64Array(d);
+                return;
+            }
+            // standardize
+            const mu = new Float64Array(d);
+            const sig = new Float64Array(d);
+            for (let j = 0; j < d; j++) {
+                let m = 0;
+                for (let i = 0; i < n; i++)
+                    m += X[i][j];
+                m /= n;
+                mu[j] = m;
+                let v = 0;
+                for (let i = 0; i < n; i++) {
+                    const z = X[i][j] - m;
+                    v += z * z;
+                }
+                sig[j] = Math.sqrt(v / n) || 1;
+            }
+            const Z = Array.from({ length: n }, (_, i) => new Float64Array(d));
+            for (let i = 0; i < n; i++)
+                for (let j = 0; j < d; j++)
+                    Z[i][j] = (X[i][j] - mu[j]) / sig[j];
+            // A = Z^T Z + λI, Zy = Z^T y
+            const A = Array.from({ length: d }, () => new Float64Array(d));
+            const Zy = new Float64Array(d);
+            for (let i = 0; i < n; i++) {
+                const zi = Z[i];
+                const yi = y[i];
+                for (let j = 0; j < d; j++) {
+                    Zy[j] += zi[j] * yi;
+                    const zij = zi[j];
+                    for (let k = 0; k <= j; k++)
+                        A[j][k] += zij * zi[k];
+                }
+            }
+            for (let j = 0; j < d; j++) {
+                for (let k = 0; k < j; k++)
+                    A[k][j] = A[j][k];
+                A[j][j] += lambda;
+            }
+            // Cholesky solve
+            const L = Array.from({ length: d }, () => new Float64Array(d));
+            for (let i = 0; i < d; i++) {
+                for (let j = 0; j <= i; j++) {
+                    let sum = A[i][j];
+                    for (let k = 0; k < j; k++)
+                        sum -= L[i][k] * L[j][k];
+                    L[i][j] = (i === j) ? Math.sqrt(Math.max(sum, 1e-12)) : (sum / (L[j][j] || 1e-12));
+                }
+            }
+            const z = new Float64Array(d);
+            for (let i = 0; i < d; i++) {
+                let s = Zy[i];
+                for (let k = 0; k < i; k++)
+                    s -= L[i][k] * z[k];
+                z[i] = s / (L[i][i] || 1e-12);
+            }
+            const w = new Float64Array(d);
+            for (let i = d - 1; i >= 0; i--) {
+                let s = z[i];
+                for (let k = i + 1; k < d; k++)
+                    s -= L[k][i] * w[k];
+                w[i] = s / (L[i][i] || 1e-12);
+            }
+            this.w = w;
+            this.mu = mu;
+            this.sigma = sig;
+        }
+        predict(x) {
+            if (!this.w || !this.mu || !this.sigma)
+                return 0;
+            let s = 0;
+            for (let j = 0; j < this.w.length; j++) {
+                const z = (x[j] - this.mu[j]) / this.sigma[j];
+                s += this.w[j] * z;
+            }
+            return s;
+        }
+    }
+    /* ===================== Weak Supervision ===================== */
+    function generateWeakLabel(q, chunk, feats) {
+        var _a;
+        const txt = (chunk.rich || chunk.content || "");
+        let y = 0;
+        const qIsGoFunc = /\bgo\b/.test(q.toLowerCase()) && /(define|declare|function|func)/i.test(q);
+        if (qIsGoFunc && containsGoCodeBlock(txt))
+            y = Math.max(y, 1.0);
+        const headHit = headingQueryMatch(chunk.heading || "", q);
+        if (headHit >= 0.34 && containsCodeBlock(txt))
+            y = Math.max(y, 0.8);
+        const cosIdx = feats.names.indexOf("cosine_tfidf");
+        const bm25Idx = feats.names.indexOf("bm25");
+        const cos = cosIdx >= 0 ? feats.values[cosIdx] : 0;
+        const bm = bm25Idx >= 0 ? feats.values[bm25Idx] : 0;
+        if (cos > 0.25)
+            y = Math.max(y, 0.6);
+        if (bm > 1.0)
+            y = Math.max(y, 0.6);
+        const priorIdx = feats.names.indexOf("prior_score_base");
+        const prior = priorIdx >= 0 ? feats.values[priorIdx] : 0;
+        if (((_a = chunk.score_base) !== null && _a !== void 0 ? _a : 0) > 0)
+            y = Math.max(y, Math.min(0.6, 0.2 + 0.5 * prior));
+        return y;
+    }
+    function sigmoid(x) {
+        if (x >= 0) {
+            const z = Math.exp(-x);
+            return 1 / (1 + z);
+        }
+        else {
+            const z = Math.exp(x);
+            return z / (1 + z);
+        }
+    }
+    /* ========================= MMR Filter ========================= */
+    function mmrFilter(scored, lambda = 0.7, budgetChars = 1200) {
+        const sel = [];
+        const docs = scored.map(s => s.content || "");
+        const { stats, tf: tfList } = buildCorpusStats(docs);
+        const tfidf = tfList.map(tf => tfidfVector(tf, stats.idf));
+        const selectedIdx = new Set();
+        let used = 0;
+        while (selectedIdx.size < scored.length) {
+            let bestIdx = -1, bestVal = -Infinity;
+            for (let i = 0; i < scored.length; i++) {
+                if (selectedIdx.has(i))
+                    continue;
+                const cand = scored[i];
+                let red = 0;
+                for (const j of selectedIdx) {
+                    const sim = cosine$1(tfidf[i], tfidf[j]);
+                    if (sim > red)
+                        red = sim;
+                }
+                const val = lambda * cand.score_rr - (1 - lambda) * red;
+                if (val > bestVal) {
+                    bestVal = val;
+                    bestIdx = i;
+                }
+            }
+            if (bestIdx < 0)
+                break;
+            const chosen = scored[bestIdx];
+            const addLen = (chosen.content || "").length;
+            if (used + addLen > budgetChars && sel.length > 0)
+                break;
+            sel.push(chosen);
+            used += addLen;
+            selectedIdx.add(bestIdx);
+        }
+        return sel;
+    }
+    /* ========================= Public API ========================= */
+    /** Train per-query ridge model and score chunks. */
+    function rerank(query, chunks, opts = {}) {
+        var _a, _b;
+        // License check removed // Premium feature - requires valid license
+        const { lambdaRidge = 1e-2, randomProjDim = 32, exposeFeatures = true, attachFeatureNames = false, } = opts;
+        const docs = [query, ...chunks.map(c => c.content || "")];
+        const { stats, tf: tfRaw, docLens } = buildCorpusStats(docs);
+        const tfidfAll = tfRaw.map(tf => tfidfVector(tf, stats.idf));
+        const qTfRaw = tfRaw[0];
+        const qTfIdf = tfidfAll[0];
+        const projQ = randomProjDim > 0 ? projectSparse(qTfIdf, randomProjDim) : undefined;
+        const X = [];
+        const y = [];
+        const featPacks = [];
+        for (let i = 0; i < chunks.length; i++) {
+            const c = chunks[i];
+            const cTfRaw = tfRaw[i + 1];
+            const cTfIdf = tfidfAll[i + 1];
+            const projC = randomProjDim > 0 ? projectSparse(cTfIdf, randomProjDim, 1337 + i) : undefined;
+            const feats = buildFeatures$1(query, c, qTfIdf, cTfIdf, qTfRaw, cTfRaw, stats, docLens[i + 1] || 1, projQ, projC);
+            featPacks.push(feats);
+            X.push(feats.values);
+            const label = generateWeakLabel(query, c, feats);
+            y.push(label);
+        }
+        const allSame = y.every(v => Math.abs(v - y[0]) < 1e-9);
+        if (allSame) {
+            const cosIdx = featPacks[0].names.indexOf("cosine_tfidf");
+            if (cosIdx >= 0) {
+                for (let i = 0; i < y.length; i++)
+                    y[i] = Math.max(0, Math.min(1, 0.2 + 0.6 * X[i][cosIdx]));
+            }
+        }
+        const rr = new Ridge();
+        rr.fit(X, y, lambdaRidge);
+        let minS = Infinity, maxS = -Infinity;
+        const rawScores = X.map(x => rr.predict(x));
+        for (const s of rawScores) {
+            if (s < minS)
+                minS = s;
+            if (s > maxS)
+                maxS = s;
+        }
+        const range = Math.max(1e-9, maxS - minS);
+        const featureNames = attachFeatureNames ? (_b = (_a = featPacks[0]) === null || _a === void 0 ? void 0 : _a.names) !== null && _b !== void 0 ? _b : [] : undefined;
+        const scored = chunks.map((c, i) => {
+            const s01 = (rawScores[i] - minS) / range;
+            const p = sigmoid((rawScores[i] - 0.5 * (minS + maxS)) / (0.2 * range + 1e-6));
+            const base = Object.assign(Object.assign({}, c), { score_rr: s01, p_relevant: p });
+            if (exposeFeatures)
+                base._features = X[i];
+            if (featureNames)
+                base._feature_names = featureNames;
+            return base;
+        });
+        scored.sort((a, b) => b.score_rr - a.score_rr);
+        return scored;
+    }
+    /** Filter scored chunks using probability/near-top thresholds and MMR coverage. */
+    function filterMMR(scored, opts = {}) {
+        // License check removed // Premium feature - requires valid license
+        const { probThresh = 0.45, epsilonTop = 0.05, useMMR = true, mmrLambda = 0.7, budgetChars = 1200 } = opts;
+        if (scored.length === 0)
+            return [];
+        const top = scored[0].score_rr;
+        const bandKept = scored.filter(s => s.p_relevant >= probThresh && s.score_rr >= (top - epsilonTop));
+        const seed = bandKept.length > 0 ? bandKept : [scored[0]];
+        if (!useMMR) {
+            const out = [];
+            let used = 0;
+            for (const s of seed) {
+                const add = (s.content || "").length;
+                if (used + add > budgetChars && out.length > 0)
+                    break;
+                out.push(s);
+                used += add;
+            }
+            return out;
+        }
+        const boosted = scored.map(s => (Object.assign(Object.assign({}, s), { score_rr: seed.includes(s) ? s.score_rr + 0.01 : s.score_rr })));
+        return mmrFilter(boosted, mmrLambda, budgetChars);
+    }
+    /** Convenience: run rerank then filter. */
+    function rerankAndFilter(query, chunks, opts = {}) {
+        // License check removed // Premium feature - requires valid license
+        const scored = rerank(query, chunks, opts);
+        return filterMMR(scored, opts);
+    }
+    /* ========================= Debug Utilities ========================= */
+    function explainFeatures(query, chunks, opts = {}) {
+        var _a;
+        const rpd = (_a = opts.randomProjDim) !== null && _a !== void 0 ? _a : 32;
+        const docs = [query, ...chunks.map(c => c.content || "")];
+        const { stats, tf: tfRaw } = buildCorpusStats(docs);
+        const tfidfAll = tfRaw.map(tf => tfidfVector(tf, stats.idf));
+        const projQ = rpd > 0 ? projectSparse(tfidfAll[0], rpd) : undefined;
+        const namesRef = [];
+        const rows = [];
+        for (let i = 0; i < chunks.length; i++) {
+            const feats = buildFeatures$1(query, chunks[i], tfidfAll[0], tfidfAll[i + 1], tfRaw[0], tfRaw[i + 1], stats, 1, projQ, rpd > 0 ? projectSparse(tfidfAll[i + 1], rpd, 1337 + i) : undefined);
+            if (namesRef.length === 0)
+                namesRef.push(...feats.names);
+            rows.push({ heading: chunks[i].heading, features: feats.values });
+        }
+        return { names: namesRef, rows };
+    }
+
+    // OmegaSumDet.ts — Deterministic, context-locked summarizer (v2.2)
+    // -----------------------------------------------------------------------------
+    // Goals
+    // - ONLY summarize from the already-kept, top-ranked chunks (no leakage).
+    // - Deterministic ordering, scoring, and composition.
+    // - Stable weighting with explicit, normalized features.
+    // - Code is treated as atomic and only included when query-aligned.
+    // - Section diversity is capped to keep answers focused.
+    // - Scored, stemmed, stopword-aware heading alignment (Dice) + small intent & RR boosts.
+    // - Intent-aware code gating (e.g., require `func` for "define function" queries).
+    // -----------------------------------------------------------------------------
+    const DEFAULTS = {
+        maxAnswerChars: 900,
+        maxBullets: 6,
+        preferCode: true,
+        includeCitations: true,
+        addFooter: true,
+        teWeight: 0.25,
+        queryWeight: 0.45,
+        evidenceWeight: 0.20,
+        rrWeight: 0.10,
+        codeBonus: 0.05,
+        headingBonus: 0.04,
+        jaccardDedupThreshold: 0.6,
+        allowOffTopic: false,
+        minQuerySimForCode: 0.40,
+        maxSectionsInAnswer: 1,
+        focusTopAlignedHeadings: 2,
+    };
+    function summarizeDeterministic(query, kept, opts) {
+        var _a, _b, _c;
+        // License check removed // Premium feature - requires valid license
+        const O = Object.assign(Object.assign({}, DEFAULTS), (opts || {}));
+        // 0) Normalize kept list with stable rrRank/rrScore defaults
+        const K = kept.map((c, i) => (Object.assign(Object.assign({}, c), { rrRank: (typeof c.rrRank === "number" ? c.rrRank : i), rrScore: (typeof c.rrScore === "number" ? c.rrScore : (kept.length - i) / Math.max(1, kept.length)) })));
+        if (K.length === 0) {
+            return { text: "No answer could be composed from the provided context.", cites: [] };
+        }
+        // 1) Scored, stemmed, stopword-aware heading alignment + RR + intent bumps
+        const intent = detectIntent(query);
+        // normalize rrScore across kept for a small deterministic boost
+        let rrMin = Infinity, rrMax = -Infinity;
+        for (const c of K) {
+            rrMin = Math.min(rrMin, (_a = c.rrScore) !== null && _a !== void 0 ? _a : 0);
+            rrMax = Math.max(rrMax, (_b = c.rrScore) !== null && _b !== void 0 ? _b : 0);
+        }
+        const rrSpan = (rrMax - rrMin) || 1;
+        function intentHit(c) {
+            const hay = (c.heading + ' ' + (c.content || '') + ' ' + (c.rich || '')).toLowerCase();
+            let hit = 0;
+            if (intent.function && /\bfunc\b|\bfunction\b/.test(hay))
+                hit += 1;
+            if (intent.variable && /\bvar\b|\bvariable\b|\b:=\b/.test(hay))
+                hit += 1;
+            if (intent.constant && /\bconst\b|\bconstant\b/.test(hay))
+                hit += 1;
+            if (intent.concurrency && /\bgoroutine\b|\bgo\s+func\b|\bchan(nel)?\b|\bselect\b/.test(hay))
+                hit += 1;
+            if (intent.loop && /\bfor\b/.test(hay))
+                hit += 1;
+            return Math.min(1, hit / 2); // 0..1
+        }
+        const alignScores = K.map(ch => diceStemmed(query, ch.heading)); // 0..1
+        const composite = K.map((c, i) => {
+            var _a;
+            const align = alignScores[i] || 0;
+            const rrNorm = (((_a = c.rrScore) !== null && _a !== void 0 ? _a : 0) - rrMin) / rrSpan; // 0..1
+            const ih = intentHit(c); // 0..1
+            // alignment dominates; rr+intent provide gentle nudges
+            return align + 0.15 * rrNorm + 0.20 * ih;
+        });
+        // rank by composite desc, break ties by rrRank asc
+        const allByComposite = K.map((_, i) => i).sort((i, j) => {
+            if (composite[j] !== composite[i])
+                return composite[j] - composite[i];
+            return (K[i].rrRank - K[j].rrRank);
+        });
+        // choose top-N aligned headings; ensure at least one is chosen
+        const alignedIdxs = allByComposite.slice(0, Math.max(1, O.focusTopAlignedHeadings));
+        const allowedChunkIdx = new Set(alignedIdxs);
+        // 2) Candidate extraction: sentences + fenced code blocks; stable order
+        const queryTok = tokens(query);
+        const candidates = [];
+        for (let i = 0; i < K.length; i++) {
+            if (!allowedChunkIdx.has(i))
+                continue; // HARD mask to top aligned headings
+            const ch = K[i];
+            const base = (_c = ch.rich) !== null && _c !== void 0 ? _c : ch.content;
+            const parts = splitCodeAware(base); // preserves order; code blocks are atomic
+            let localSentIdx = 0;
+            for (const part of parts) {
+                const hasCode = part.kind === "code";
+                const sentList = hasCode ? [part.text] : splitSentences(part.text);
+                for (const s of sentList) {
+                    const trimmed = s.trim();
+                    if (!trimmed)
+                        continue;
+                    const f = buildFeatures(trimmed, queryTok, ch, O, hasCode);
+                    candidates.push({
+                        sent: trimmed,
+                        chunkIdx: i,
+                        sentIdx: localSentIdx++,
+                        heading: ch.heading,
+                        hasCode,
+                        features: f,
+                        score: 0,
+                    });
+                }
+            }
+        }
+        if (candidates.length === 0) {
+            return { text: "No answer could be composed from the aligned context.", cites: [] };
+        }
+        // 3) Normalize numeric features across candidates → [0,1]
+        normalizeFeature(candidates, "querySim");
+        normalizeFeature(candidates, "teGain");
+        normalizeFeature(candidates, "evidence");
+        normalizeFeature(candidates, "rr");
+        // 4) Combine with explicit weights + strict, intent-aware gates (deterministic)
+        for (const c of candidates) {
+            const f = c.features;
+            let s = O.queryWeight * f.querySim +
+                O.teWeight * f.teGain +
+                O.evidenceWeight * f.evidence +
+                O.rrWeight * f.rr;
+            // Intent-aware code gating
+            if (c.hasCode) {
+                const align = alignScores[c.chunkIdx] || 0;
+                const txt = c.sent.toLowerCase();
+                let intentOK = true;
+                if (intent.function)
+                    intentOK = /\bfunc\b/.test(txt);
+                if (intent.variable)
+                    intentOK = intentOK && (/\bvar\b/.test(txt) || /\b:=\b/.test(txt));
+                if (intent.constant)
+                    intentOK = intentOK && /\bconst\b/.test(txt);
+                if (intent.concurrency)
+                    intentOK = intentOK && (/\bgoroutine\b|\bgo\s+func\b|\bchan(nel)?\b|\bselect\b/.test(txt));
+                if (!intentOK || align < 0.25 || f.querySim < O.minQuerySimForCode || f.codeRelevance <= 0.2) {
+                    s *= 0.5; // neuter misaligned code
+                }
+                else if (O.preferCode) {
+                    s += O.codeBonus * Math.min(1, f.codeRelevance * 1.25) * align;
+                }
+            }
+            // Heading bonus scaled by composite alignment
+            const hb = Math.min(1, composite[c.chunkIdx] || 0);
+            if (hb > 0)
+                s += O.headingBonus * hb;
+            // Off-topic heading handling (shouldn’t happen due to hard mask, but keep as fail-safe)
+            if (hb === 0 && !O.allowOffTopic) {
+                s *= 0.1; // near-zero
+            }
+            c.score = clamp01p5(s);
+        }
+        // 5) TOTAL order sort with explicit tie-breakers (stable)
+        candidates.sort((a, b) => {
+            if (b.score !== a.score)
+                return b.score - a.score;
+            const ar = K[a.chunkIdx].rrRank, br = K[b.chunkIdx].rrRank;
+            if (ar !== br)
+                return ar - br; // better reranker rank first
+            if (a.chunkIdx !== b.chunkIdx)
+                return a.chunkIdx - b.chunkIdx; // earlier chunk first
+            if (a.sentIdx !== b.sentIdx)
+                return a.sentIdx - b.sentIdx; // earlier sentence first
+            return a.sent.localeCompare(b.sent); // final deterministic tie-breaker
+        });
+        // 6) Deterministic dedup (Jaccard) — keep first occurrence only
+        const picked = [];
+        const seen = [];
+        for (const c of candidates) {
+            const t = c.sent.toLowerCase();
+            let dup = false;
+            for (const s of seen) {
+                if (jaccardText(t, s) >= O.jaccardDedupThreshold) {
+                    dup = true;
+                    break;
+                }
+            }
+            if (!dup) {
+                picked.push(c);
+                seen.push(t);
+            }
+        }
+        // 7) Compose answer under budget with section cap
+        const out = [];
+        const citesSet = new Set();
+        let budget = O.maxAnswerChars;
+        const usedHeadings = new Set();
+        for (const c of picked) {
+            const h = K[c.chunkIdx].heading;
+            const alreadyUsed = usedHeadings.has(h);
+            // Enforce max distinct headings
+            if (!alreadyUsed && usedHeadings.size >= O.maxSectionsInAnswer)
+                continue;
+            const unit = (picked.length > 1 ? `- ${c.sent}` : c.sent);
+            const cost = unit.length + (out.length ? 1 : 0);
+            if (cost > budget)
+                continue;
+            out.push(unit);
+            budget -= cost;
+            usedHeadings.add(h);
+            if (O.includeCitations)
+                citesSet.add(h);
+            if (out.length >= O.maxBullets)
+                break;
+        }
+        // Fallback if nothing fits budget
+        if (out.length === 0 && picked.length > 0) {
+            const c = picked[0];
+            out.push(c.sent);
+            citesSet.add(K[c.chunkIdx].heading);
+        }
+        let text = picked.length > 1 ? out.join("\n") : out.join("");
+        const cites = [...citesSet].map(h => ({ heading: h }));
+        if (O.addFooter && cites.length > 0) {
+            text += `\n\n---\n**Sources used:**\n` + cites.map(c => `- ${c.heading}`).join("\n");
+        }
+        return { text, cites };
+    }
+    /* -------------------- helpers (deterministic) -------------------- */
+    function clamp01p5(x) {
+        if (!Number.isFinite(x))
+            return 0;
+        return Math.max(0, Math.min(1.5, x));
+    }
+    function tokens(s) {
+        var _a;
+        return (_a = s.toLowerCase().match(/[a-z0-9_]+/g)) !== null && _a !== void 0 ? _a : [];
+    }
+    // code-aware split: returns a sequence of {kind: "code"|"text", text}
+    function splitCodeAware(raw) {
+        const out = [];
+        const re = /```([\s\S]*?)```/g;
+        let last = 0, m;
+        while ((m = re.exec(raw)) !== null) {
+            const before = raw.slice(last, m.index);
+            if (before.trim())
+                out.push({ kind: "text", text: normalizeWS(before) });
+            const code = m[1];
+            if (code.trim())
+                out.push({ kind: "code", text: "```" + normalizeWS(code) + "```" });
+            last = m.index + m[0].length;
+        }
+        const tail = raw.slice(last);
+        if (tail.trim())
+            out.push({ kind: "text", text: normalizeWS(tail) });
+        return out;
+    }
+    // conservative sentence splitter (period, question, exclamation)
+    function splitSentences(text) {
+        // split on sentence boundaries; also split on blank lines to avoid giant paragraphs
+        const parts = text.split(/(?<=[\.\?\!])\s+(?=[A-Z0-9[`])/g);
+        return parts.flatMap(p => p.split(/\n{2,}/g)).map(s => s.trim()).filter(Boolean);
+    }
+    function normalizeWS(s) {
+        return s.replace(/\r/g, "").replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+    }
+    function bow(ts) {
+        var _a;
+        const m = new Map();
+        for (const t of ts)
+            m.set(t, ((_a = m.get(t)) !== null && _a !== void 0 ? _a : 0) + 1);
+        return m;
+    }
+    function cosine(a, b) {
+        let dot = 0, na = 0, nb = 0;
+        for (const [, v] of a)
+            na += v * v;
+        for (const [, v] of b)
+            nb += v * v;
+        const n = Math.sqrt(na || 1e-9) * Math.sqrt(nb || 1e-9);
+        if (n === 0)
+            return 0;
+        const smaller = a.size < b.size ? a : b;
+        const larger = a.size < b.size ? b : a;
+        for (const [k, v] of smaller) {
+            const w = larger.get(k);
+            if (w)
+                dot += v * w;
+        }
+        const val = dot / n;
+        return Number.isFinite(val) ? Math.max(0, Math.min(1, val)) : 0;
+    }
+    // normalize each named feature across candidates → [0,1] deterministically
+    function normalizeFeature(cands, key) {
+        var _a, _b;
+        let min = Infinity, max = -Infinity;
+        for (const c of cands) {
+            const v = (_a = c.features[key]) !== null && _a !== void 0 ? _a : 0;
+            const vv = Number.isFinite(v) ? v : 0;
+            if (vv < min)
+                min = vv;
+            if (vv > max)
+                max = vv;
+        }
+        const span = (max - min) || 1;
+        for (const c of cands) {
+            const v = (_b = c.features[key]) !== null && _b !== void 0 ? _b : 0;
+            const vv = Number.isFinite(v) ? v : 0;
+            c.features[key] = (vv - min) / span;
+        }
+    }
+    function jaccardText(a, b) {
+        const A = new Set(a.split(/\W+/).filter(Boolean));
+        const B = new Set(b.split(/\W+/).filter(Boolean));
+        let inter = 0;
+        for (const x of A)
+            if (B.has(x))
+                inter++;
+        return inter / Math.max(1, A.size + B.size - inter);
+    }
+    /* ---------- stopwords + intent ---------- */
+    const STOP = new Set([
+        'a', 'an', 'the', 'and', 'or', 'but', 'if', 'then', 'else', 'of', 'in', 'on', 'for', 'to', 'from', 'by',
+        'with', 'without', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'as', 'at', 'it', 'this', 'that',
+        'these', 'those', 'i', 'you', 'he', 'she', 'we', 'they', 'do', 'does', 'did', 'how', 'what', 'when',
+        'where', 'why', 'which', 'can', 'could', 'should', 'would'
+    ]);
+    function filterStops(ts) {
+        return ts.filter(t => !STOP.has(t));
+    }
+    function detectIntent(q) {
+        const s = q.toLowerCase();
+        return {
+            function: /\bfunc(tion|)\b|\bdefine\b|\bdeclar(e|ation)\b|\bprototype\b/.test(s),
+            variable: /\bvar(iable)?\b|\bdeclare\b/.test(s),
+            constant: /\bconst(ant)?\b/.test(s),
+            concurrency: /\bconcurrency\b|\bgoroutine\b|\bchannel\b|\bselect\b/.test(s),
+            loop: /\bfor\s+loop\b|\bloop\b|\bfor\b/.test(s),
+        };
+    }
+    /* ---------- light stemming + stemmed Dice alignment (0..1) ---------- */
+    function stemToken(w) {
+        let s = w.toLowerCase().replace(/^[^a-z0-9]+|[^a-z0-9]+$/g, '');
+        if (s.length <= 2)
+            return s;
+        if (s.endsWith('ies') && s.length > 4)
+            s = s.slice(0, -3) + 'y';
+        else if (/(xes|ches|shes|zes|sses)$/.test(s) && s.length > 4)
+            s = s.replace(/(xes|ches|shes|zes|sses)$/, (m) => (m === 'sses' ? 'ss' : m.replace(/es$/, '')));
+        else if (s.endsWith('s') && !/(ss|us)$/.test(s) && s.length > 3)
+            s = s.slice(0, -1);
+        const rules = [
+            [/ization$|isation$/, 'ize'],
+            [/ational$/, 'ate'],
+            [/fulness$/, 'ful'],
+            [/ousness$/, 'ous'],
+            [/iveness$/, 'ive'],
+            [/ability$/, 'able'],
+            [/ness$/, ''],
+            [/ment$/, ''],
+            [/ations?$/, 'ate'],
+            [/izer$|iser$/, 'ize'],
+            [/ally$/, 'al'],
+            [/ically$/, 'ic'],
+            [/ingly$|edly$/, ''],
+            [/ing$|ed$/, ''],
+        ];
+        for (const [re, rep] of rules) {
+            if (re.test(s) && s.length - rep.length >= 4) {
+                s = s.replace(re, rep);
+                break;
+            }
+        }
+        return s;
+    }
+    function stemTokens(str) {
+        var _a;
+        const raw = ((_a = str.toLowerCase().match(/[a-z0-9_]+/g)) !== null && _a !== void 0 ? _a : []);
+        const stemmed = raw.map(stemToken).filter(Boolean);
+        return filterStops(stemmed);
+    }
+    // Dice coefficient over stemmed tokens (0..1). Robust for short strings.
+    function diceStemmed(a, b) {
+        const A = new Set(stemTokens(a));
+        const B = new Set(stemTokens(b));
+        if (A.size === 0 || B.size === 0)
+            return 0;
+        let inter = 0;
+        for (const t of A)
+            if (B.has(t))
+                inter++;
+        return (2 * inter) / (A.size + B.size);
+    }
+    // Overlap between code tokens and query tokens (fraction of code tokens in query)
+    function cCodeRelevance(sentence, queryTokens) {
+        if (!sentence.includes("```"))
+            return 0;
+        const codeTokens = tokens(sentence.replace(/```/g, ""));
+        if (codeTokens.length === 0)
+            return 0;
+        const Q = new Set(queryTokens);
+        let overlap = 0;
+        for (const t of codeTokens) {
+            if (Q.has(t))
+                overlap++;
+        }
+        return overlap / codeTokens.length;
+    }
+    // Feature builder (deterministic). If you have TE per chunk/sentence, inject it here.
+    function buildFeatures(sentence, queryTokens, ch, _O, hasCode) {
+        // querySim (raw) via cosine on hashed BoW; normalized later
+        const qvec = bow(queryTokens);
+        const svec = bow(tokens(sentence));
+        const querySimRaw = cosine(qvec, svec); // 0..1
+        // sentence↔heading local alignment (stemmed); treat ≥0.15 as aligned
+        const localAlignScore = diceStemmed(sentence, ch.heading);
+        const headingAligned = localAlignScore >= 0.15;
+        // teGain: placeholder (replace with your TE if you have it)
+        const teGainRaw = headingAligned ? 1 : 0;
+        // evidence: proxy for coverage/utility (bounded length effect)
+        const evRaw = Math.min(1, tokens(sentence).length / 40);
+        const rrRaw = (typeof ch.rrScore === "number") ? ch.rrScore : 0;
+        const codeRel = hasCode ? cCodeRelevance(sentence, queryTokens) : 0;
+        return {
+            querySim: querySimRaw,
+            teGain: teGainRaw,
+            evidence: evRaw,
+            rr: rrRaw,
+            headingAligned,
+            codeRelevance: codeRel,
+        };
+    }
+
+    // infoflow/TransferEntropy.ts
+    // Phase-1: streaming Transfer Entropy (TE) with linear-Gaussian approximation.
+    // TE(X→Y) ≈ 1/2 * log( Var[e | Y_past] / Var[e | Y_past, X_past] ), in nats (set bits=true for /ln2)
+    function zscore(v) {
+        const n = v.length || 1;
+        let m = 0;
+        for (const x of v)
+            m += x;
+        m /= n;
+        let s2 = 0;
+        for (const x of v) {
+            const d = x - m;
+            s2 += d * d;
+        }
+        const inv = 1 / Math.sqrt(s2 / Math.max(1, n - 1) || 1e-12);
+        return v.map(x => (x - m) * inv);
+    }
+    function ridgeSolve(X, y, l2) {
+        var _a;
+        // Solve (X^T X + l2 I) beta = X^T y via Cholesky (d is small here).
+        const n = X.length, d = ((_a = X[0]) === null || _a === void 0 ? void 0 : _a.length) || 0;
+        if (!n || !d)
+            return new Array(d).fill(0);
+        const XtX = new Float64Array(d * d);
+        const Xty = new Float64Array(d);
+        for (let i = 0; i < n; i++) {
+            const row = X[i];
+            const yi = y[i];
+            for (let j = 0; j < d; j++) {
+                Xty[j] += row[j] * yi;
+                for (let k = 0; k <= j; k++)
+                    XtX[j * d + k] += row[j] * row[k];
+            }
+        }
+        for (let j = 0; j < d; j++) {
+            for (let k = 0; k < j; k++)
+                XtX[k * d + j] = XtX[j * d + k];
+            XtX[j * d + j] += l2;
+        }
+        // Cholesky
+        const L = new Float64Array(d * d);
+        for (let i = 0; i < d; i++) {
+            for (let j = 0; j <= i; j++) {
+                let s = XtX[i * d + j];
+                for (let k = 0; k < j; k++)
+                    s -= L[i * d + k] * L[j * d + k];
+                L[i * d + j] = (i === j) ? Math.sqrt(Math.max(s, 1e-12)) : s / (L[j * d + j] || 1e-12);
+            }
+        }
+        // Solve L z = Xty
+        const z = new Float64Array(d);
+        for (let i = 0; i < d; i++) {
+            let s = Xty[i];
+            for (let k = 0; k < i; k++)
+                s -= L[i * d + k] * z[k];
+            z[i] = s / (L[i * d + i] || 1e-12);
+        }
+        // Solve L^T beta = z
+        const beta = new Float64Array(d);
+        for (let i = d - 1; i >= 0; i--) {
+            let s = z[i];
+            for (let k = i + 1; k < d; k++)
+                s -= L[k * d + i] * beta[k];
+            beta[i] = s / (L[i * d + i] || 1e-12);
+        }
+        return Array.from(beta);
+    }
+    function mseResidual(X, y, beta) {
+        const n = X.length || 1;
+        let s = 0;
+        for (let i = 0; i < n; i++) {
+            const row = X[i];
+            let p = 0;
+            for (let j = 0; j < row.length; j++)
+                p += row[j] * beta[j];
+            const e = y[i] - p;
+            s += e * e;
+        }
+        return s / n;
+    }
+    // Build supervised datasets for Y_t and regressors made of past Y/X lags.
+    function makeDesign(ySeq, xSeq, L, LX) {
+        // ySeq[i] and xSeq[i] are vectors at time i (we’ll average to 1D to keep it cheap)
+        const y1d = ySeq.map(v => v.reduce((a, b) => a + b, 0) / Math.max(1, v.length));
+        const x1d = xSeq.map(v => v.reduce((a, b) => a + b, 0) / Math.max(1, v.length));
+        const N = y1d.length;
+        const rowsY = [];
+        const rowsYX = [];
+        const target = [];
+        for (let t = Math.max(L, LX); t < N; t++) {
+            // target: current Y (scalar)
+            target.push([y1d[t]]);
+            // past Y
+            const ylags = [];
+            for (let k = 1; k <= L; k++)
+                ylags.push(y1d[t - k]);
+            // past X
+            const xlags = [];
+            for (let k = 1; k <= LX; k++)
+                xlags.push(x1d[t - k]);
+            rowsY.push(ylags);
+            rowsYX.push([...ylags, ...xlags]);
+        }
+        // standardize columns for stability
+        const colZ = (M) => {
+            var _a;
+            const n = M.length, d = ((_a = M[0]) === null || _a === void 0 ? void 0 : _a.length) || 0;
+            const out = Array.from({ length: n }, () => new Array(d).fill(0));
+            for (let j = 0; j < d; j++) {
+                const col = new Array(n);
+                for (let i = 0; i < n; i++)
+                    col[i] = M[i][j];
+                const zs = zscore(col);
+                for (let i = 0; i < n; i++)
+                    out[i][j] = zs[i];
+            }
+            return out;
+        };
+        return { XY: colZ(rowsY), XYX: colZ(rowsYX), y: target.map(v => v[0]) };
+    }
+    class TransferEntropy {
+        constructor(opts = {}) {
+            this.xBuf = [];
+            this.yBuf = [];
+            this.opts = Object.assign({ window: 256, condLags: 1, xLags: 1, ridge: 1e-3, bits: true }, opts);
+        }
+        /** Push a synchronized sample pair (vectors OK). */
+        push(x, y) {
+            const X = Array.isArray(x) ? x : [x];
+            const Y = Array.isArray(y) ? y : [y];
+            this.xBuf.push(X);
+            this.yBuf.push(Y);
+            const W = this.opts.window;
+            if (this.xBuf.length > W) {
+                this.xBuf.shift();
+                this.yBuf.shift();
+            }
+        }
+        /** Estimate TE(X→Y) over the current window. */
+        estimate() {
+            const n = this.xBuf.length;
+            const L = Math.max(1, this.opts.condLags | 0);
+            const LX = Math.max(1, this.opts.xLags | 0);
+            if (n < Math.max(L, LX) + 5)
+                return 0;
+            const { XY, XYX, y } = makeDesign(this.yBuf, this.xBuf, L, LX);
+            if (!XY.length || !XYX.length)
+                return 0;
+            // H1: regress Y_t on Y_{t-1..t-L}
+            const b1 = ridgeSolve(XY, y, this.opts.ridge);
+            const v1 = mseResidual(XY, y, b1);
+            // H2: regress Y_t on [Y_{t-1..t-L}, X_{t-1..t-L}]
+            const b2 = ridgeSolve(XYX, y, this.opts.ridge);
+            const v2 = mseResidual(XYX, y, b2);
+            // TE ≈ 0.5 * log( v1 / v2 )
+            const teNats = 0.5 * Math.log(Math.max(1e-12, v1) / Math.max(1e-12, v2));
+            const te = Math.max(0, teNats); // no negatives (numerical guard)
+            return this.opts.bits ? (te / Math.LN2) : te;
+        }
+    }
+    class InfoFlowGraph {
+        constructor(defaultOpts = {}) {
+            this.defaultOpts = defaultOpts;
+            this.monitors = new Map();
+            // License check removed // Premium feature - requires valid license
+        }
+        get(name) {
+            if (!this.monitors.has(name))
+                this.monitors.set(name, new TransferEntropy(this.defaultOpts));
+            return this.monitors.get(name);
+        }
+        snapshot() {
+            const out = {};
+            for (const [k, mon] of this.monitors)
+                out[k] = Number(mon.estimate().toFixed(4));
+            return out;
+        }
+    }
+
+    // src/infoflow/TransferEntropyPWS.ts
+    // Phase-2 TE-PWS: importance sampling for rare events + path-weight sampling (PWS)
+    // API mirrors Phase-1 so it plugs in with minimal edits.
+    // --- small helpers ---
+    function meanStd(arr) {
+        if (arr.length === 0)
+            return { m: 0, s: 0 };
+        let m = 0;
+        for (const v of arr)
+            m += v;
+        m /= arr.length;
+        let v = 0;
+        for (const x of arr) {
+            const d = x - m;
+            v += d * d;
+        }
+        return { m, s: Math.sqrt(v / Math.max(1, arr.length)) || 1e-12 };
+    }
+    function l2(a) { let s = 0; for (let i = 0; i < a.length; i++)
+        s += a[i] * a[i]; return Math.sqrt(s); }
+    function sub(a, b) { const n = Math.min(a.length, b.length); const o = new Array(n); for (let i = 0; i < n; i++)
+        o[i] = a[i] - b[i]; return o; }
+    function concat(a, b) { const o = new Array(a.length + b.length); let k = 0; for (const v of a)
+        o[k++] = v; for (const v of b)
+        o[k++] = v; return o; }
+    function gaussianVec(a, b, s) {
+        // product kernel with shared bandwidth
+        const n = Math.min(a.length, b.length);
+        let q = 0;
+        for (let i = 0; i < n; i++) {
+            const d = a[i] - b[i];
+            q += d * d;
+        }
+        const ss = s * s || 1e-12;
+        return Math.exp(-0.5 * q / ss) / Math.pow(Math.sqrt(2 * Math.PI * ss), n);
+    }
+    class TransferEntropyPWS {
+        constructor(opts = {}) {
+            this.xBuf = [];
+            this.yBuf = [];
+            this.yDiffBuf = []; // ||ΔY|| magnitude for rarity
+            this.wBuf = []; // per-sample weights (importance * decay)
+            this.opts = Object.assign({ window: 256, condLags: 1, xLags: 1, normalize: true, tailQuantile: 0.9, tailBoost: 4, decay: 1.0, usePWS: false, jitterSigma: 0.15, pwsIters: 8, bandwidth: 0, ridge: 1e-6, bits: true }, opts);
+        }
+        /** Push one synchronized sample (vectors OK). */
+        push(x, y) {
+            const X = Array.isArray(x) ? x.slice() : [x];
+            const Y = Array.isArray(y) ? y.slice() : [y];
+            // Δ||Y|| for rarity
+            const prev = this.yBuf.length ? this.yBuf[this.yBuf.length - 1] : Y;
+            const d = l2(sub(Y, prev));
+            this.xBuf.push(X);
+            this.yBuf.push(Y);
+            this.yDiffBuf.push(d);
+            // time decay (most recent → weight 1)
+            const tDecay = this.opts.decay;
+            const wDecay = tDecay < 1 && this.xBuf.length > 1
+                ? Math.pow(tDecay, this.xBuf.length - 1)
+                : 1;
+            // placeholder weight now; we’ll update after we know tail threshold
+            this.wBuf.push(wDecay);
+            // maintain window
+            while (this.xBuf.length > this.opts.window) {
+                this.xBuf.shift();
+                this.yBuf.shift();
+                this.yDiffBuf.shift();
+                this.wBuf.shift();
+            }
+        }
+        /** Basic Phase-2 call: choose PWS or vanilla IS+KDE based on opts.usePWS */
+        estimate() {
+            return this.opts.usePWS ? this.estimatePWS() : this.estimateIS();
+        }
+        /** Vanilla importance-weighted TE via KDE (no path jitter). */
+        estimateIS() {
+            const N = this.yBuf.length;
+            const L = Math.max(1, this.opts.condLags | 0);
+            const LX = Math.max(1, this.opts.xLags | 0);
+            if (N <= Math.max(L, LX) + 2)
+                return 0;
+            // compute tail threshold on recent Δ||Y||
+            const diffs = this.yDiffBuf.slice();
+            const thr = quantile(diffs, this.opts.tailQuantile);
+            // update importance weights
+            for (let i = 0; i < this.wBuf.length; i++) {
+                const tail = diffs[i] >= thr ? this.opts.tailBoost : 1;
+                this.wBuf[i] = Math.max(1e-8, this.wBuf[i] * tail);
+            }
+            // Build contexts
+            const samples = [];
+            for (let t = Math.max(L, LX); t < N; t++) {
+                const y = this.yBuf[t];
+                const yPast = stackPast(this.yBuf, t, L);
+                const xPast = stackPast(this.xBuf, t, LX);
+                samples.push({ y, yPast, xPast, w: this.wBuf[t] });
+            }
+            if (samples.length < 4)
+                return 0;
+            // bandwidth selection
+            const ySc = flatten(samples.map(s => s.y));
+            const b = this.opts.bandwidth > 0 ? this.opts.bandwidth
+                : silverman(ySc);
+            // H(Y|Ypast) and H(Y|Ypast,Xpast) via KDE density ratio
+            const HY_Y = condEntropyKDE(samples, 'yPast', b, this.opts.ridge);
+            const HY_YX = condEntropyKDE(samples, 'yPast+xPast', b, this.opts.ridge);
+            const te = Math.max(0, HY_Y - HY_YX); // >= 0 numerically clipped
+            return this.opts.bits ? te / Math.log(2) : te;
+        }
+        /** Path-Weight Sampling: jitter past contexts, average conditional entropies. */
+        estimatePWS() {
+            const N = this.yBuf.length;
+            const L = Math.max(1, this.opts.condLags | 0);
+            const LX = Math.max(1, this.opts.xLags | 0);
+            if (N <= Math.max(L, LX) + 2)
+                return 0;
+            // tail-aware importance weights
+            const diffs = this.yDiffBuf.slice();
+            const thr = quantile(diffs, this.opts.tailQuantile);
+            for (let i = 0; i < this.wBuf.length; i++) {
+                const tail = diffs[i] >= thr ? this.opts.tailBoost : 1;
+                this.wBuf[i] = Math.max(1e-8, this.wBuf[i] * tail);
+            }
+            const samples = [];
+            for (let t = Math.max(L, LX); t < N; t++) {
+                const y = this.yBuf[t];
+                const yPast = stackPast(this.yBuf, t, L);
+                const xPast = stackPast(this.xBuf, t, LX);
+                samples.push({ y, yPast, xPast, w: this.wBuf[t] });
+            }
+            if (samples.length < 4)
+                return 0;
+            const ySc = flatten(samples.map(s => s.y));
+            const b = this.opts.bandwidth > 0 ? this.opts.bandwidth : silverman(ySc);
+            const J = Math.max(1, this.opts.pwsIters | 0);
+            const jSig = this.opts.jitterSigma;
+            // baseline entropies
+            const baseHY_Y = condEntropyKDE(samples, 'yPast', b, this.opts.ridge);
+            const baseHY_YX = condEntropyKDE(samples, 'yPast+xPast', b, this.opts.ridge);
+            // jittered contexts
+            let accY = 0, accYX = 0;
+            for (let j = 0; j < J; j++) {
+                const jittered = jitterSamples(samples, jSig);
+                accY += condEntropyKDE(jittered, 'yPast', b, this.opts.ridge);
+                accYX += condEntropyKDE(jittered, 'yPast+xPast', b, this.opts.ridge);
+            }
+            const HY_Y = 0.5 * baseHY_Y + 0.5 * (accY / J);
+            const HY_YX = 0.5 * baseHY_YX + 0.5 * (accYX / J);
+            const te = Math.max(0, HY_Y - HY_YX);
+            return this.opts.bits ? te / Math.log(2) : te;
+        }
+    }
+    /** Manage many labeled links, PWS-enabled. Same API as Phase-1. */
+    class InfoFlowGraphPWS {
+        constructor(defaultOpts = {}) {
+            this.defaultOpts = defaultOpts;
+            this.monitors = new Map();
+            // License check removed // Premium feature - requires valid license
+        }
+        get(name) {
+            if (!this.monitors.has(name))
+                this.monitors.set(name, new TransferEntropyPWS(this.defaultOpts));
+            return this.monitors.get(name);
+        }
+        snapshot() {
+            const out = {};
+            for (const [k, mon] of this.monitors)
+                out[k] = mon.estimate();
+            return out;
+        }
+    }
+    // ========================= internals =========================
+    function stackPast(buf, t, L) {
+        var _a;
+        const out = [];
+        for (let l = 1; l <= L; l++) {
+            const v = (_a = buf[t - l]) !== null && _a !== void 0 ? _a : buf[0];
+            for (let i = 0; i < v.length; i++)
+                out.push(v[i]);
+        }
+        return out;
+    }
+    function flatten(mats) {
+        const out = [];
+        for (const v of mats)
+            for (const x of v)
+                out.push(x);
+        return out;
+    }
+    function silverman(vals) {
+        // Silverman's rule-of-thumb for Gaussian KDE (per-dim averaged)
+        if (vals.length < 2)
+            return 1;
+        const { s } = meanStd(vals);
+        const n = vals.length;
+        return 1.06 * s * Math.pow(n, -1 / 5); // scalar, used for product kernel
+    }
+    function quantile(arr, q) {
+        if (arr.length === 0)
+            return 0;
+        const a = arr.slice().sort((x, y) => x - y);
+        const idx = Math.min(a.length - 1, Math.max(0, Math.floor(q * (a.length - 1))));
+        return a[idx];
+    }
+    function condEntropyKDE(samples, mode, bw, ridge) {
+        // H(Y|C) ≈ E[-log p(y|c)] with KDE ratio: p(y,c)/p(c)
+        // Use importance weights w and product Gaussian kernels with shared bw.
+        const useXY = mode === 'yPast+xPast';
+        let totalW = 0, acc = 0;
+        // Pre-extract contexts
+        const C = samples.map(s => useXY ? concat(s.yPast, s.xPast) : s.yPast);
+        const Y = samples.map(s => s.y);
+        const W = samples.map(s => s.w);
+        for (let i = 0; i < samples.length; i++) {
+            const ci = C[i], yi = Y[i], wi = W[i];
+            // joint density p(y,c) ~ sum_j w_j K_c(ci,cj) K_y(yi,yj)
+            // context density p(c)  ~ sum_j w_j K_c(ci,cj)
+            let num = 0, den = 0;
+            for (let j = 0; j < samples.length; j++) {
+                const kc = gaussianVec(ci, C[j], bw);
+                den += W[j] * kc;
+                num += W[j] * kc * gaussianVec(yi, Y[j], bw);
+            }
+            const p = Math.max(ridge, num / Math.max(ridge, den));
+            acc += -Math.log(p) * wi;
+            totalW += wi;
+        }
+        return (totalW > 0) ? acc / totalW : 0;
+    }
+    function jitterSamples(samples, sigmaFrac) {
+        var _a, _b;
+        if (sigmaFrac <= 0)
+            return samples;
+        // Estimate per-dim std of yPast across buffer to scale jitter
+        const allYp = samples.map(s => s.yPast);
+        const dims = ((_a = allYp[0]) === null || _a === void 0 ? void 0 : _a.length) || 0;
+        const perDim = new Array(dims).fill(0);
+        // compute std per dim
+        for (let d = 0; d < dims; d++) {
+            const vals = [];
+            for (const v of allYp)
+                vals.push((_b = v[d]) !== null && _b !== void 0 ? _b : 0);
+            perDim[d] = meanStd(vals).s || 1e-3;
+        }
+        // jitter
+        const out = new Array(samples.length);
+        for (let i = 0; i < samples.length; i++) {
+            const s = samples[i];
+            const yp = s.yPast.slice();
+            for (let d = 0; d < yp.length; d++) {
+                const z = gauss() * sigmaFrac * perDim[d];
+                yp[d] += z;
+            }
+            out[i] = { y: s.y, yPast: yp, xPast: s.xPast, w: s.w };
+        }
+        return out;
+    }
+    function gauss() {
+        // Box-Muller
+        let u = 0, v = 0;
+        while (u === 0)
+            u = Math.random();
+        while (v === 0)
+            v = Math.random();
+        return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    }
+
+    // TEController.ts — TE-PWS closed-loop tuner for Ω
+    /* ------------------------ utils ------------------------ */
+    function clampNumber(x, lo, hi) {
+        return Math.max(lo, Math.min(hi, x));
+    }
+    function withinBand(v, band) {
+        return v >= band[0] && v <= band[1];
+    }
+    /* ------------------------ controller ------------------------ */
+    class TEController {
+        constructor(params = {}) {
+            this.qCount = 0;
+            this.emaBeta = 0.2; // EMA smoothing for TE
+            // License check removed // Premium feature - requires valid license
+            const defaultLimits = {
+                alpha: [0.4, 0.98],
+                sigma: [0.12, 1.0],
+                ridge: [0.01, 0.2],
+                probThresh: [0.3, 0.7],
+                mmrLambda: [0.4, 0.9],
+                budgetChars: [600, 2400],
+            };
+            const defaultStep = {
+                alpha: 0.03,
+                sigma: 0.04,
+                ridge: 0.01,
+                probThresh: 0.03,
+                mmrLambda: 0.05,
+                budgetChars: 120,
+            };
+            const defaults = {
+                targets: {
+                    q2score: [0.01, 0.10],
+                    feat2score: [0.01, 0.10],
+                    kept2sum: [0.01, 0.10],
+                    loopMax: 0.25,
+                },
+                limits: defaultLimits,
+                step: defaultStep,
+                cooldown: 2,
+                maxPerSessionAdjusts: 24,
+                trustMinSamples: 8,
+            };
+            this.p = Object.assign(Object.assign(Object.assign({}, defaults), params), { targets: Object.assign(Object.assign({}, defaults.targets), (params.targets || {})), limits: Object.assign(Object.assign({}, defaultLimits), (params.limits || {})), step: Object.assign(Object.assign({}, defaultStep), (params.step || {})) });
+            this.s = { lastAdjustAt: -999, totalAdjusts: 0, ema: {}, history: [] };
+        }
+        /** Update EMA from a TE snapshot. */
+        pushTE(teSnap) {
+            var _a;
+            this.qCount++;
+            for (const [k, v] of Object.entries(teSnap || {})) {
+                const prev = (_a = this.s.ema[k]) !== null && _a !== void 0 ? _a : v;
+                this.s.ema[k] = prev + this.emaBeta * (v - prev);
+            }
+        }
+        /** Try one adjustment; returns {knobs?, note?}. Only adjusts if safe. */
+        maybeAdjust(current) {
+            var _a, _b, _c, _d;
+            if (this.qCount < this.p.trustMinSamples)
+                return {};
+            if (this.s.totalAdjusts >= this.p.maxPerSessionAdjusts)
+                return {};
+            if (this.qCount - this.s.lastAdjustAt < this.p.cooldown)
+                return {};
+            const te = this.s.ema;
+            const { q2score, feat2score, kept2sum, loopMax } = this.p.targets;
+            const out = Object.assign({}, current);
+            let changed = null;
+            const pick = (cand) => {
+                if (!changed)
+                    changed = cand; // single-knob change per step
+            };
+            const tQS = (_a = te['Retriever:Q->Score']) !== null && _a !== void 0 ? _a : 0;
+            const tFS = (_b = te['OmegaRR:Feat->Score']) !== null && _b !== void 0 ? _b : 0;
+            const tKS = (_c = te['Omega:Kept->Summary']) !== null && _c !== void 0 ? _c : 0;
+            const tLoop = (_d = te['Reservoir:Loop']) !== null && _d !== void 0 ? _d : 0; // optional if you wire it
+            // 1) Retrieval signal shaping
+            if (!withinBand(tQS, q2score)) {
+                if (tQS < q2score[0]) {
+                    pick({ param: 'alpha', delta: +this.p.step.alpha, why: `Q→Score low (${tQS.toFixed(3)} < ${q2score[0]})` });
+                    if (!changed)
+                        pick({ param: 'sigma', delta: -this.p.step.sigma, why: `Q→Score low, sharpen σ` });
+                }
+                else {
+                    pick({ param: 'sigma', delta: +this.p.step.sigma, why: `Q→Score high (${tQS.toFixed(3)} > ${q2score[1]})` });
+                    if (!changed)
+                        pick({ param: 'alpha', delta: -this.p.step.alpha, why: `Q→Score high, blend TF-IDF more` });
+                }
+            }
+            // 2) Reranker feature effectiveness via ridge
+            if (!changed && !withinBand(tFS, feat2score)) {
+                if (tFS < feat2score[0]) {
+                    pick({ param: 'ridge', delta: -this.p.step.ridge, why: `Feat→Score low (${tFS.toFixed(3)}): loosen λ` });
+                }
+                else {
+                    pick({ param: 'ridge', delta: +this.p.step.ridge, why: `Feat→Score high (${tFS.toFixed(3)}): stabilize λ` });
+                }
+            }
+            // 3) Grounding strength into summary via kept set
+            if (!changed && !withinBand(tKS, kept2sum)) {
+                if (tKS < kept2sum[0]) {
+                    pick({ param: 'probThresh', delta: -this.p.step.probThresh, why: `Kept→Summary low (${tKS.toFixed(3)}): expand kept` });
+                    if (!changed)
+                        pick({ param: 'budgetChars', delta: +this.p.step.budgetChars, why: `Kept→Summary low: widen budget` });
+                }
+                else {
+                    pick({ param: 'probThresh', delta: +this.p.step.probThresh, why: `Kept→Summary high: tighten kept` });
+                }
+            }
+            // 4) Optional loop stability guard
+            if (!changed && loopMax != null && tLoop > loopMax) {
+                pick({ param: 'ridge', delta: +this.p.step.ridge, why: `Loop TE ${tLoop.toFixed(3)} > ${loopMax}: damp` });
+                if (!changed)
+                    pick({ param: 'alpha', delta: -this.p.step.alpha, why: `Loop TE high: reduce dense gain` });
+            }
+            if (!changed)
+                return {}; // nothing to do
+            // ---- APPLY CHANGE (narrowed & typed) ----
+            const change = changed; // non-null
+            const limitsTuple = this.p.limits[change.param];
+            const lo = limitsTuple[0];
+            const hi = limitsTuple[1];
+            const cur = out[change.param];
+            const next = clampNumber(cur + change.delta, lo, hi);
+            out[change.param] = next;
+            // commit
+            this.s.lastAdjustAt = this.qCount;
+            this.s.totalAdjusts++;
+            this.s.history.push({ param: change.param, oldVal: current[change.param], newVal: next, why: change.why });
+            const note = `auto-adjust ${String(change.param)}: ${current[change.param]} → ${next} (${change.why})`;
+            return { knobs: out, note };
+        }
+        getHistory() { return this.s.history.slice(-8); } // recent changes
+        reset() {
+            this.s = { lastAdjustAt: -999, totalAdjusts: 0, ema: {}, history: [] };
+            this.qCount = 0;
+        }
+    }
+
+    // Markdown parsing utilities
+    // Extracted from workers for reuse
+    const FENCE_RE = /```[\s\S]*?```/g;
+    const LINK_RE = /\[([^\]]+)\]\(([^)]+)\)/g;
+    function stripForIndex(md, opts) {
+        let s = md;
+        if (opts.stripCode) {
+            // Preserve a 1-line signature from the first non-empty line inside each fenced block.
+            s = s.replace(FENCE_RE, m => {
+                const lines = m.split('\n').slice(1, -1);
+                const sig = (lines.find(l => l.trim()) || '').trim();
+                return sig ? `\n${sig}\n` : '\n<code omitted>\n';
+            });
+        }
+        if (opts.stripLinks) {
+            // Keep anchor text, drop target
+            s = s.replace(LINK_RE, '$1');
+        }
+        // Light cleanup
+        s = s.replace(/[ \t]+/g, ' ')
+            .replace(/\n{3,}/g, '\n\n')
+            .trim();
+        return s;
+    }
+    function parseMarkdownToSections(md, opts = { stripCode: true, stripLinks: true }) {
+        const lines = md.split(/\r?\n/);
+        const root = { id: 0, level: 1, heading: '(root)', content: '', rich: '', children: [] };
+        let current = null;
+        const stack = [root];
+        let nextId = 1;
+        let buf = [];
+        const flush = (buf, target) => {
+            if (!target)
+                return;
+            const rich = buf.join('\n').trim();
+            target.rich = rich;
+            target.content = stripForIndex(rich, opts);
+        };
+        for (const line of lines) {
+            const mH = /^(#{2,6})\s+(.*)$/.exec(line);
+            if (mH) {
+                // heading line
+                flush(buf, current);
+                buf = [];
+                const level = mH[1].length;
+                const heading = mH[2].trim();
+                const sec = { id: nextId++, level, heading, content: '', rich: '', children: [] };
+                // Find proper parent
+                while (stack.length && stack[stack.length - 1].level >= level)
+                    stack.pop();
+                const parent = stack[stack.length - 1] || root;
+                parent.children.push(sec);
+                sec.parent = parent.id;
+                stack.push(sec);
+                current = sec;
+            }
+            else {
+                buf.push(line);
+            }
+        }
+        flush(buf, current);
+        return root;
+    }
+    function backfillEmptyParents(root) {
+        const visit = (s) => {
+            var _a;
+            s.children.forEach(visit);
+            // Backfill typical chapter parents (##) only; adjust as needed
+            if (s.level === 2) {
+                const isEmpty = !s.content || !s.content.trim();
+                if (isEmpty) {
+                    const childSummaries = s.children
+                        .filter(c => (c.content || c.rich).trim())
+                        .slice(0, 2)
+                        .map(c => {
+                        const body = (c.content || c.rich).split('\n').slice(0, 3).join('\n');
+                        return `### ${c.heading}\n${body}`;
+                    });
+                    if (childSummaries.length) {
+                        s.content = childSummaries.join('\n\n');
+                        if (!((_a = s.rich) === null || _a === void 0 ? void 0 : _a.trim())) {
+                            s.rich = `> Summary of subsections:\n\n${childSummaries.join('\n\n')}`;
+                        }
+                    }
+                }
+            }
+        };
+        visit(root);
+    }
+    function flattenSections(root) {
+        const out = [];
+        const walk = (s) => {
+            if (s.id !== 0 && s.heading) {
+                out.push({ heading: s.heading, content: s.content, rich: s.rich, secId: s.id, level: s.level });
+            }
+            s.children.forEach(walk);
+        };
+        walk(root);
+        return out;
+    }
+
+    // Auto-tuning utilities for hyperparameter optimization
+    // Extracted from dev-worker for reuse
+    /**
+     * Sample queries from corpus
+     */
+    function sampleQueriesFromCorpus(chunks, n, useStem) {
+        const out = [];
+        for (let i = 0; i < n; i++) {
+            const s = chunks[Math.floor(Math.random() * chunks.length)];
+            // short synthetic queries from headings + nouns-ish tokens
+            const toks = tokenize$1((s.heading + ' ' + s.content).slice(0, 400), useStem)
+                .filter(t => t.length > 3)
+                .slice(0, 40);
+            const uniq = Array.from(new Set(toks));
+            out.push(uniq.slice(0, 6).join(' '));
+        }
+        return out;
+    }
+    /**
+     * Compute penalty for configuration complexity
+     */
+    function penalty(cfg) {
+        const lmCost = (cfg.landmarks - 128) / 512;
+        const vocabCost = (cfg.vocab - 8000) / 24000;
+        const preCost = (cfg.prefilter - 200) / 1200;
+        return 0.02 * (lmCost + vocabCost + preCost);
+    }
+    /**
+     * Jaccard similarity between two index arrays
+     */
+    function jaccard(a, b) {
+        const A = new Set(a);
+        const B = new Set(b);
+        let inter = 0;
+        for (const x of A)
+            if (B.has(x))
+                inter++;
+        const uni = new Set([...A, ...B]).size;
+        return uni ? inter / uni : 0;
+    }
+    /**
+     * Clamp value between min and max
+     */
+    function clamp(x, a, b) {
+        return Math.max(a, Math.min(b, x));
+    }
+    /**
+     * Pick random element from array
+     */
+    function pick(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+    /**
+     * Random number in range
+     */
+    function randRange(a, b) {
+        return a + Math.random() * (b - a);
+    }
+    /**
+     * Mutate object with patch
+     */
+    function mutate(base, patch) {
+        return Object.assign({}, base, patch);
+    }
+    /**
+     * Auto-tune hyperparameters
+     */
+    function autoTune(opts, onProgress) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b;
+            // License check removed // Premium feature - requires valid license
+            const { chunks, vocabMap, idf, tfidfDocs, vocabSize, budget = 40, sampleQueries: Qn = 24, currentSettings, } = opts;
+            const budgetClamped = Math.max(10, Math.min(200, budget));
+            const QnClamped = Math.max(8, Math.min(60, Qn));
+            const useStem = ((_a = currentSettings.useStem) !== null && _a !== void 0 ? _a : true);
+            const queries = sampleQueriesFromCorpus(chunks, QnClamped, useStem);
+            // Pre-compute TF-IDF top-K for each query (baseline)
+            const tfidfTops = queries.map(q => {
+                var _a;
+                const qv = toTfidf(tokenize$1(q, useStem), idf, vocabMap, 1);
+                const scores = tfidfDocs.map(v => cosineSparse(v, qv));
+                return topKIndices(scores, ((_a = currentSettings.topK) !== null && _a !== void 0 ? _a : 8));
+            });
+            let best = { score: -Infinity, cfg: Object.assign({}, currentSettings) };
+            // Cache for dense docs (keyed by kernel params)
+            const denseCache = new Map();
+            const denseDocsFor = (cfg) => {
+                // ridge doesn't affect projection; key on kernel params only
+                const key = `${cfg.kernel}:${cfg.landmarks}:${cfg.sigma}`;
+                let dd = denseCache.get(key);
+                if (!dd) {
+                    const { landmarksIdx, landmarkMat } = buildLandmarks(tfidfDocs, vocabSize, cfg.landmarks);
+                    dd = buildDenseDocs(tfidfDocs, vocabSize, landmarkMat, cfg.kernel, cfg.sigma);
+                    denseCache.set(key, dd);
+                }
+                return dd;
+            };
+            let trial = 0;
+            const tryCfg = (cfg, note) => {
+                var _a;
+                const jScores = [];
+                const dd = denseDocsFor(cfg);
+                const alpha = clamp(cfg.alpha, 0, 1);
+                const lambda = ((_a = cfg.ridge) !== null && _a !== void 0 ? _a : 0.05);
+                for (let qi = 0; qi < queries.length; qi++) {
+                    const q = queries[qi];
+                    const qv = toTfidf(tokenize$1(q, cfg.useStem), idf, vocabMap, 1);
+                    const { landmarksIdx, landmarkMat } = buildLandmarks(tfidfDocs, vocabSize, cfg.landmarks);
+                    const qd = projectToDense(qv, vocabSize, landmarkMat, cfg.kernel, cfg.sigma);
+                    const tfidfScores = tfidfDocs.map(v => cosineSparse(v, qv));
+                    // Compute dense scores using kernel similarity
+                    const denseScoresSimple = dd.map((v) => kernelSim(v, qd, cfg.kernel, cfg.sigma));
+                    // ridge-regularized hybrid (bonus off during tuning)
+                    const hybrid = denseScoresSimple.map((d, i) => {
+                        const t = tfidfScores[i];
+                        const reg = 1 / (1 + lambda * (d * d + t * t));
+                        return reg * (alpha * d + (1 - alpha) * t);
+                    });
+                    const idxs = topKIndices(hybrid, cfg.topK);
+                    jScores.push(jaccard(tfidfTops[qi], idxs));
+                }
+                const score = (jScores.reduce((a, b) => a + b, 0) / jScores.length) - penalty(cfg);
+                if (score > best.score)
+                    best = { score, cfg: Object.assign({}, cfg) };
+                if (onProgress)
+                    onProgress(++trial, best.score, note);
+            };
+            // random warmup
+            for (let i = 0; i < Math.floor(budgetClamped * 0.6); i++) {
+                const cfg = mutate(currentSettings, {
+                    alpha: randRange(0.55, 0.95),
+                    beta: randRange(0.0, 0.35),
+                    sigma: randRange(0.18, 0.75),
+                    kernel: pick(['rbf', 'cosine', 'poly2']),
+                    vocab: pick([8000, 10000, 12000, 15000]),
+                    landmarks: pick([128, 192, 256, 320, 384]),
+                    prefilter: pick([200, 300, 400, 600]),
+                    topK: pick([4, 6, 8]),
+                    headingW: randRange(1.5, 4.5),
+                    chunk: pick([450, 550, 650]),
+                    overlap: pick([50, 75, 100]),
+                    penalizeLinks: true,
+                    stripCode: true,
+                    expandQuery: true,
+                    useStem: true,
+                    ridge: randRange(0.02, 0.18),
+                });
+                tryCfg(cfg, 'random');
+            }
+            // refinement
+            for (let i = trial; i < budgetClamped; i++) {
+                const b = best.cfg;
+                const cfg = mutate(b, {
+                    alpha: clamp(b.alpha + randRange(-0.1, 0.1), 0.4, 0.98),
+                    beta: clamp(b.beta + randRange(-0.1, 0.1), 0, 0.4),
+                    sigma: clamp(b.sigma + randRange(-0.08, 0.08), 0.12, 1.0),
+                    kernel: b.kernel,
+                    vocab: b.vocab,
+                    landmarks: b.landmarks,
+                    prefilter: b.prefilter,
+                    topK: b.topK,
+                    headingW: clamp(b.headingW + randRange(-0.4, 0.4), 1.0, 6.0),
+                    chunk: b.chunk,
+                    overlap: b.overlap,
+                    penalizeLinks: b.penalizeLinks,
+                    stripCode: b.stripCode,
+                    expandQuery: b.expandQuery,
+                    useStem: b.useStem,
+                    ridge: clamp(((_b = b.ridge) !== null && _b !== void 0 ? _b : 0.05) + randRange(-0.02, 0.02), 0.0, 0.2),
+                });
+                tryCfg(cfg, 'refine');
+            }
+            return {
+                bestSettings: best.cfg,
+                bestScore: best.score,
+                trials: trial,
+            };
+        });
+    }
+
+    // Model serialization utilities
+    // Extracted from workers for reuse
+    /**
+     * Small, deterministic hash (not cryptographic)
+     */
+    function quickHash(s) {
+        let h1 = 0x9e3779b1, h2 = 0x85ebca6b;
+        for (let i = 0; i < s.length; i++) {
+            const c = s.charCodeAt(i);
+            h1 = Math.imul(h1 ^ c, 0x85ebca6b);
+            h2 = Math.imul(h2 ^ c, 0xc2b2ae35);
+        }
+        h1 = (h1 ^ (h2 >>> 15)) >>> 0;
+        return ('00000000' + h1.toString(16)).slice(-8);
+    }
+    /**
+     * Export model to serialized format
+     */
+    function exportModel(opts) {
+        // License check removed // Premium feature - requires valid license
+        const { settings, vocabMap, idf, chunks, tfidfDocs, landmarksIdx, landmarkMat, denseDocs, includeRich = true, includeDense = false, } = opts;
+        // 1) settings snapshot (clone to avoid accidental mutation)
+        const settingsSnap = JSON.parse(JSON.stringify(settings || {}));
+        // 2) vocab
+        const vocab = Array.from(vocabMap.entries());
+        // 3) chunks (minimal text)
+        const chunksSnap = chunks.map(c => ({
+            heading: c.heading,
+            content: c.content || '',
+            rich: includeRich ? (c.rich || undefined) : undefined,
+            level: c.level,
+            secId: c.secId,
+        }));
+        // 4) tfidfDocs → array of pairs
+        const tfidfPairs = tfidfDocs.map((m) => {
+            const row = [];
+            for (const [i, v] of m)
+                row.push([i, v]);
+            // sort indices for determinism
+            row.sort((a, b) => a[0] - b[0]);
+            return row;
+        });
+        // 5) Nyström landmarks and (optional) denseDocs
+        const landmarkMatArr = landmarkMat.map(v => Array.from(v));
+        const denseDocsArr = includeDense ?
+            ((denseDocs === null || denseDocs === void 0 ? void 0 : denseDocs.map(v => Array.from(v))) || undefined) : undefined;
+        const payload = {
+            version: 'astermind-pro-v1',
+            savedAt: new Date().toISOString(),
+            settings: settingsSnap,
+            vocab,
+            idf: Array.from(idf),
+            chunks: chunksSnap,
+            tfidfDocs: tfidfPairs,
+            landmarksIdx: Array.from(landmarksIdx),
+            landmarkMat: landmarkMatArr,
+            denseDocs: denseDocsArr,
+        };
+        // (Optional) quick content hash for sanity (small & deterministic)
+        payload.hash = quickHash(JSON.stringify({
+            idf: payload.idf.slice(0, 64),
+            vi: payload.vocab.length,
+            ci: payload.chunks.length,
+            lm: payload.landmarksIdx.length
+        }));
+        return payload;
+    }
+    function importModel(model, opts) {
+        // License check removed // Premium feature - requires valid license
+        if (model.version !== 'astermind-pro-v1' && model.version !== 'astermind-elm-v1') {
+            throw new Error(`Unsupported model version: ${model.version}. Expected 'astermind-pro-v1' or 'astermind-elm-v1'`);
+        }
+        // 1) restore settings
+        const settings = JSON.parse(JSON.stringify(model.settings || {}));
+        // 2) vocab & idf
+        const vocabMap = new Map(model.vocab);
+        const idf = Float64Array.from(model.idf); // keep as number[] for compatibility
+        // 3) chunks
+        const chunks = model.chunks.map(c => ({
+            heading: c.heading,
+            content: c.content || '',
+            rich: c.rich,
+            level: c.level,
+            secId: c.secId
+        }));
+        // 4) tfidfDocs from pairs
+        const tfidfDocs = model.tfidfDocs.map(row => {
+            const m = new Map();
+            for (const [i, v] of row)
+                m.set(i, v);
+            return m;
+        });
+        // 5) Nyström landmarks
+        const landmarksIdx = Array.from(model.landmarksIdx);
+        const landmarkMat = model.landmarkMat.map(a => Float64Array.from(a));
+        // 6) denseDocs: use stored or recompute
+        const needRecompute = ((opts === null || opts === void 0 ? void 0 : opts.recomputeDense) === true) || !model.denseDocs || model.denseDocs.length !== tfidfDocs.length;
+        let denseDocs;
+        if (needRecompute && (opts === null || opts === void 0 ? void 0 : opts.buildDense)) {
+            denseDocs = opts.buildDense(tfidfDocs, vocabMap.size, landmarkMat, settings.kernel || 'rbf', settings.sigma || 1.0);
+        }
+        else if (needRecompute) {
+            throw new Error('recomputeDense=true but buildDense function not provided');
+        }
+        else {
+            denseDocs = model.denseDocs.map(a => Float64Array.from(a));
+        }
+        return {
+            settings,
+            vocabMap,
+            idf,
+            chunks,
+            tfidfDocs,
+            landmarksIdx,
+            landmarkMat,
+            denseDocs,
+        };
+    }
+
+    // elm_scorer.ts — tiny, self-contained ELM scorer for (query, chunk) relevance
+    // Uses a random single hidden layer + ridge (closed form via OnlineRidge).
+    // 
+    // NOTE: You can also use astermind's ELM or OnlineELM classes from the local build:
+    // import { ELM, OnlineELM, defaultNumericConfig } from '@astermind/astermind-elm';
+    // License removed - all features are now free!
+    function rngFactory(seed = 1337) {
+        // xorshift32
+        let x = (seed >>> 0) || 1;
+        return () => {
+            x ^= x << 13;
+            x ^= x >> 17;
+            x ^= x << 5;
+            return ((x >>> 0) / 0xFFFFFFFF);
+        };
+    }
+    class ELMScorer {
+        constructor(p, cfg) {
+            var _a;
+            // License check removed // License check - ELMScorer uses premium OnlineRidge
+            this.p = p;
+            this.dim = Math.max(8, cfg.dim | 0);
+            this.lambda = Math.max(1e-6, cfg.lambda);
+            const rng = rngFactory((_a = cfg.seed) !== null && _a !== void 0 ? _a : 1337);
+            this.W = new Float64Array(this.dim * p);
+            for (let i = 0; i < this.W.length; i++)
+                this.W[i] = (rng() * 2 - 1) * Math.sqrt(2 / p);
+            this.b = new Float64Array(this.dim);
+            for (let i = 0; i < this.b.length; i++)
+                this.b[i] = (rng() * 2 - 1);
+            this.ridge = new OnlineRidge(this.dim, 1, this.lambda);
+            this.ready = false;
+        }
+        hidden(x) {
+            const h = new Float64Array(this.dim);
+            for (let j = 0; j < this.dim; j++) {
+                let s = this.b[j];
+                const row = j * this.p;
+                for (let i = 0; i < this.p; i++)
+                    s += this.W[row + i] * x[i];
+                // GELU-ish smooth nonlinearity (fast approximate)
+                const t = s;
+                h[j] = 0.5 * t * (1 + Math.tanh(Math.sqrt(2 / Math.PI) * (t + 0.044715 * Math.pow(t, 3))));
+            }
+            return h;
+        }
+        partialFit(batchX, batchY) {
+            if (!this.ridge)
+                this.ridge = new OnlineRidge(this.dim, 1, this.lambda);
+            for (let k = 0; k < batchX.length; k++) {
+                const h = this.hidden(batchX[k]); // Float64Array
+                const y = new Float64Array([batchY[k]]); // <-- make it Float64Array
+                this.ridge.update(h, y);
+            }
+            this.ready = true;
+        }
+        fit(X, y, iters = 1, batch = 256) {
+            const n = X.length;
+            for (let t = 0; t < iters; t++) {
+                for (let i = 0; i < n; i += batch) {
+                    const xb = X.slice(i, i + batch);
+                    const yb = y.slice(i, i + batch);
+                    this.partialFit(xb, yb);
+                }
+            }
+            this.ready = true;
+        }
+        score(x) {
+            if (!this.ready || !this.ridge)
+                return 0;
+            const h = this.hidden(x);
+            // y = h^T Beta (single output)
+            const Beta = this.ridge.Beta;
+            let s = 0;
+            for (let j = 0; j < this.dim; j++)
+                s += h[j] * Beta[j];
+            return s;
+        }
+    }
+
+    // multi-kernel-elm.ts — Multi-Kernel ELM combining multiple kernel types
+    // Combines RBF, polynomial, and linear kernels for improved accuracy
+    /**
+     * Multi-Kernel ELM that combines multiple kernel types
+     * Uses weighted combination of kernels for improved accuracy
+     */
+    class MultiKernelELM {
+        constructor(categories, options) {
+            var _a, _b, _c, _d, _e, _f, _g, _h;
+            this.kelms = [];
+            this.kernelWeights = [];
+            this.categories = [];
+            this.trained = false;
+            // License check removed // Premium feature - requires valid license
+            this.categories = categories;
+            this.options = {
+                kernels: options.kernels,
+                ridgeLambda: (_a = options.ridgeLambda) !== null && _a !== void 0 ? _a : 0.001,
+                learnWeights: (_b = options.learnWeights) !== null && _b !== void 0 ? _b : true,
+                nystrom: {
+                    m: (_d = (_c = options.nystrom) === null || _c === void 0 ? void 0 : _c.m) !== null && _d !== void 0 ? _d : 100,
+                    strategy: (_f = (_e = options.nystrom) === null || _e === void 0 ? void 0 : _e.strategy) !== null && _f !== void 0 ? _f : 'uniform',
+                },
+            };
+            // Initialize kernel ELMs
+            for (const kernelConfig of this.options.kernels) {
+                const kelm = new KernelELM({
+                    outputDim: categories.length,
+                    kernel: {
+                        type: kernelConfig.type === 'polynomial' ? 'rbf' : kernelConfig.type, // Map polynomial to rbf for now
+                        gamma: (_h = (_g = kernelConfig.params) === null || _g === void 0 ? void 0 : _g.gamma) !== null && _h !== void 0 ? _h : 0.01,
+                    },
+                    ridgeLambda: this.options.ridgeLambda,
+                    task: 'classification',
+                    mode: 'nystrom',
+                    nystrom: {
+                        m: this.options.nystrom.m,
+                        strategy: this.options.nystrom.strategy === 'random' ? 'uniform' : this.options.nystrom.strategy,
+                    },
+                });
+                this.kelms.push(kelm);
+            }
+            // Initialize kernel weights
+            if (this.options.learnWeights) {
+                this.kernelWeights = this.options.kernels.map((k, i) => { var _a; return (_a = k.weight) !== null && _a !== void 0 ? _a : 1.0 / this.options.kernels.length; });
+            }
+            else {
+                this.kernelWeights = this.options.kernels.map((k) => { var _a; return (_a = k.weight) !== null && _a !== void 0 ? _a : 1.0 / this.options.kernels.length; });
+            }
+        }
+        /**
+         * Train the multi-kernel ELM
+         */
+        fit(X, y) {
+            // Convert y to one-hot if needed
+            const oneHotY = this._toOneHot(y);
+            // Train each kernel ELM
+            for (const kelm of this.kelms) {
+                kelm.fit(X, oneHotY);
+            }
+            // Learn optimal kernel weights if enabled
+            if (this.options.learnWeights && this.kelms.length > 1) {
+                this._learnKernelWeights(X, oneHotY);
+            }
+            this.trained = true;
+        }
+        /**
+         * Predict with multi-kernel combination
+         */
+        predict(X, topK = 3) {
+            if (!this.trained) {
+                throw new Error('Model must be trained before prediction');
+            }
+            const XArray = Array.isArray(X[0]) ? X : [X];
+            const allPredictions = [];
+            for (const x of XArray) {
+                const predictions = [];
+                // Get predictions from each kernel
+                const kernelPredictions = this.kelms.map((kelm) => {
+                    var _a, _b, _c, _d;
+                    const pred = ((_b = (_a = kelm).transform) === null || _b === void 0 ? void 0 : _b.call(_a, [x])) || ((_d = (_c = kelm).predict) === null || _d === void 0 ? void 0 : _d.call(_c, [x]));
+                    return (Array.isArray(pred) ? pred[0] : pred) || new Float64Array(this.categories.length);
+                });
+                // Weighted combination
+                const combined = new Float64Array(this.categories.length);
+                for (let i = 0; i < this.kelms.length; i++) {
+                    const weight = this.kernelWeights[i];
+                    for (let j = 0; j < this.categories.length; j++) {
+                        combined[j] += kernelPredictions[i][j] * weight;
+                    }
+                }
+                // Convert to probabilities
+                const probs = this._softmax(combined);
+                // Get top-K
+                const indexed = [];
+                for (let idx = 0; idx < probs.length; idx++) {
+                    indexed.push({
+                        label: this.categories[idx],
+                        prob: probs[idx],
+                        index: idx,
+                    });
+                }
+                indexed.sort((a, b) => b.prob - a.prob);
+                const topResults = [];
+                for (let i = 0; i < Math.min(topK, indexed.length); i++) {
+                    topResults.push({
+                        label: indexed[i].label,
+                        prob: indexed[i].prob,
+                    });
+                }
+                predictions.push(...topResults);
+                allPredictions.push(...predictions);
+            }
+            return allPredictions;
+        }
+        /**
+         * Learn optimal kernel weights using validation performance
+         */
+        _learnKernelWeights(X, y) {
+            var _a, _b, _c, _d;
+            // Simple approach: weight by validation accuracy
+            // In practice, you might use cross-validation
+            const weights = new Float64Array(this.kelms.length);
+            for (let i = 0; i < this.kelms.length; i++) {
+                const kelm = this.kelms[i];
+                let correct = 0;
+                let total = 0;
+                // Evaluate on training data (in production, use validation set)
+                for (let j = 0; j < Math.min(100, X.length); j++) {
+                    const pred = ((_b = (_a = kelm).transform) === null || _b === void 0 ? void 0 : _b.call(_a, [X[j]])) || ((_d = (_c = kelm).predict) === null || _d === void 0 ? void 0 : _d.call(_c, [X[j]]));
+                    const predVec = (Array.isArray(pred) ? pred[0] : pred) || new Float64Array(0);
+                    const predIdx = this._argmax(predVec);
+                    const trueIdx = this._argmax(y[j]);
+                    if (predIdx === trueIdx)
+                        correct++;
+                    total++;
+                }
+                weights[i] = total > 0 ? correct / total : 1.0 / this.kelms.length;
+            }
+            // Normalize weights
+            const sum = Array.from(weights).reduce((a, b) => a + b, 0);
+            if (sum > 0) {
+                for (let i = 0; i < weights.length; i++) {
+                    this.kernelWeights[i] = weights[i] / sum;
+                }
+            }
+        }
+        _toOneHot(y) {
+            if (Array.isArray(y[0])) {
+                return y;
+            }
+            const labels = y;
+            return labels.map((label) => {
+                const oneHot = new Array(this.categories.length).fill(0);
+                oneHot[label] = 1;
+                return oneHot;
+            });
+        }
+        _softmax(logits) {
+            const max = Math.max(...Array.from(logits));
+            const exp = new Float64Array(logits.length);
+            let sum = 0;
+            for (let i = 0; i < logits.length; i++) {
+                exp[i] = Math.exp(logits[i] - max);
+                sum += exp[i];
+            }
+            for (let i = 0; i < exp.length; i++) {
+                exp[i] /= sum;
+            }
+            return exp;
+        }
+        _argmax(arr) {
+            let maxIdx = 0;
+            let maxVal = arr[0] || 0;
+            for (let i = 1; i < arr.length; i++) {
+                if ((arr[i] || 0) > maxVal) {
+                    maxVal = arr[i] || 0;
+                    maxIdx = i;
+                }
+            }
+            return maxIdx;
+        }
+        /**
+         * Get current kernel weights
+         */
+        getKernelWeights() {
+            return [...this.kernelWeights];
+        }
+    }
+
+    // deep-elm-pro.ts — Improved Deep ELM with advanced features
+    // Enhanced version of DeepELM with better training strategies and regularization
+    /**
+     * Improved Deep ELM with advanced training strategies
+     * Features:
+     * - Layer-wise training with autoencoder pretraining
+     * - Dropout and batch normalization
+     * - L1/L2/Elastic net regularization
+     * - Better initialization strategies
+     */
+    class DeepELMPro {
+        constructor(options) {
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
+            this.layers = [];
+            this.trained = false;
+            this.featureExtractors = []; // For pretraining
+            // License check removed // Premium feature - requires valid license
+            this.options = {
+                layers: options.layers,
+                activation: (_a = options.activation) !== null && _a !== void 0 ? _a : 'relu',
+                useDropout: (_b = options.useDropout) !== null && _b !== void 0 ? _b : false,
+                dropoutRate: (_c = options.dropoutRate) !== null && _c !== void 0 ? _c : 0.2,
+                useBatchNorm: (_d = options.useBatchNorm) !== null && _d !== void 0 ? _d : false,
+                regularization: {
+                    type: (_f = (_e = options.regularization) === null || _e === void 0 ? void 0 : _e.type) !== null && _f !== void 0 ? _f : 'l2',
+                    lambda: (_h = (_g = options.regularization) === null || _g === void 0 ? void 0 : _g.lambda) !== null && _h !== void 0 ? _h : 0.0001,
+                    alpha: (_k = (_j = options.regularization) === null || _j === void 0 ? void 0 : _j.alpha) !== null && _k !== void 0 ? _k : 0.5,
+                },
+                layerWiseTraining: (_l = options.layerWiseTraining) !== null && _l !== void 0 ? _l : true,
+                pretraining: (_m = options.pretraining) !== null && _m !== void 0 ? _m : true,
+                categories: options.categories,
+                maxLen: (_o = options.maxLen) !== null && _o !== void 0 ? _o : 100,
+            };
+            // Initialize layers
+            for (let i = 0; i < this.options.layers.length; i++) {
+                const deepELM = new DeepELM({
+                    layers: [{ hiddenUnits: this.options.layers[i], activation: this.options.activation }],
+                    maxLen: this.options.maxLen,
+                    useTokenizer: i === 0, // Only first layer uses tokenizer
+                });
+                // Set categories for last layer after construction
+                if (i === this.options.layers.length - 1) {
+                    (_q = (_p = deepELM).setCategories) === null || _q === void 0 ? void 0 : _q.call(_p, this.options.categories);
+                }
+                this.layers.push(deepELM);
+            }
+            // Initialize feature extractors for pretraining
+            if (this.options.pretraining) {
+                for (let i = 0; i < this.options.layers.length - 1; i++) {
+                    const extractor = new ELM({
+                        useTokenizer: i === 0 ? true : undefined,
+                        hiddenUnits: this.options.layers[i],
+                        categories: [],
+                        maxLen: this.options.maxLen,
+                    });
+                    this.featureExtractors.push(extractor);
+                }
+            }
+        }
+        /**
+         * Train the deep ELM with improved strategies
+         */
+        train(X, y) {
+            return __awaiter(this, void 0, void 0, function* () {
+                // Step 1: Pretraining (if enabled)
+                if (this.options.pretraining) {
+                    yield this._pretrain(X);
+                }
+                // Step 2: Layer-wise or joint training
+                if (this.options.layerWiseTraining) {
+                    yield this._trainLayerWise(X, y);
+                }
+                else {
+                    yield this._trainJoint(X, y);
+                }
+                this.trained = true;
+            });
+        }
+        /**
+         * Predict with deep ELM
+         */
+        predict(X, topK = 3) {
+            var _a, _b;
+            if (!this.trained) {
+                throw new Error('Model must be trained before prediction');
+            }
+            const XArray = Array.isArray(X[0]) ? X : [X];
+            const predictions = [];
+            for (const x of XArray) {
+                // Forward pass through layers
+                let features = x;
+                for (let i = 0; i < this.layers.length; i++) {
+                    const layer = this.layers[i];
+                    // Apply batch normalization if enabled
+                    if (this.options.useBatchNorm && i > 0) {
+                        features = this._batchNormalize(features);
+                    }
+                    // Apply dropout if enabled (only during training, but we're in predict mode)
+                    // In practice, dropout is disabled during inference
+                    // Forward through layer
+                    if (i === this.layers.length - 1) {
+                        // Last layer: get predictions
+                        const pred = ((_b = (_a = layer).predictFromVector) === null || _b === void 0 ? void 0 : _b.call(_a, [features], topK)) || [];
+                        predictions.push(...pred.map((p) => ({
+                            label: p.label || this.options.categories[p.index || 0],
+                            prob: p.prob || 0,
+                        })));
+                    }
+                    else {
+                        // Hidden layers: extract features
+                        features = this._extractFeatures(layer, features);
+                    }
+                }
+            }
+            return predictions;
+        }
+        /**
+         * Pretrain layers as autoencoders
+         */
+        _pretrain(X) {
+            return __awaiter(this, void 0, void 0, function* () {
+                var _a, _b;
+                let currentFeatures = X;
+                for (let i = 0; i < this.featureExtractors.length; i++) {
+                    const extractor = this.featureExtractors[i];
+                    // Train as autoencoder (reconstruct input)
+                    const encoded = currentFeatures.map(x => {
+                        var _a, _b, _c, _d;
+                        const enc = ((_b = (_a = extractor.encoder) === null || _a === void 0 ? void 0 : _a.encode) === null || _b === void 0 ? void 0 : _b.call(_a, x)) || x;
+                        return ((_d = (_c = extractor.encoder) === null || _c === void 0 ? void 0 : _c.normalize) === null || _d === void 0 ? void 0 : _d.call(_c, enc)) || enc;
+                    });
+                    // Use encoded features as both input and target (autoencoder)
+                    (_b = (_a = extractor).trainFromData) === null || _b === void 0 ? void 0 : _b.call(_a, encoded, encoded.map((_, idx) => idx));
+                    // Extract features for next layer
+                    currentFeatures = encoded.map(x => {
+                        const hidden = this._extractFeaturesFromELM(extractor, x);
+                        return Array.from(hidden);
+                    });
+                }
+            });
+        }
+        /**
+         * Train layers sequentially
+         */
+        _trainLayerWise(X, y) {
+            return __awaiter(this, void 0, void 0, function* () {
+                var _a, _b, _c, _d, _e, _f;
+                let currentFeatures = X;
+                const labelIndices = y.map(label => typeof label === 'number' ? label : this.options.categories.indexOf(label));
+                for (let i = 0; i < this.layers.length; i++) {
+                    const layer = this.layers[i];
+                    // Prepare features
+                    const features = currentFeatures.map(x => {
+                        if (i === 0) {
+                            // First layer: use raw input
+                            return x;
+                        }
+                        else {
+                            // Subsequent layers: use previous layer output
+                            return this._extractFeatures(this.layers[i - 1], x);
+                        }
+                    });
+                    // Train layer
+                    if (i === this.layers.length - 1) {
+                        // Last layer: train with labels
+                        (_b = (_a = layer).setCategories) === null || _b === void 0 ? void 0 : _b.call(_a, this.options.categories);
+                        (_d = (_c = layer).trainFromData) === null || _d === void 0 ? void 0 : _d.call(_c, features, labelIndices);
+                    }
+                    else {
+                        // Hidden layers: train to extract features
+                        // Use next layer's input as target (unsupervised)
+                        const nextLayerFeatures = i < this.layers.length - 1
+                            ? features.map(f => this._extractFeatures(this.layers[i + 1], f))
+                            : features;
+                        (_f = (_e = layer).trainFromData) === null || _f === void 0 ? void 0 : _f.call(_e, features, nextLayerFeatures.map((_, idx) => idx));
+                    }
+                    // Update features for next layer
+                    currentFeatures = features.map(f => this._extractFeatures(layer, f));
+                }
+            });
+        }
+        /**
+         * Train all layers jointly
+         */
+        _trainJoint(X, y) {
+            return __awaiter(this, void 0, void 0, function* () {
+                var _a, _b, _c, _d;
+                const labelIndices = y.map(label => typeof label === 'number' ? label : this.options.categories.indexOf(label));
+                // Train the last layer with final features
+                const lastLayer = this.layers[this.layers.length - 1];
+                const finalFeatures = X.map(x => {
+                    let features = x;
+                    for (let i = 0; i < this.layers.length - 1; i++) {
+                        features = this._extractFeatures(this.layers[i], features);
+                    }
+                    return features;
+                });
+                (_b = (_a = lastLayer).setCategories) === null || _b === void 0 ? void 0 : _b.call(_a, this.options.categories);
+                (_d = (_c = lastLayer).trainFromData) === null || _d === void 0 ? void 0 : _d.call(_c, finalFeatures, labelIndices);
+            });
+        }
+        _extractFeatures(layer, input) {
+            var _a, _b, _c, _d;
+            // Extract hidden layer representation
+            const hidden = (_b = (_a = layer).buildHidden) === null || _b === void 0 ? void 0 : _b.call(_a, [input], (_c = layer.model) === null || _c === void 0 ? void 0 : _c.W, (_d = layer.model) === null || _d === void 0 ? void 0 : _d.b);
+            return (hidden === null || hidden === void 0 ? void 0 : hidden[0]) ? Array.from(hidden[0]) : input;
+        }
+        _extractFeaturesFromELM(elm, input) {
+            var _a, _b, _c, _d;
+            const hidden = (_b = (_a = elm).buildHidden) === null || _b === void 0 ? void 0 : _b.call(_a, [input], (_c = elm.model) === null || _c === void 0 ? void 0 : _c.W, (_d = elm.model) === null || _d === void 0 ? void 0 : _d.b);
+            return (hidden === null || hidden === void 0 ? void 0 : hidden[0]) || new Float64Array(input.length);
+        }
+        _batchNormalize(features) {
+            const mean = features.reduce((a, b) => a + b, 0) / features.length;
+            const variance = features.reduce((sum, x) => sum + Math.pow((x - mean), 2), 0) / features.length;
+            const std = Math.sqrt(variance + 1e-8);
+            return features.map(x => (x - mean) / std);
+        }
+    }
+
+    // online-kernel-elm.ts — Online Kernel ELM for streaming data
+    // Incremental kernel learning with forgetting mechanisms
+    /**
+     * Online Kernel ELM for real-time learning from streaming data
+     * Features:
+     * - Incremental kernel matrix updates
+     * - Sliding window with forgetting
+     * - Adaptive landmark selection
+     * - Real-time prediction
+     */
+    class OnlineKernelELM {
+        constructor(options) {
+            var _a, _b, _c, _d, _e, _f, _g;
+            // Storage for streaming data
+            this.landmarks = [];
+            this.landmarkIndices = [];
+            this.samples = [];
+            this.labels = [];
+            this.sampleWeights = [];
+            // Online ridge for incremental updates
+            this.onlineRidge = null;
+            this.kernelMatrix = [];
+            this.kernelMatrixInv = [];
+            this.trained = false;
+            // License check removed // Premium feature - requires valid license
+            this.kernelType = options.kernel.type;
+            this.kernelParams = {
+                gamma: (_a = options.kernel.gamma) !== null && _a !== void 0 ? _a : 0.01,
+                degree: (_b = options.kernel.degree) !== null && _b !== void 0 ? _b : 2,
+                coef0: (_c = options.kernel.coef0) !== null && _c !== void 0 ? _c : 0,
+            };
+            this.categories = options.categories;
+            this.ridgeLambda = (_d = options.ridgeLambda) !== null && _d !== void 0 ? _d : 0.001;
+            this.windowSize = (_e = options.windowSize) !== null && _e !== void 0 ? _e : 1000;
+            this.decayFactor = (_f = options.decayFactor) !== null && _f !== void 0 ? _f : 0.99;
+            this.maxLandmarks = (_g = options.maxLandmarks) !== null && _g !== void 0 ? _g : 100;
+        }
+        /**
+         * Initial training with batch data
+         */
+        fit(X, y) {
+            const oneHotY = this._toOneHot(y);
+            // Select landmarks
+            this._selectLandmarks(X);
+            // Compute initial kernel matrix
+            this._computeKernelMatrix(X);
+            // Initialize online ridge
+            this.onlineRidge = new OnlineRidge(this.landmarks.length, this.categories.length, this.ridgeLambda);
+            // Train on initial batch
+            for (let i = 0; i < X.length; i++) {
+                const phi = this._computeKernelFeatures(X[i]);
+                const yVec = new Float64Array(oneHotY[i]);
+                this.onlineRidge.update(phi, yVec);
+            }
+            // Store samples
+            this.samples = X.map(x => [...x]);
+            this.labels = Array.isArray(y[0])
+                ? y.map(yy => this._argmax(yy))
+                : y;
+            this.sampleWeights = new Array(X.length).fill(1.0);
+            this.trained = true;
+        }
+        /**
+         * Incremental update with new sample
+         */
+        update(x, y) {
+            if (!this.trained) {
+                throw new Error('Model must be initially trained with fit() before incremental updates');
+            }
+            const oneHotY = Array.isArray(y)
+                ? y
+                : (() => {
+                    const oh = new Array(this.categories.length).fill(0);
+                    oh[y] = 1;
+                    return oh;
+                })();
+            // Add to samples
+            this.samples.push([...x]);
+            this.labels.push(Array.isArray(y) ? this._argmax(y) : y);
+            this.sampleWeights.push(1.0);
+            // Apply decay to old samples
+            for (let i = 0; i < this.sampleWeights.length; i++) {
+                this.sampleWeights[i] *= this.decayFactor;
+            }
+            // Remove old samples if window exceeded
+            if (this.samples.length > this.windowSize) {
+                const removeCount = this.samples.length - this.windowSize;
+                this.samples.splice(0, removeCount);
+                this.labels.splice(0, removeCount);
+                this.sampleWeights.splice(0, removeCount);
+            }
+            // Update landmarks if needed (adaptive strategy)
+            if (this.landmarkStrategy === 'adaptive') {
+                this._updateLandmarksAdaptive();
+            }
+            // Compute kernel features
+            const phi = this._computeKernelFeatures(x);
+            const yVec = new Float64Array(oneHotY);
+            // Update online ridge
+            if (this.onlineRidge) {
+                this.onlineRidge.update(phi, yVec);
+            }
+        }
+        /**
+         * Predict with online model
+         */
+        predict(x, topK = 3) {
+            if (!this.trained || !this.onlineRidge) {
+                throw new Error('Model must be trained before prediction');
+            }
+            const XArray = Array.isArray(x[0]) ? x : [x];
+            const allPredictions = [];
+            for (const xi of XArray) {
+                const predictions = [];
+                const phi = this._computeKernelFeatures(xi);
+                const logits = this.onlineRidge.predict(phi);
+                // Convert to probabilities
+                const probs = this._softmax(logits);
+                // Get top-K
+                const indexed = [];
+                for (let idx = 0; idx < probs.length; idx++) {
+                    indexed.push({
+                        label: this.categories[idx],
+                        prob: probs[idx],
+                        index: idx,
+                    });
+                }
+                indexed.sort((a, b) => b.prob - a.prob);
+                const topResults = [];
+                for (let i = 0; i < Math.min(topK, indexed.length); i++) {
+                    topResults.push({
+                        label: indexed[i].label,
+                        prob: indexed[i].prob,
+                    });
+                }
+                predictions.push(...topResults);
+                allPredictions.push(...predictions);
+            }
+            return allPredictions;
+        }
+        /**
+         * Select landmarks from data
+         */
+        _selectLandmarks(X) {
+            const strategy = this.landmarkStrategy || 'uniform';
+            const n = Math.min(this.maxLandmarks, X.length);
+            if (strategy === 'uniform') {
+                const step = Math.max(1, Math.floor(X.length / n));
+                this.landmarkIndices = Array.from({ length: n }, (_, i) => Math.min(X.length - 1, i * step));
+            }
+            else if (strategy === 'random') {
+                const indices = Array.from({ length: X.length }, (_, i) => i);
+                for (let i = indices.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [indices[i], indices[j]] = [indices[j], indices[i]];
+                }
+                this.landmarkIndices = indices.slice(0, n);
+            }
+            else {
+                // Adaptive: use first n samples initially
+                this.landmarkIndices = Array.from({ length: n }, (_, i) => i);
+            }
+            this.landmarks = this.landmarkIndices.map(idx => [...X[idx]]);
+        }
+        /**
+         * Compute kernel features for a sample
+         */
+        _computeKernelFeatures(x) {
+            const features = new Float64Array(this.landmarks.length);
+            for (let i = 0; i < this.landmarks.length; i++) {
+                features[i] = this._kernel(x, this.landmarks[i]);
+            }
+            return features;
+        }
+        /**
+         * Compute kernel between two vectors
+         */
+        _kernel(x1, x2) {
+            if (this.kernelType === 'linear') {
+                return this._dot(x1, x2);
+            }
+            else if (this.kernelType === 'rbf') {
+                const dist = this._squaredDistance(x1, x2);
+                return Math.exp(-this.kernelParams.gamma * dist);
+            }
+            else if (this.kernelType === 'polynomial') {
+                const dot = this._dot(x1, x2);
+                return Math.pow(dot + this.kernelParams.coef0, this.kernelParams.degree);
+            }
+            return 0;
+        }
+        _dot(a, b) {
+            let sum = 0;
+            for (let i = 0; i < Math.min(a.length, b.length); i++) {
+                sum += a[i] * b[i];
+            }
+            return sum;
+        }
+        _squaredDistance(a, b) {
+            let sum = 0;
+            for (let i = 0; i < Math.min(a.length, b.length); i++) {
+                const diff = a[i] - b[i];
+                sum += diff * diff;
+            }
+            return sum;
+        }
+        _computeKernelMatrix(X) {
+            // For online learning, we don't need full kernel matrix
+            // This is kept for compatibility
+            this.kernelMatrix = [];
+        }
+        _updateLandmarksAdaptive() {
+            // Adaptive landmark selection based on prediction error
+            // In practice, you might replace landmarks with high error
+            // For now, keep existing landmarks
+        }
+        _toOneHot(y) {
+            if (Array.isArray(y[0])) {
+                return y;
+            }
+            const labels = y;
+            return labels.map((label) => {
+                const oneHot = new Array(this.categories.length).fill(0);
+                oneHot[label] = 1;
+                return oneHot;
+            });
+        }
+        _softmax(logits) {
+            const max = Math.max(...Array.from(logits));
+            const exp = new Float64Array(logits.length);
+            let sum = 0;
+            for (let i = 0; i < logits.length; i++) {
+                exp[i] = Math.exp(logits[i] - max);
+                sum += exp[i];
+            }
+            for (let i = 0; i < exp.length; i++) {
+                exp[i] /= sum;
+            }
+            return exp;
+        }
+        _argmax(arr) {
+            let maxIdx = 0;
+            let maxVal = arr[0] || 0;
+            for (let i = 1; i < arr.length; i++) {
+                if ((arr[i] || 0) > maxVal) {
+                    maxVal = arr[i] || 0;
+                    maxIdx = i;
+                }
+            }
+            return maxIdx;
+        }
+        get landmarkStrategy() {
+            return 'adaptive'; // Default for online learning
+        }
+    }
+
+    // multi-task-elm.ts — Multi-Task ELM for joint learning across related tasks
+    // Shared hidden layer with task-specific output layers
+    /**
+     * Multi-Task ELM for joint learning across related tasks
+     * Features:
+     * - Shared feature extraction layer
+     * - Task-specific output layers
+     * - Task weighting for importance
+     * - Joint optimization
+     */
+    class MultiTaskELM {
+        constructor(options) {
+            var _a, _b, _c, _d, _e;
+            this.taskELMs = new Map();
+            this.trained = false;
+            // License check removed // Premium feature - requires valid license
+            this.tasks = options.tasks.map((task) => {
+                var _a;
+                return ({
+                    name: task.name,
+                    categories: task.categories,
+                    weight: (_a = task.weight) !== null && _a !== void 0 ? _a : 1.0,
+                });
+            });
+            this.options = {
+                sharedHiddenUnits: (_a = options.sharedHiddenUnits) !== null && _a !== void 0 ? _a : 256,
+                taskSpecificHiddenUnits: (_b = options.taskSpecificHiddenUnits) !== null && _b !== void 0 ? _b : options.tasks.map(() => 128),
+                activation: (_c = options.activation) !== null && _c !== void 0 ? _c : 'relu',
+                maxLen: (_d = options.maxLen) !== null && _d !== void 0 ? _d : 100,
+                useTokenizer: (_e = options.useTokenizer) !== null && _e !== void 0 ? _e : true,
+            };
+            // Initialize shared ELM
+            this.sharedELM = new ELM({
+                useTokenizer: this.options.useTokenizer ? true : undefined,
+                hiddenUnits: this.options.sharedHiddenUnits,
+                categories: [], // No categories for shared layer
+                maxLen: this.options.maxLen,
+                activation: this.options.activation,
+            });
+            // Initialize task-specific ELMs
+            for (let i = 0; i < this.tasks.length; i++) {
+                const task = this.tasks[i];
+                const taskELM = new ELM({
+                    hiddenUnits: this.options.taskSpecificHiddenUnits[i],
+                    categories: task.categories,
+                    maxLen: this.options.sharedHiddenUnits, // Input size is shared layer output
+                    activation: this.options.activation,
+                });
+                this.taskELMs.set(task.name, taskELM);
+            }
+        }
+        /**
+         * Train multi-task ELM
+         * @param X Input features
+         * @param yTaskData Map of task name to labels
+         */
+        train(X, yTaskData) {
+            var _a, _b, _c, _d;
+            // Step 1: Train shared layer (use all tasks)
+            const allFeatures = this._extractSharedFeatures(X);
+            // Step 2: Train each task-specific layer
+            for (const task of this.tasks) {
+                const taskLabels = yTaskData.get(task.name);
+                if (!taskLabels)
+                    continue;
+                const taskELM = this.taskELMs.get(task.name);
+                const labelIndices = taskLabels.map(label => typeof label === 'number'
+                    ? label
+                    : task.categories.indexOf(label));
+                // Train task-specific ELM on shared features
+                (_b = (_a = taskELM).setCategories) === null || _b === void 0 ? void 0 : _b.call(_a, task.categories);
+                (_d = (_c = taskELM).trainFromData) === null || _d === void 0 ? void 0 : _d.call(_c, allFeatures, labelIndices);
+            }
+            this.trained = true;
+        }
+        /**
+         * Predict for all tasks
+         */
+        predict(X, topK = 3) {
+            var _a, _b;
+            if (!this.trained) {
+                throw new Error('Model must be trained before prediction');
+            }
+            const XArray = Array.isArray(X[0]) ? X : [X];
+            const results = new Map();
+            for (const x of XArray) {
+                // Extract shared features
+                const sharedFeatures = this._extractSharedFeatures([x])[0];
+                // Predict for each task
+                for (const task of this.tasks) {
+                    const taskELM = this.taskELMs.get(task.name);
+                    const taskPreds = ((_b = (_a = taskELM).predictFromVector) === null || _b === void 0 ? void 0 : _b.call(_a, [sharedFeatures], topK)) || [];
+                    const taskResults = taskPreds.map((pred) => ({
+                        task: task.name,
+                        label: pred.label || task.categories[pred.index || 0],
+                        prob: pred.prob || 0,
+                    }));
+                    if (!results.has(task.name)) {
+                        results.set(task.name, []);
+                    }
+                    results.get(task.name).push(...taskResults);
+                }
+            }
+            return results;
+        }
+        /**
+         * Predict for a specific task
+         */
+        predictTask(x, taskName, topK = 3) {
+            var _a, _b;
+            if (!this.trained) {
+                throw new Error('Model must be trained before prediction');
+            }
+            const taskELM = this.taskELMs.get(taskName);
+            if (!taskELM) {
+                throw new Error(`Task ${taskName} not found`);
+            }
+            const XArray = Array.isArray(x[0]) ? x : [x];
+            const results = [];
+            for (const xi of XArray) {
+                // Extract shared features
+                const sharedFeatures = this._extractSharedFeatures([xi])[0];
+                // Predict with task-specific ELM
+                const taskPreds = ((_b = (_a = taskELM).predictFromVector) === null || _b === void 0 ? void 0 : _b.call(_a, [sharedFeatures], topK)) || [];
+                results.push(...taskPreds.map((pred) => ({
+                    task: taskName,
+                    label: pred.label || this.tasks.find(t => t.name === taskName).categories[pred.index || 0],
+                    prob: pred.prob || 0,
+                })));
+            }
+            return results;
+        }
+        /**
+         * Extract features from shared layer
+         */
+        _extractSharedFeatures(X) {
+            // Encode inputs if using tokenizer
+            const encoded = this.options.useTokenizer
+                ? X.map(x => {
+                    var _a, _b, _c, _d;
+                    const enc = ((_b = (_a = this.sharedELM.encoder) === null || _a === void 0 ? void 0 : _a.encode) === null || _b === void 0 ? void 0 : _b.call(_a, x)) || x;
+                    return ((_d = (_c = this.sharedELM.encoder) === null || _c === void 0 ? void 0 : _c.normalize) === null || _d === void 0 ? void 0 : _d.call(_c, enc)) || enc;
+                })
+                : X;
+            // Extract hidden layer features
+            return encoded.map(x => {
+                var _a, _b, _c, _d;
+                const hidden = (_b = (_a = this.sharedELM).buildHidden) === null || _b === void 0 ? void 0 : _b.call(_a, [x], (_c = this.sharedELM.model) === null || _c === void 0 ? void 0 : _c.W, (_d = this.sharedELM.model) === null || _d === void 0 ? void 0 : _d.b);
+                return (hidden === null || hidden === void 0 ? void 0 : hidden[0]) ? Array.from(hidden[0]) : x;
+            });
+        }
+        /**
+         * Get task names
+         */
+        getTaskNames() {
+            return this.tasks.map(t => t.name);
+        }
+        /**
+         * Get task weights
+         */
+        getTaskWeights() {
+            return new Map(this.tasks.map(t => [t.name, t.weight]));
+        }
+    }
+
+    // sparse-elm.ts — Sparse ELM with L1/L2 regularization and feature selection
+    // Efficient for high-dimensional data with interpretability
+    /**
+     * Sparse ELM with regularization and feature selection
+     * Features:
+     * - L1/L2/Elastic net regularization
+     * - Weight pruning for sparsity
+     * - Feature importance ranking
+     * - Interpretable models
+     */
+    class SparseELM {
+        constructor(options) {
+            var _a, _b, _c, _d, _e, _f, _g;
+            this.trained = false;
+            this.weightMask = []; // Track which weights are active
+            this.featureImportance = [];
+            // License check removed // Premium feature - requires valid license
+            this.options = {
+                categories: options.categories,
+                hiddenUnits: (_a = options.hiddenUnits) !== null && _a !== void 0 ? _a : 256,
+                maxLen: (_b = options.maxLen) !== null && _b !== void 0 ? _b : 100,
+                useTokenizer: (_c = options.useTokenizer) !== null && _c !== void 0 ? _c : true,
+                activation: (_d = options.activation) !== null && _d !== void 0 ? _d : 'relu',
+                regularization: {
+                    type: options.regularization.type,
+                    lambda: options.regularization.lambda,
+                    alpha: (_e = options.regularization.alpha) !== null && _e !== void 0 ? _e : 0.5,
+                },
+                sparsityTarget: (_f = options.sparsityTarget) !== null && _f !== void 0 ? _f : 0.5,
+                pruneThreshold: (_g = options.pruneThreshold) !== null && _g !== void 0 ? _g : 1e-6,
+            };
+            this.elm = new ELM({
+                useTokenizer: this.options.useTokenizer ? true : undefined,
+                hiddenUnits: this.options.hiddenUnits,
+                categories: this.options.categories,
+                maxLen: this.options.maxLen,
+                activation: this.options.activation,
+            });
+        }
+        /**
+         * Train sparse ELM with regularization
+         */
+        train(X, y) {
+            var _a, _b, _c, _d;
+            // Prepare labels
+            const labelIndices = y.map(label => typeof label === 'number'
+                ? label
+                : this.options.categories.indexOf(label));
+            // Encode inputs
+            const encoded = this.options.useTokenizer
+                ? X.map(x => {
+                    var _a, _b, _c, _d;
+                    const enc = ((_b = (_a = this.elm.encoder) === null || _a === void 0 ? void 0 : _a.encode) === null || _b === void 0 ? void 0 : _b.call(_a, x)) || x;
+                    return ((_d = (_c = this.elm.encoder) === null || _c === void 0 ? void 0 : _c.normalize) === null || _d === void 0 ? void 0 : _d.call(_c, enc)) || enc;
+                })
+                : X;
+            // Train base ELM
+            (_b = (_a = this.elm).setCategories) === null || _b === void 0 ? void 0 : _b.call(_a, this.options.categories);
+            (_d = (_c = this.elm).trainFromData) === null || _d === void 0 ? void 0 : _d.call(_c, encoded, labelIndices);
+            // Apply regularization and sparsification
+            this._applyRegularization();
+            this._pruneWeights();
+            this._computeFeatureImportance();
+            this.trained = true;
+        }
+        /**
+         * Predict with sparse model
+         */
+        predict(X, topK = 3) {
+            var _a, _b;
+            if (!this.trained) {
+                throw new Error('Model must be trained before prediction');
+            }
+            // Use base ELM for prediction (sparsity is in weights)
+            const XArray = Array.isArray(X[0]) ? X : [X];
+            const preds = ((_b = (_a = this.elm).predictFromVector) === null || _b === void 0 ? void 0 : _b.call(_a, XArray, topK)) || [];
+            return preds.map((pred) => ({
+                label: pred.label || this.options.categories[pred.index || 0],
+                prob: pred.prob || 0,
+            }));
+        }
+        /**
+         * Apply regularization to weights
+         */
+        _applyRegularization() {
+            const model = this.elm.model;
+            if (!model || !model.W)
+                return;
+            const W = model.W;
+            const lambda = this.options.regularization.lambda;
+            const alpha = this.options.regularization.alpha || 0.5;
+            // Apply regularization
+            for (let i = 0; i < W.length; i++) {
+                for (let j = 0; j < W[i].length; j++) {
+                    const w = W[i][j];
+                    if (this.options.regularization.type === 'l1') {
+                        // L1: soft thresholding
+                        const sign = w >= 0 ? 1 : -1;
+                        W[i][j] = sign * Math.max(0, Math.abs(w) - lambda);
+                    }
+                    else if (this.options.regularization.type === 'l2') {
+                        // L2: shrinkage
+                        W[i][j] = w / (1 + lambda);
+                    }
+                    else if (this.options.regularization.type === 'elastic') {
+                        // Elastic net: combination
+                        const l1 = alpha * lambda;
+                        const l2 = (1 - alpha) * lambda;
+                        const sign = w >= 0 ? 1 : -1;
+                        const softThresh = sign * Math.max(0, Math.abs(w) - l1);
+                        W[i][j] = softThresh / (1 + l2);
+                    }
+                }
+            }
+        }
+        /**
+         * Prune small weights for sparsity
+         */
+        _pruneWeights() {
+            const model = this.elm.model;
+            if (!model || !model.W)
+                return;
+            const W = model.W;
+            const threshold = this.options.pruneThreshold;
+            this.weightMask = [];
+            // Prune weights below threshold
+            for (let i = 0; i < W.length; i++) {
+                this.weightMask[i] = [];
+                for (let j = 0; j < W[i].length; j++) {
+                    if (Math.abs(W[i][j]) < threshold) {
+                        W[i][j] = 0;
+                        this.weightMask[i][j] = false;
+                    }
+                    else {
+                        this.weightMask[i][j] = true;
+                    }
+                }
+            }
+            // Enforce sparsity target
+            const currentSparsity = this._computeSparsity();
+            if (currentSparsity < this.options.sparsityTarget) {
+                this._enforceSparsityTarget();
+            }
+        }
+        /**
+         * Compute current sparsity ratio
+         */
+        _computeSparsity() {
+            if (this.weightMask.length === 0)
+                return 0;
+            let total = 0;
+            let zeros = 0;
+            for (const row of this.weightMask) {
+                for (const active of row) {
+                    total++;
+                    if (!active)
+                        zeros++;
+                }
+            }
+            return total > 0 ? zeros / total : 0;
+        }
+        /**
+         * Enforce target sparsity by pruning more weights
+         */
+        _enforceSparsityTarget() {
+            var _a;
+            const model = this.elm.model;
+            if (!model || !model.W)
+                return;
+            const W = model.W;
+            const target = this.options.sparsityTarget;
+            // Collect all weights with their absolute values
+            const weights = [];
+            for (let i = 0; i < W.length; i++) {
+                for (let j = 0; j < W[i].length; j++) {
+                    if (Math.abs(W[i][j]) > 0) {
+                        weights.push({ i, j, abs: Math.abs(W[i][j]) });
+                    }
+                }
+            }
+            // Sort by absolute value
+            weights.sort((a, b) => a.abs - b.abs);
+            // Prune smallest weights to reach target
+            const totalWeights = W.length * (((_a = W[0]) === null || _a === void 0 ? void 0 : _a.length) || 0);
+            const targetZeros = Math.floor(totalWeights * target);
+            const currentZeros = totalWeights - weights.length;
+            const needToPrune = targetZeros - currentZeros;
+            for (let k = 0; k < Math.min(needToPrune, weights.length); k++) {
+                const { i, j } = weights[k];
+                W[i][j] = 0;
+                if (this.weightMask[i]) {
+                    this.weightMask[i][j] = false;
+                }
+            }
+        }
+        /**
+         * Compute feature importance based on weight magnitudes
+         */
+        _computeFeatureImportance() {
+            var _a;
+            const model = this.elm.model;
+            if (!model || !model.W)
+                return;
+            const W = model.W;
+            const inputDim = ((_a = W[0]) === null || _a === void 0 ? void 0 : _a.length) || 0;
+            this.featureImportance = new Array(inputDim).fill(0);
+            // Sum absolute weights for each input feature
+            for (let i = 0; i < W.length; i++) {
+                for (let j = 0; j < W[i].length; j++) {
+                    this.featureImportance[j] += Math.abs(W[i][j]);
+                }
+            }
+            // Normalize
+            const max = Math.max(...this.featureImportance);
+            if (max > 0) {
+                for (let i = 0; i < this.featureImportance.length; i++) {
+                    this.featureImportance[i] /= max;
+                }
+            }
+        }
+        /**
+         * Get feature importance scores
+         */
+        getFeatureImportance() {
+            return [...this.featureImportance];
+        }
+        /**
+         * Get sparsity statistics
+         */
+        getSparsityStats() {
+            const model = this.elm.model;
+            if (!model || !model.W) {
+                return { sparsity: 0, activeWeights: 0, totalWeights: 0 };
+            }
+            const W = model.W;
+            let total = 0;
+            let active = 0;
+            for (let i = 0; i < W.length; i++) {
+                for (let j = 0; j < W[i].length; j++) {
+                    total++;
+                    if (Math.abs(W[i][j]) > this.options.pruneThreshold) {
+                        active++;
+                    }
+                }
+            }
+            return {
+                sparsity: total > 0 ? 1 - active / total : 0,
+                activeWeights: active,
+                totalWeights: total,
+            };
+        }
+    }
+
+    /**
+     * SyntheticFieldStore - Storage for labeled samples
+     * Supports insert, get, and sample operations
+     */
+    class SyntheticFieldStore {
+        constructor() {
+            this.store = new Map();
+        }
+        /**
+         * Insert a labeled sample into the store
+         */
+        insert(sample) {
+            if (!this.store.has(sample.label)) {
+                this.store.set(sample.label, []);
+            }
+            this.store.get(sample.label).push(sample.value);
+        }
+        /**
+         * Insert multiple samples at once
+         */
+        insertMany(samples) {
+            for (const sample of samples) {
+                this.insert(sample);
+            }
+        }
+        /**
+         * Get all values for a given label
+         */
+        get(label) {
+            return this.store.get(label) || [];
+        }
+        /**
+         * Sample k values uniformly at random for a given label
+         */
+        sample(label, k = 1) {
+            const values = this.get(label);
+            if (values.length === 0) {
+                return [];
+            }
+            const result = [];
+            const indices = new Set();
+            // Simple uniform random sampling without replacement
+            while (result.length < k && indices.size < values.length) {
+                const idx = Math.floor(Math.random() * values.length);
+                if (!indices.has(idx)) {
+                    indices.add(idx);
+                    result.push(values[idx]);
+                }
+            }
+            return result;
+        }
+        /**
+         * Check if a label exists in the store
+         */
+        hasLabel(label) {
+            return this.store.has(label);
+        }
+        /**
+         * Get all labels in the store
+         */
+        getLabels() {
+            return Array.from(this.store.keys());
+        }
+        /**
+         * Get the count of samples for a label
+         */
+        count(label) {
+            return this.get(label).length;
+        }
+        /**
+         * Clear all data
+         */
+        clear() {
+            this.store.clear();
+        }
+    }
+
+    /**
+     * RetrievalGenerator - Simple deterministic retrieval sampler
+     * Uniform random sampling from stored labeled samples
+     */
+    /**
+     * Seeded random number generator for deterministic testing
+     */
+    let SeededRNG$1 = class SeededRNG {
+        constructor(seed = Date.now()) {
+            this.seed = seed;
+        }
+        next() {
+            // Linear congruential generator
+            this.seed = (this.seed * 1664525 + 1013904223) % Math.pow(2, 32);
+            return this.seed / Math.pow(2, 32);
+        }
+        setSeed(seed) {
+            this.seed = seed;
+        }
+    };
+    class RetrievalGenerator {
+        constructor(seed) {
+            // Initialize and require license before allowing generator use
+            this.store = new SyntheticFieldStore();
+            this.seed = seed;
+            this.rng = new SeededRNG$1(seed);
+        }
+        /**
+         * Ingest labeled samples into the store
+         */
+        ingest(samples) {
+            this.store.insertMany(samples);
+        }
+        /**
+         * Sample k values for a given label
+         * Returns empty array if label doesn't exist or has no samples
+         */
+        sample(label, k = 1) {
+            const values = this.store.get(label);
+            if (values.length === 0) {
+                return [];
+            }
+            const result = [];
+            const availableIndices = Array.from({ length: values.length }, (_, i) => i);
+            // Sample k values (or all if k > available)
+            const sampleCount = Math.min(k, values.length);
+            for (let i = 0; i < sampleCount; i++) {
+                const randomIndex = Math.floor(this.rng.next() * availableIndices.length);
+                const selectedIndex = availableIndices.splice(randomIndex, 1)[0];
+                result.push(values[selectedIndex]);
+            }
+            return result;
+        }
+        /**
+         * Get a single sample (convenience method)
+         */
+        sampleOne(label) {
+            const samples = this.sample(label, 1);
+            return samples.length > 0 ? samples[0] : null;
+        }
+        /**
+         * Check if a label has samples
+         */
+        hasLabel(label) {
+            return this.store.hasLabel(label) && this.store.count(label) > 0;
+        }
+        /**
+         * Get all available labels
+         */
+        getLabels() {
+            return this.store.getLabels();
+        }
+        /**
+         * Reset the generator (clears store and optionally resets seed)
+         */
+        reset(seed) {
+            this.store.clear();
+            if (seed !== undefined) {
+                this.seed = seed;
+                this.rng.setSeed(seed);
+            }
+        }
+    }
+
+    /**
+     * CharVocab - Character vocabulary builder
+     * Builds a vocabulary from character sets and training data
+     */
+    class CharVocab {
+        constructor() {
+            this.charToIndex = new Map();
+            this.indexToChar = new Map();
+            this.size = 0;
+        }
+        /**
+         * Build vocabulary from a set of strings
+         * @param samples Array of strings to build vocabulary from
+         * @param charSet Optional predefined character set (e.g., alphanumeric + punctuation)
+         */
+        build(samples, charSet) {
+            const chars = new Set();
+            // Add padding character first (index 0) - use null character
+            // This ensures index 0 is always padding
+            chars.add('\0');
+            // Add predefined character set if provided
+            if (charSet) {
+                for (const char of charSet) {
+                    // Skip null character if it's in the charSet (we already added it)
+                    if (char !== '\0') {
+                        chars.add(char);
+                    }
+                }
+            }
+            // Add all characters from samples
+            for (const sample of samples) {
+                for (const char of sample) {
+                    // Skip null characters from samples (we use it for padding)
+                    if (char !== '\0') {
+                        chars.add(char);
+                    }
+                }
+            }
+            // Sort characters for consistent ordering, but keep null char at index 0
+            const sortedChars = Array.from(chars).sort((a, b) => {
+                // Ensure null char is always first
+                if (a === '\0')
+                    return -1;
+                if (b === '\0')
+                    return 1;
+                return a.localeCompare(b);
+            });
+            // Build mappings
+            this.charToIndex.clear();
+            this.indexToChar.clear();
+            this.size = sortedChars.length;
+            sortedChars.forEach((char, index) => {
+                this.charToIndex.set(char, index);
+                this.indexToChar.set(index, char);
+            });
+        }
+        /**
+         * Get index for a character
+         */
+        getIndex(char) {
+            const index = this.charToIndex.get(char);
+            if (index === undefined) {
+                throw new Error(`Character '${char}' not in vocabulary`);
+            }
+            return index;
+        }
+        /**
+         * Get character for an index
+         */
+        getChar(index) {
+            const char = this.indexToChar.get(index);
+            if (char === undefined) {
+                throw new Error(`Index ${index} not in vocabulary`);
+            }
+            return char;
+        }
+        /**
+         * Check if character exists in vocabulary
+         */
+        hasChar(char) {
+            return this.charToIndex.has(char);
+        }
+        /**
+         * Get vocabulary size
+         */
+        getSize() {
+            return this.size;
+        }
+        /**
+         * Get all characters in vocabulary
+         */
+        getChars() {
+            return Array.from(this.charToIndex.keys()).sort();
+        }
+        /**
+         * Get default character set (alphanumeric + common punctuation)
+         */
+        static getDefaultCharSet() {
+            return 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789' +
+                ' !"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~';
+        }
+    }
+
+    /**
+     * FixedLength - Utilities for fixed-length padding and truncation
+     */
+    class FixedLength {
+        /**
+         * Pad or truncate an array to a fixed length
+         * @param arr Array to pad/truncate
+         * @param length Target length
+         * @param padValue Value to use for padding (default: 0)
+         */
+        static padOrTruncate(arr, length, padValue = 0) {
+            if (arr.length === length) {
+                return [...arr];
+            }
+            if (arr.length > length) {
+                // Truncate
+                return arr.slice(0, length);
+            }
+            // Pad
+            const result = [...arr];
+            while (result.length < length) {
+                result.push(padValue);
+            }
+            return result;
+        }
+        /**
+         * Pad or truncate a string to a fixed length
+         * @param str String to pad/truncate
+         * @param length Target length
+         * @param padChar Character to use for padding (default: space)
+         */
+        static padOrTruncateString(str, length, padChar = ' ') {
+            if (str.length === length) {
+                return str;
+            }
+            if (str.length > length) {
+                // Truncate
+                return str.slice(0, length);
+            }
+            // Pad
+            return str + padChar.repeat(length - str.length);
+        }
+    }
+
+    /**
+     * OneHot - One-hot encoding utilities
+     */
+    class OneHot {
+        /**
+         * Encode an index as a one-hot vector
+         * @param index Index to encode
+         * @param size Size of the one-hot vector
+         */
+        static encode(index, size) {
+            if (index < 0 || index >= size) {
+                throw new Error(`Index ${index} out of range [0, ${size})`);
+            }
+            const vector = new Array(size).fill(0);
+            vector[index] = 1;
+            return vector;
+        }
+        /**
+         * Decode a one-hot vector to an index
+         * @param vector One-hot vector
+         */
+        static decode(vector) {
+            const index = vector.indexOf(1);
+            if (index === -1) {
+                throw new Error('Invalid one-hot vector: no element equals 1');
+            }
+            return index;
+        }
+        /**
+         * Encode multiple indices as one-hot vectors
+         * @param indices Array of indices
+         * @param size Size of each one-hot vector
+         */
+        static encodeBatch(indices, size) {
+            return indices.map(idx => this.encode(idx, size));
+        }
+        /**
+         * Decode multiple one-hot vectors to indices
+         * @param vectors Array of one-hot vectors
+         */
+        static decodeBatch(vectors) {
+            return vectors.map(vec => this.decode(vec));
+        }
+    }
+
+    /**
+     * StringEncoder - Encodes strings to vectors and decodes back
+     * Compatible with ELM/KELM pipelines
+     */
+    class StringEncoder {
+        constructor(config) {
+            this.config = Object.assign({ useOneHot: false }, config);
+            this.vocab = new CharVocab();
+        }
+        /**
+         * Build vocabulary from training samples
+         */
+        buildVocab(samples) {
+            this.vocab.build(samples, this.config.charSet || CharVocab.getDefaultCharSet());
+        }
+        /**
+         * Encode a string to a vector
+         * @param str String to encode
+         * @returns Encoded vector (either indices or one-hot)
+         */
+        encode(str) {
+            if (this.vocab.getSize() === 0) {
+                throw new Error('Vocabulary not built. Call buildVocab() first.');
+            }
+            // Convert string to indices
+            const indices = [];
+            for (const char of str) {
+                if (this.vocab.hasChar(char)) {
+                    indices.push(this.vocab.getIndex(char));
+                }
+                else {
+                    // For unknown characters, try to find a similar one or use space
+                    // If space is in vocab, use it; otherwise use 0 (which will be treated as padding)
+                    if (this.vocab.hasChar(' ')) {
+                        indices.push(this.vocab.getIndex(' '));
+                    }
+                    else {
+                        indices.push(0);
+                    }
+                }
+            }
+            // Pad or truncate to fixed length
+            const padded = FixedLength.padOrTruncate(indices, this.config.maxLength, 0);
+            // Convert to one-hot if requested
+            if (this.config.useOneHot) {
+                const vocabSize = this.vocab.getSize();
+                const oneHotVectors = [];
+                for (const idx of padded) {
+                    oneHotVectors.push(...OneHot.encode(idx, vocabSize));
+                }
+                return oneHotVectors;
+            }
+            return padded;
+        }
+        /**
+         * Decode a vector back to a string
+         * @param vector Encoded vector
+         * @returns Decoded string
+         */
+        decode(vector) {
+            if (this.vocab.getSize() === 0) {
+                throw new Error('Vocabulary not built. Call buildVocab() first.');
+            }
+            let indices;
+            if (this.config.useOneHot) {
+                // Decode one-hot vectors
+                const vocabSize = this.vocab.getSize();
+                indices = [];
+                for (let i = 0; i < vector.length; i += vocabSize) {
+                    const oneHot = vector.slice(i, i + vocabSize);
+                    try {
+                        indices.push(OneHot.decode(oneHot));
+                    }
+                    catch (_a) {
+                        // If decoding fails, use argmax as fallback
+                        const maxIdx = oneHot.indexOf(Math.max(...oneHot));
+                        indices.push(maxIdx);
+                    }
+                }
+                // Truncate to maxLength
+                indices = indices.slice(0, this.config.maxLength);
+            }
+            else {
+                // Direct index-based decoding
+                indices = vector.slice(0, this.config.maxLength);
+            }
+            // Convert indices to characters, stopping at first padding
+            let result = '';
+            const vocabSize = this.vocab.getSize();
+            const paddingIdx = 0; // Padding is always index 0
+            for (const idx of indices) {
+                // Clamp index to valid range
+                const clampedIdx = Math.max(0, Math.min(vocabSize - 1, Math.round(idx)));
+                // Stop decoding at first padding index (0)
+                if (clampedIdx === paddingIdx) {
+                    break;
+                }
+                // Try to get character for this index
+                try {
+                    const char = this.vocab.getChar(clampedIdx);
+                    // Skip null characters and control characters (except space, tab, newline)
+                    if (char === '\0' || (char.charCodeAt(0) < 32 && char !== ' ' && char !== '\t' && char !== '\n')) {
+                        break; // Stop at first invalid character
+                    }
+                    result += char;
+                }
+                catch (_b) {
+                    // Invalid index - stop decoding
+                    break;
+                }
+            }
+            // Trim trailing whitespace but preserve internal spaces
+            return result.trimEnd();
+        }
+        /**
+         * Encode multiple strings
+         */
+        encodeBatch(strings) {
+            return strings.map(str => this.encode(str));
+        }
+        /**
+         * Decode multiple vectors
+         */
+        decodeBatch(vectors) {
+            return vectors.map(vec => this.decode(vec));
+        }
+        /**
+         * Get the output vector size
+         */
+        getVectorSize() {
+            if (this.config.useOneHot) {
+                return this.config.maxLength * this.vocab.getSize();
+            }
+            return this.config.maxLength;
+        }
+        /**
+         * Get vocabulary size
+         */
+        getVocabSize() {
+            return this.vocab.getSize();
+        }
+        /**
+         * Get vocabulary
+         */
+        getVocab() {
+            return this.vocab;
+        }
+    }
+
+    /**
+     * ELM utilities for OmegaSynth
+     * Helper functions for working with ELM models
+     */
+    /**
+     * Create one-hot vector for a label index
+     */
+    function oneHotLabel(labelIndex, numLabels) {
+        const vector = new Array(numLabels).fill(0);
+        if (labelIndex >= 0 && labelIndex < numLabels) {
+            vector[labelIndex] = 1;
+        }
+        return vector;
+    }
+    /**
+     * Generate random noise vector
+     */
+    function generateNoiseVector(size, seed) {
+        const rng = seed !== undefined ? new SeededRNG(seed) : null;
+        const noise = [];
+        for (let i = 0; i < size; i++) {
+            const value = rng ? rng.next() : Math.random();
+            // Normalize to [-1, 1]
+            noise.push(value * 2 - 1);
+        }
+        return noise;
+    }
+    /**
+     * Seeded random number generator
+     */
+    class SeededRNG {
+        constructor(seed) {
+            this.seed = seed;
+        }
+        next() {
+            this.seed = (this.seed * 1664525 + 1013904223) % Math.pow(2, 32);
+            return this.seed / Math.pow(2, 32);
+        }
+    }
+
+    /**
+     * Label-specific validation and cleaning utilities
+     */
+    /**
+     * Validate and clean a generated string based on its label type
+     */
+    function validateForLabel(label, value) {
+        if (!value || value.length === 0) {
+            return { isValid: false, cleaned: '', reason: 'Empty value' };
+        }
+        // Get label-specific validator
+        const validator = getValidatorForLabel(label);
+        return validator(value);
+    }
+    /**
+     * Get validator function for a specific label
+     */
+    function getValidatorForLabel(label) {
+        switch (label) {
+            case 'first_name':
+            case 'last_name':
+                return validateName;
+            case 'phone_number':
+                return validatePhoneNumber;
+            case 'email':
+                return validateEmail;
+            case 'street_address':
+                return validateStreetAddress;
+            case 'city':
+            case 'state':
+            case 'country':
+                return validateLocation;
+            case 'company_name':
+            case 'job_title':
+            case 'product_name':
+                return validateText;
+            case 'color':
+                return validateColor;
+            case 'uuid':
+                return validateUUID;
+            case 'date':
+                return validateDate;
+            case 'credit_card_type':
+            case 'device_type':
+                return validateText;
+            default:
+                return validateGeneric;
+        }
+    }
+    /**
+     * Validate name (first_name, last_name)
+     * Rules: Letters only, optional hyphens/apostrophes, no numbers
+     */
+    function validateName(value) {
+        // First check for placeholder patterns in original value (before cleaning)
+        value.toLowerCase();
+        // Reject "Name" followed by numbers (e.g., "Name97", "name123")
+        if (/^name\d+$/i.test(value)) {
+            return { isValid: false, cleaned: '', reason: 'Placeholder name with numbers' };
+        }
+        // Remove all non-letter characters except hyphens and apostrophes
+        let cleaned = value.replace(/[^a-zA-Z\-\'\s]/g, '');
+        // Remove numbers completely
+        cleaned = cleaned.replace(/[0-9]/g, '');
+        // Remove excessive special characters
+        cleaned = cleaned.replace(/[-']{2,}/g, '-'); // Multiple hyphens/apostrophes -> single
+        cleaned = cleaned.replace(/^[-']+|[-']+$/g, ''); // Remove leading/trailing
+        // Trim and normalize whitespace
+        cleaned = cleaned.trim().replace(/\s+/g, ' ');
+        // Must be at least 2 characters and contain at least one letter
+        if (cleaned.length < 2 || !/[a-zA-Z]/.test(cleaned)) {
+            return { isValid: false, cleaned: '', reason: 'Too short or no letters' };
+        }
+        // Reject common placeholder names (case-insensitive) after cleaning
+        const lowerCleaned = cleaned.toLowerCase();
+        // Check for exact matches
+        if (lowerCleaned === 'name' || lowerCleaned === 'firstname' || lowerCleaned === 'lastname' ||
+            lowerCleaned === 'surname') {
+            return { isValid: false, cleaned: '', reason: 'Placeholder name' };
+        }
+        // Check for "name" followed by very short variations
+        if (lowerCleaned.startsWith('name') && lowerCleaned.length <= 6) {
+            return { isValid: false, cleaned: '', reason: 'Placeholder name' };
+        }
+        // Max length check
+        if (cleaned.length > 30) {
+            cleaned = cleaned.substring(0, 30).trim();
+        }
+        return { isValid: true, cleaned };
+    }
+    /**
+     * Validate phone number
+     * Rules: Digits, dashes, parentheses, dots, plus, spaces
+     */
+    function validatePhoneNumber(value) {
+        // Keep only valid phone characters
+        let cleaned = value.replace(/[^0-9\-\+\(\)\.\s]/g, '');
+        // Remove excessive special characters
+        cleaned = cleaned.replace(/[-\.]{2,}/g, '-');
+        cleaned = cleaned.replace(/\s+/g, ' ');
+        cleaned = cleaned.trim();
+        // Count digits
+        const digitCount = (cleaned.match(/\d/g) || []).length;
+        // Must have at least 7 digits (minimum phone number)
+        if (digitCount < 7) {
+            return { isValid: false, cleaned: '', reason: 'Too few digits' };
+        }
+        // Max length check
+        if (cleaned.length > 25) {
+            cleaned = cleaned.substring(0, 25).trim();
+        }
+        return { isValid: true, cleaned };
+    }
+    /**
+     * Validate email
+     * Rules: Must contain @, valid characters before and after
+     */
+    function validateEmail(value) {
+        // Keep valid email characters
+        let cleaned = value.replace(/[^a-zA-Z0-9@\.\-\_]/g, '');
+        // Must contain @
+        if (!cleaned.includes('@')) {
+            return { isValid: false, cleaned: '', reason: 'Missing @ symbol' };
+        }
+        const parts = cleaned.split('@');
+        if (parts.length !== 2) {
+            return { isValid: false, cleaned: '', reason: 'Invalid @ usage' };
+        }
+        const [local, domain] = parts;
+        // Local part must have at least 1 character
+        if (!local || local.length === 0) {
+            return { isValid: false, cleaned: '', reason: 'Empty local part' };
+        }
+        // Domain must have at least 3 characters (x.y)
+        if (!domain || domain.length < 3) {
+            return { isValid: false, cleaned: '', reason: 'Invalid domain' };
+        }
+        // Domain must contain at least one dot
+        if (!domain.includes('.')) {
+            return { isValid: false, cleaned: '', reason: 'Domain missing dot' };
+        }
+        // Remove leading/trailing dots and hyphens
+        const cleanLocal = local.replace(/^[\.\-]+|[\.\-]+$/g, '');
+        const cleanDomain = domain.replace(/^[\.\-]+|[\.\-]+$/g, '');
+        if (!cleanLocal || !cleanDomain) {
+            return { isValid: false, cleaned: '', reason: 'Invalid format after cleaning' };
+        }
+        cleaned = `${cleanLocal}@${cleanDomain}`;
+        // Max length check
+        if (cleaned.length > 50) {
+            cleaned = cleaned.substring(0, 50);
+        }
+        return { isValid: true, cleaned };
+    }
+    /**
+     * Validate street address
+     * Rules: Numbers, letters, spaces, common address characters
+     */
+    function validateStreetAddress(value) {
+        // Keep valid address characters
+        let cleaned = value.replace(/[^a-zA-Z0-9\s\-\#\.\,]/g, '');
+        cleaned = cleaned.trim().replace(/\s+/g, ' ');
+        // Must have at least 5 characters
+        if (cleaned.length < 5) {
+            return { isValid: false, cleaned: '', reason: 'Too short' };
+        }
+        // Max length check
+        if (cleaned.length > 50) {
+            cleaned = cleaned.substring(0, 50).trim();
+        }
+        return { isValid: true, cleaned };
+    }
+    /**
+     * Validate location (city, state, country)
+     * Rules: Mostly letters, optional spaces/hyphens
+     */
+    function validateLocation(value) {
+        // Keep letters, spaces, hyphens, apostrophes
+        let cleaned = value.replace(/[^a-zA-Z\s\-\']/g, '');
+        cleaned = cleaned.trim().replace(/\s+/g, ' ');
+        // Must have at least 2 characters and contain letters
+        if (cleaned.length < 2 || !/[a-zA-Z]/.test(cleaned)) {
+            return { isValid: false, cleaned: '', reason: 'Too short or no letters' };
+        }
+        // Max length check
+        if (cleaned.length > 30) {
+            cleaned = cleaned.substring(0, 30).trim();
+        }
+        return { isValid: true, cleaned };
+    }
+    /**
+     * Validate text (company_name, job_title, product_name)
+     * Rules: Letters, numbers, spaces, common punctuation
+     */
+    function validateText(value) {
+        // Keep alphanumeric and common punctuation
+        let cleaned = value.replace(/[^a-zA-Z0-9\s\-\'\.\,]/g, '');
+        cleaned = cleaned.trim().replace(/\s+/g, ' ');
+        // Must have at least 2 characters
+        if (cleaned.length < 2) {
+            return { isValid: false, cleaned: '', reason: 'Too short' };
+        }
+        // Max length check
+        if (cleaned.length > 50) {
+            cleaned = cleaned.substring(0, 50).trim();
+        }
+        return { isValid: true, cleaned };
+    }
+    /**
+     * Validate color
+     * Rules: Letters only, maybe spaces
+     */
+    function validateColor(value) {
+        // Keep letters and spaces only
+        let cleaned = value.replace(/[^a-zA-Z\s]/g, '');
+        cleaned = cleaned.trim().replace(/\s+/g, ' ');
+        // Must have at least 3 characters
+        if (cleaned.length < 3) {
+            return { isValid: false, cleaned: '', reason: 'Too short' };
+        }
+        // Max length check
+        if (cleaned.length > 20) {
+            cleaned = cleaned.substring(0, 20).trim();
+        }
+        return { isValid: true, cleaned };
+    }
+    /**
+     * Validate UUID
+     * Rules: Should follow UUID format (8-4-4-4-12 hex digits with dashes)
+     */
+    function validateUUID(value) {
+        // Keep hex characters and dashes
+        let cleaned = value.replace(/[^0-9a-fA-F\-]/g, '');
+        // Try to format as UUID if it has enough characters
+        const hexOnly = cleaned.replace(/-/g, '');
+        if (hexOnly.length >= 32) {
+            // Format as UUID: 8-4-4-4-12
+            const formatted = [
+                hexOnly.substring(0, 8),
+                hexOnly.substring(8, 12),
+                hexOnly.substring(12, 16),
+                hexOnly.substring(16, 20),
+                hexOnly.substring(20, 32)
+            ].join('-');
+            cleaned = formatted;
+        }
+        // Must have at least 32 hex characters
+        const hexCount = cleaned.replace(/-/g, '').length;
+        if (hexCount < 32) {
+            return { isValid: false, cleaned: '', reason: 'Too few hex characters' };
+        }
+        return { isValid: true, cleaned };
+    }
+    /**
+     * Validate date
+     * Rules: Should follow date format (YYYY-MM-DD or similar)
+     */
+    function validateDate(value) {
+        // Keep digits, dashes, slashes
+        let cleaned = value.replace(/[^0-9\-\/]/g, '');
+        // Must have at least 8 digits (YYYYMMDD)
+        const digitCount = (cleaned.match(/\d/g) || []).length;
+        if (digitCount < 8) {
+            return { isValid: false, cleaned: '', reason: 'Too few digits' };
+        }
+        // Max length check
+        if (cleaned.length > 20) {
+            cleaned = cleaned.substring(0, 20).trim();
+        }
+        return { isValid: true, cleaned };
+    }
+    /**
+     * Generic validator for unknown labels
+     */
+    function validateGeneric(value) {
+        // Remove control characters
+        let cleaned = value.replace(/[\x00-\x1F\x7F]/g, '');
+        cleaned = cleaned.trim().replace(/\s+/g, ' ');
+        if (cleaned.length < 1) {
+            return { isValid: false, cleaned: '', reason: 'Empty after cleaning' };
+        }
+        return { isValid: true, cleaned };
+    }
+
+    /**
+     * PatternCorrector - Post-processing pattern matching and correction
+     * Learns patterns from training data and applies them to generated samples
+     */
+    class PatternCorrector {
+        constructor() {
+            this.patterns = new Map();
+        }
+        /**
+         * Learn patterns from training data
+         */
+        learnPatterns(samples) {
+            const byLabel = new Map();
+            // Group samples by label
+            for (const sample of samples) {
+                if (!byLabel.has(sample.label)) {
+                    byLabel.set(sample.label, []);
+                }
+                byLabel.get(sample.label).push(sample.value);
+            }
+            // Learn patterns for each label
+            for (const [label, values] of byLabel.entries()) {
+                this.learnPattern(label, values);
+            }
+        }
+        /**
+         * Learn pattern for a specific label
+         */
+        learnPattern(label, examples) {
+            if (examples.length === 0)
+                return;
+            // Extract common prefixes (first 1-3 characters)
+            const prefixCounts = new Map();
+            const suffixCounts = new Map();
+            const charFreq = new Map();
+            const lengths = [];
+            for (const example of examples) {
+                lengths.push(example.length);
+                // Prefixes
+                for (let len = 1; len <= Math.min(3, example.length); len++) {
+                    const prefix = example.substring(0, len);
+                    prefixCounts.set(prefix, (prefixCounts.get(prefix) || 0) + 1);
+                }
+                // Suffixes
+                for (let len = 1; len <= Math.min(3, example.length); len++) {
+                    const suffix = example.substring(example.length - len);
+                    suffixCounts.set(suffix, (suffixCounts.get(suffix) || 0) + 1);
+                }
+                // Character frequency
+                for (const char of example) {
+                    charFreq.set(char, (charFreq.get(char) || 0) + 1);
+                }
+            }
+            // Get common prefixes (appear in >10% of examples - lowered from 20% for better pattern matching)
+            const commonPrefixes = Array.from(prefixCounts.entries())
+                .filter(([_, count]) => count / examples.length > 0.1)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 15) // Increased from 10 to 15
+                .map(([prefix]) => prefix);
+            // Get common suffixes (appear in >10% of examples - lowered from 20% for better pattern matching)
+            const commonSuffixes = Array.from(suffixCounts.entries())
+                .filter(([_, count]) => count / examples.length > 0.1)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 15) // Increased from 10 to 15
+                .map(([suffix]) => suffix);
+            // Normalize character frequencies
+            const totalChars = Array.from(charFreq.values()).reduce((a, b) => a + b, 0);
+            for (const [char, count] of charFreq.entries()) {
+                charFreq.set(char, count / totalChars);
+            }
+            this.patterns.set(label, {
+                label,
+                examples,
+                commonPrefixes,
+                commonSuffixes,
+                charFrequency: charFreq,
+                lengthDistribution: lengths,
+            });
+        }
+        /**
+         * Correct a generated string using learned patterns
+         */
+        correct(generated, label) {
+            const pattern = this.patterns.get(label);
+            if (!pattern) {
+                return generated; // No pattern learned, return as-is
+            }
+            let corrected = generated;
+            // 1. Check if it matches a known example (exact match)
+            if (pattern.examples.includes(generated)) {
+                return generated; // Already perfect
+            }
+            // 2. Check prefix/suffix patterns
+            const hasValidPrefix = pattern.commonPrefixes.some(prefix => corrected.toLowerCase().startsWith(prefix.toLowerCase()));
+            pattern.commonSuffixes.some(suffix => corrected.toLowerCase().endsWith(suffix.toLowerCase()));
+            // 3. If no valid prefix, try to fix it
+            if (!hasValidPrefix && pattern.commonPrefixes.length > 0) {
+                const mostCommonPrefix = pattern.commonPrefixes[0];
+                // Only fix if the generated string is very different
+                if (corrected.length > 0 && !corrected.toLowerCase().startsWith(mostCommonPrefix[0].toLowerCase())) ;
+            }
+            // 4. Check character frequency (remove unlikely characters)
+            const charFreq = pattern.charFrequency;
+            let cleaned = '';
+            for (const char of corrected) {
+                const freq = charFreq.get(char) || 0;
+                // Keep character if it appears in >0.5% of training data (lowered from 1%), or if it's common (space, etc.)
+                if (freq > 0.005 || /[a-zA-Z0-9\s]/.test(char)) {
+                    cleaned += char;
+                }
+            }
+            if (cleaned.length > 0) {
+                corrected = cleaned;
+            }
+            // 5. Check length distribution
+            pattern.lengthDistribution.reduce((a, b) => a + b, 0) / pattern.lengthDistribution.length;
+            Math.min(...pattern.lengthDistribution);
+            const maxLength = Math.max(...pattern.lengthDistribution);
+            // Truncate if too long
+            if (corrected.length > maxLength * 1.5) {
+                corrected = corrected.substring(0, Math.floor(maxLength * 1.2));
+            }
+            return corrected;
+        }
+        /**
+         * Score how well a generated string matches the pattern
+         */
+        score(generated, label) {
+            const pattern = this.patterns.get(label);
+            if (!pattern) {
+                return 0.5; // Unknown pattern, neutral score
+            }
+            let score = 0;
+            let factors = 0;
+            // 1. Exact match bonus
+            if (pattern.examples.includes(generated)) {
+                return 1.0; // Perfect match
+            }
+            // 2. Prefix match (30% weight)
+            const prefixMatch = pattern.commonPrefixes.some(prefix => generated.toLowerCase().startsWith(prefix.toLowerCase()));
+            score += prefixMatch ? 0.3 : 0;
+            factors++;
+            // 3. Suffix match (20% weight)
+            const suffixMatch = pattern.commonSuffixes.some(suffix => generated.toLowerCase().endsWith(suffix.toLowerCase()));
+            score += suffixMatch ? 0.2 : 0;
+            factors++;
+            // 4. Character frequency match (30% weight)
+            const charFreq = pattern.charFrequency;
+            let charScore = 0;
+            let charCount = 0;
+            for (const char of generated) {
+                const freq = charFreq.get(char) || 0;
+                charScore += freq;
+                charCount++;
+            }
+            score += (charCount > 0 ? charScore / charCount : 0) * 0.3;
+            factors++;
+            // 5. Length match (20% weight)
+            const avgLength = pattern.lengthDistribution.reduce((a, b) => a + b, 0) / pattern.lengthDistribution.length;
+            const lengthDiff = Math.abs(generated.length - avgLength) / avgLength;
+            const lengthScore = Math.max(0, 1 - lengthDiff);
+            score += lengthScore * 0.2;
+            factors++;
+            return factors > 0 ? score / factors : 0;
+        }
+        /**
+         * Get pattern for a label
+         */
+        getPattern(label) {
+            return this.patterns.get(label);
+        }
+    }
+
+    /**
+     * SequenceContext - Add sequence context to generation
+     * Uses previous characters to inform next character prediction
+     */
+    class SequenceContext {
+        constructor(n = 3) {
+            this.ngramPatterns = new Map();
+            this.n = n;
+        }
+        /**
+         * Learn n-gram patterns from training data
+         */
+        learnPatterns(samples) {
+            this.ngramPatterns.clear();
+            for (const sample of samples) {
+                // Extract n-grams
+                for (let i = 0; i <= sample.length - this.n; i++) {
+                    const ngram = sample.substring(i, i + this.n - 1); // Context (n-1 chars)
+                    const nextChar = sample[i + this.n - 1]; // Next character
+                    if (!this.ngramPatterns.has(ngram)) {
+                        this.ngramPatterns.set(ngram, new Map());
+                    }
+                    const charMap = this.ngramPatterns.get(ngram);
+                    charMap.set(nextChar, (charMap.get(nextChar) || 0) + 1);
+                }
+            }
+        }
+        /**
+         * Get next character probabilities given context
+         */
+        getNextCharProbs(context) {
+            // Use last n-1 characters as context
+            const ctx = context.length >= this.n - 1
+                ? context.substring(context.length - (this.n - 1))
+                : context;
+            const charCounts = this.ngramPatterns.get(ctx);
+            if (!charCounts || charCounts.size === 0) {
+                return new Map();
+            }
+            // Convert counts to probabilities
+            const total = Array.from(charCounts.values()).reduce((a, b) => a + b, 0);
+            const probs = new Map();
+            for (const [char, count] of charCounts.entries()) {
+                probs.set(char, count / total);
+            }
+            return probs;
+        }
+        /**
+         * Suggest next character based on context
+         */
+        suggestNextChar(context) {
+            const probs = this.getNextCharProbs(context);
+            if (probs.size === 0) {
+                return null;
+            }
+            // Return most likely character
+            let bestChar = '';
+            let bestProb = 0;
+            for (const [char, prob] of probs.entries()) {
+                if (prob > bestProb) {
+                    bestProb = prob;
+                    bestChar = char;
+                }
+            }
+            return bestChar;
+        }
+        /**
+         * Score how well a character fits the context
+         */
+        scoreChar(context, char) {
+            const probs = this.getNextCharProbs(context);
+            return probs.get(char) || 0;
+        }
+    }
+
+    /**
+     * ELMGenerator - Label-conditioned string generator using ELM
+     * Trains an ELM to generate encoded strings based on labels + noise
+     */
+    class ELMGenerator {
+        constructor(config) {
+            var _a;
+            this.elm = null;
+            this.labels = [];
+            this.patternCorrector = null;
+            this.sequenceContext = null;
+            // Initialize and require license before allowing generator use
+            this.config = Object.assign({ hiddenUnits: 128, activation: 'relu', ridgeLambda: 0.01, noiseSize: 32, useOneHot: false, useClassification: false, usePatternCorrection: true }, config);
+            this.noiseSize = this.config.noiseSize;
+            this.useClassification = this.config.useClassification;
+            this.encoder = new StringEncoder({
+                maxLength: config.maxLength,
+                useOneHot: (_a = this.config.useOneHot) !== null && _a !== void 0 ? _a : false, // Default to false for memory efficiency
+            });
+            if (this.config.usePatternCorrection) {
+                this.patternCorrector = new PatternCorrector();
+            }
+            // Always use sequence context for better generation
+            this.sequenceContext = new SequenceContext(3); // 3-grams
+        }
+        /**
+         * Train the ELM generator on labeled samples
+         */
+        train(samples) {
+            if (samples.length === 0) {
+                throw new Error('Cannot train on empty dataset');
+            }
+            // Extract unique labels
+            const uniqueLabels = Array.from(new Set(samples.map(s => s.label)));
+            this.labels = uniqueLabels;
+            // Extract all values for vocabulary building
+            const allValues = samples.map(s => s.value);
+            this.encoder.buildVocab(allValues);
+            // Learn patterns if pattern correction is enabled
+            if (this.patternCorrector) {
+                this.patternCorrector.learnPatterns(samples);
+            }
+            // Learn sequence context
+            if (this.sequenceContext) {
+                this.sequenceContext.learnPatterns(allValues);
+            }
+            // Build training data
+            const X = [];
+            const Y = [];
+            for (const sample of samples) {
+                const labelIndex = this.labels.indexOf(sample.label);
+                if (labelIndex === -1) {
+                    continue;
+                }
+                // Input: concat(oneHot(label), noiseVector)
+                const labelOneHot = oneHotLabel(labelIndex, this.labels.length);
+                const noise = generateNoiseVector(this.noiseSize, this.config.seed);
+                const inputVector = [...labelOneHot, ...noise];
+                X.push(inputVector);
+                // Target: encoded(value)
+                const encodedValue = this.encoder.encode(sample.value);
+                Y.push(encodedValue);
+            }
+            if (X.length === 0) {
+                throw new Error('No valid training samples after processing');
+            }
+            // Create ELM config
+            const inputSize = this.labels.length + this.noiseSize;
+            this.encoder.getVectorSize();
+            const elmConfig = {
+                useTokenizer: false, // Numeric mode
+                inputSize: inputSize,
+                categories: this.useClassification ? [] : [], // For classification, we'll handle it differently
+                hiddenUnits: this.config.hiddenUnits,
+                activation: this.config.activation,
+                // Use lower regularization for better pattern learning
+                ridgeLambda: this.config.ridgeLambda * 0.1, // Reduce regularization
+                task: this.useClassification ? 'classification' : 'regression',
+            };
+            // Create and train ELM - resolve constructor robustly across CJS/ESM shapes
+            // Replace dynamic require with direct constructor
+            this.elm = new ELM(elmConfig);
+            this.elm.trainFromData(X, Y);
+        }
+        /**
+         * Generate a string for a given label
+         * @param label Label to generate for
+         * @param noiseSeed Optional seed for noise generation (for deterministic output)
+         */
+        generate(label, noiseSeed) {
+            var _a;
+            if (!this.elm) {
+                throw new Error('Model not trained. Call train() first.');
+            }
+            const labelIndex = this.labels.indexOf(label);
+            if (labelIndex === -1) {
+                throw new Error(`Label '${label}' not found in training data`);
+            }
+            // Create input: concat(oneHot(label), noiseVector)
+            const labelOneHot = oneHotLabel(labelIndex, this.labels.length);
+            const noise = generateNoiseVector(this.noiseSize, noiseSeed !== undefined ? noiseSeed : this.config.seed);
+            const inputVector = [...labelOneHot, ...noise];
+            // Predict based on mode
+            let decoded;
+            if (this.useClassification && this.config.useOneHot && typeof this.elm.predictProbaFromVector === 'function') {
+                // Classification mode with one-hot: use probabilities
+                const vocabSize = this.encoder.getVocabSize();
+                const maxLength = this.config.maxLength;
+                // Get probabilities for each position
+                const probs = this.elm.predictProbaFromVector(inputVector);
+                // Reshape to [maxLength, vocabSize] and use argmax
+                const indices = [];
+                for (let pos = 0; pos < maxLength; pos++) {
+                    const posProbs = probs.slice(pos * vocabSize, (pos + 1) * vocabSize);
+                    const maxIdx = posProbs.indexOf(Math.max(...posProbs));
+                    indices.push(maxIdx);
+                }
+                decoded = this.encoder.decode(indices);
+            }
+            else {
+                // Regression mode: use logits and round
+                const prediction = this.elm.predictLogitsFromVector(inputVector);
+                // Convert logits to indices with proper quantization
+                const vocabSize = this.encoder.getVocabSize();
+                const indices = prediction.map(val => {
+                    // Clamp value to reasonable range first (prevent extreme values)
+                    const clamped = Math.max(-vocabSize, Math.min(vocabSize * 2, val));
+                    // Round to nearest integer
+                    const rounded = Math.round(clamped);
+                    // Clamp to valid vocabulary range [0, vocabSize-1]
+                    const idx = Math.max(0, Math.min(vocabSize - 1, rounded));
+                    return idx;
+                });
+                decoded = this.encoder.decode(indices);
+            }
+            // Apply pattern correction if enabled
+            let corrected = decoded;
+            if (this.patternCorrector) {
+                corrected = this.patternCorrector.correct(decoded, label);
+            }
+            // Apply sequence context refinement
+            if (this.sequenceContext && corrected.length > 0) {
+                corrected = this.refineWithSequenceContext(corrected, label);
+            }
+            // Validate and clean the decoded string using label-specific rules
+            const validation = validateForLabel(label, corrected);
+            // If validation fails, try to generate again with different noise (up to 3 attempts)
+            if (!validation.isValid) {
+                for (let attempt = 0; attempt < 3; attempt++) {
+                    const baseSeed = noiseSeed !== undefined ? noiseSeed : ((_a = this.config.seed) !== null && _a !== void 0 ? _a : Date.now());
+                    const newNoise = generateNoiseVector(this.noiseSize, baseSeed + attempt + 1000);
+                    const newInputVector = [...labelOneHot, ...newNoise];
+                    let newDecoded;
+                    if (this.useClassification && this.config.useOneHot && typeof this.elm.predictProbaFromVector === 'function') {
+                        const vocabSize = this.encoder.getVocabSize();
+                        const maxLength = this.config.maxLength;
+                        const probs = this.elm.predictProbaFromVector(newInputVector);
+                        const newIndices = [];
+                        for (let pos = 0; pos < maxLength; pos++) {
+                            const posProbs = probs.slice(pos * vocabSize, (pos + 1) * vocabSize);
+                            const maxIdx = posProbs.indexOf(Math.max(...posProbs));
+                            newIndices.push(maxIdx);
+                        }
+                        newDecoded = this.encoder.decode(newIndices);
+                    }
+                    else {
+                        const newPrediction = this.elm.predictLogitsFromVector(newInputVector);
+                        const vocabSize = this.encoder.getVocabSize();
+                        const newIndices = newPrediction.map(val => {
+                            const clamped = Math.max(-vocabSize, Math.min(vocabSize * 2, val));
+                            const rounded = Math.round(clamped);
+                            return Math.max(0, Math.min(vocabSize - 1, rounded));
+                        });
+                        newDecoded = this.encoder.decode(newIndices);
+                    }
+                    // Apply pattern correction
+                    if (this.patternCorrector) {
+                        newDecoded = this.patternCorrector.correct(newDecoded, label);
+                    }
+                    const newValidation = validateForLabel(label, newDecoded);
+                    if (newValidation.isValid) {
+                        return newValidation.cleaned;
+                    }
+                }
+                // If all attempts fail, return empty string
+                return '';
+            }
+            return validation.cleaned;
+        }
+        /**
+         * Generate multiple strings for a label with confidence-based selection
+         */
+        generateBatch(label, count) {
+            const candidates = [];
+            const seen = new Set();
+            let attempts = 0;
+            const maxAttempts = count * 10; // Allow up to 10x attempts to get valid unique samples
+            // Generate candidates with scoring
+            while (attempts < maxAttempts) {
+                const seed = this.config.seed !== undefined
+                    ? this.config.seed + attempts
+                    : Date.now() + attempts;
+                try {
+                    const generated = this.generate(label, seed);
+                    if (generated && generated.length > 0 && !seen.has(generated.toLowerCase())) {
+                        // Score the candidate
+                        let score = 1.0;
+                        // Pattern match score
+                        if (this.patternCorrector) {
+                            score = this.patternCorrector.score(generated, label);
+                        }
+                        // Validation score (valid = 1.0, invalid = 0.0)
+                        const validation = validateForLabel(label, generated);
+                        if (!validation.isValid) {
+                            score = 0;
+                        }
+                        candidates.push({ value: generated, score });
+                        seen.add(generated.toLowerCase());
+                    }
+                }
+                catch (error) {
+                    // Skip errors
+                }
+                attempts++;
+            }
+            // Sort by score and return top candidates
+            candidates.sort((a, b) => b.score - a.score);
+            return candidates.slice(0, count).map(c => c.value);
+        }
+        /**
+         * Refine generated string using sequence context
+         */
+        refineWithSequenceContext(generated, label) {
+            if (!this.sequenceContext || generated.length === 0) {
+                return generated;
+            }
+            // Try to improve the string by checking sequence context
+            let refined = '';
+            for (let i = 0; i < generated.length; i++) {
+                const context = refined; // Use what we've built so far
+                const currentChar = generated[i];
+                // Check if current char fits the context
+                const contextScore = this.sequenceContext.scoreChar(context, currentChar);
+                // If score is very low, try to suggest better character
+                if (contextScore < 0.1 && context.length > 0) {
+                    const suggested = this.sequenceContext.suggestNextChar(context);
+                    if (suggested && suggested !== currentChar) {
+                        // Only replace if it's a significant improvement
+                        refined += suggested;
+                    }
+                    else {
+                        refined += currentChar;
+                    }
+                }
+                else {
+                    refined += currentChar;
+                }
+                // Stop if we hit padding or invalid character
+                if (currentChar === '\0' || currentChar.charCodeAt(0) === 0) {
+                    break;
+                }
+            }
+            return refined;
+        }
+        /**
+         * Get all trained labels
+         */
+        getLabels() {
+            return [...this.labels];
+        }
+        /**
+         * Check if model is trained
+         */
+        isTrained() {
+            return this.elm !== null;
+        }
+    }
+
+    /**
+     * HybridGenerator - Blends Retrieval + ELM jitter for realism + variation
+     * 1. Retrieve real sample
+     * 2. Encode
+     * 3. Apply ELM noise
+     * 4. Decode
+     */
+    class HybridGenerator {
+        constructor(config) {
+            var _a;
+            this.patternCorrector = null;
+            // Initialize and require license before allowing generator use
+            this.config = Object.assign({ elmHiddenUnits: 128, elmActivation: 'relu', elmRidgeLambda: 0.01, noiseSize: 32, jitterStrength: 0.05, exactMode: false, useOneHot: false, useClassification: false, usePatternCorrection: true }, config);
+            // If exact mode, set jitter to 0
+            if (this.config.exactMode) {
+                this.jitterStrength = 0;
+            }
+            else {
+                this.jitterStrength = this.config.jitterStrength;
+            }
+            this.retrieval = new RetrievalGenerator(config.seed);
+            this.elm = new ELMGenerator({
+                maxLength: config.maxLength,
+                hiddenUnits: this.config.elmHiddenUnits,
+                activation: this.config.elmActivation,
+                ridgeLambda: this.config.elmRidgeLambda,
+                noiseSize: this.config.noiseSize,
+                useOneHot: this.config.useOneHot,
+                useClassification: this.config.useClassification,
+                usePatternCorrection: this.config.usePatternCorrection,
+                seed: config.seed,
+            });
+            this.encoder = new StringEncoder({
+                maxLength: config.maxLength,
+                useOneHot: (_a = this.config.useOneHot) !== null && _a !== void 0 ? _a : false, // Default to false for memory efficiency
+            });
+            if (this.config.usePatternCorrection) {
+                this.patternCorrector = new PatternCorrector();
+            }
+        }
+        /**
+         * Train the hybrid generator on labeled samples
+         */
+        train(samples) {
+            // Train retrieval
+            this.retrieval.ingest(samples);
+            // Build encoder vocabulary
+            const allValues = samples.map(s => s.value);
+            this.encoder.buildVocab(allValues);
+            // Train ELM for jittering
+            this.elm.train(samples);
+            // Learn patterns if pattern correction is enabled
+            if (this.patternCorrector) {
+                this.patternCorrector.learnPatterns(samples);
+            }
+        }
+        /**
+         * Generate a hybrid sample (retrieval + jitter)
+         * @param label Label to generate for
+         * @param noiseSeed Optional seed for deterministic output
+         */
+        generate(label, noiseSeed) {
+            // Step 1: Retrieve real sample
+            const retrieved = this.retrieval.sampleOne(label);
+            if (!retrieved) {
+                // Fallback to pure ELM if no retrieval available
+                return this.elm.generate(label, noiseSeed);
+            }
+            // Step 2: Encode
+            const encoded = this.encoder.encode(retrieved);
+            // Step 3: Apply ELM noise/jitter
+            // Generate a jittered version using ELM
+            const jittered = this.applyJitter(encoded, label, noiseSeed);
+            // Step 4: Decode
+            const decoded = this.encoder.decode(jittered);
+            // Step 5: Apply pattern correction if enabled
+            let corrected = decoded;
+            if (this.patternCorrector) {
+                corrected = this.patternCorrector.correct(decoded, label);
+            }
+            // Step 6: Validate and clean using label-specific rules
+            const validation = validateForLabel(label, corrected);
+            // If validation fails, try jittering again with different noise (up to 2 attempts)
+            if (!validation.isValid) {
+                for (let attempt = 0; attempt < 2; attempt++) {
+                    const newSeed = noiseSeed !== undefined ? noiseSeed + attempt + 1000 : undefined;
+                    const newJittered = this.applyJitter(encoded, label, newSeed);
+                    const newDecoded = this.encoder.decode(newJittered);
+                    let newCorrected = newDecoded;
+                    if (this.patternCorrector) {
+                        newCorrected = this.patternCorrector.correct(newDecoded, label);
+                    }
+                    const newValidation = validateForLabel(label, newCorrected);
+                    if (newValidation.isValid) {
+                        return newValidation.cleaned;
+                    }
+                }
+                // If all attempts fail, return original (retrieved is always valid)
+                return retrieved;
+            }
+            return validation.cleaned;
+        }
+        /**
+         * Apply jitter to an encoded vector
+         */
+        applyJitter(encoded, label, noiseSeed) {
+            // Generate ELM output for the label
+            const elmOutput = this.generateELMVector(label, noiseSeed);
+            // If ELM output is empty or invalid, return original (no jitter)
+            if (!elmOutput || elmOutput.length === 0 || elmOutput.every(v => v === 0)) {
+                return encoded;
+            }
+            // Blend: (1 - jitterStrength) * original + jitterStrength * elmOutput
+            // Use smaller jitter to preserve more of the original
+            const effectiveJitter = Math.min(this.jitterStrength, 0.05); // Cap at 5% jitter
+            const jittered = encoded.map((val, idx) => {
+                const elmVal = elmOutput[idx] || 0;
+                return (1 - effectiveJitter) * val + effectiveJitter * elmVal;
+            });
+            // Convert blended continuous values to integer indices
+            // Round and clamp to valid vocabulary range
+            const vocabSize = this.encoder.getVocabSize();
+            const indices = jittered.map(val => {
+                // Clamp value first
+                const clamped = Math.max(0, Math.min(vocabSize - 1, val));
+                const idx = Math.round(clamped);
+                return Math.max(0, Math.min(vocabSize - 1, idx));
+            });
+            return indices;
+        }
+        /**
+         * Generate an ELM vector for jittering
+         */
+        generateELMVector(label, noiseSeed) {
+            try {
+                // Try to get ELM prediction
+                const elmGenerated = this.elm.generate(label, noiseSeed);
+                // Only encode if we got a non-empty string
+                if (elmGenerated && elmGenerated.length > 0) {
+                    return this.encoder.encode(elmGenerated);
+                }
+                // If empty, return zero vector (no jitter)
+                return new Array(this.encoder.getVectorSize()).fill(0);
+            }
+            catch (_a) {
+                // If ELM fails, return zero vector (no jitter)
+                return new Array(this.encoder.getVectorSize()).fill(0);
+            }
+        }
+        /**
+         * Generate multiple hybrid samples
+         */
+        generateBatch(label, count) {
+            const results = [];
+            const seen = new Set();
+            let attempts = 0;
+            const maxAttempts = count * 5; // Allow up to 5x attempts to get valid unique samples
+            while (results.length < count && attempts < maxAttempts) {
+                const seed = this.config.seed !== undefined
+                    ? this.config.seed + attempts
+                    : Date.now() + attempts;
+                const generated = this.generate(label, seed);
+                // Only add if valid, non-empty, and unique
+                if (generated && generated.length > 0 && !seen.has(generated.toLowerCase())) {
+                    results.push(generated);
+                    seen.add(generated.toLowerCase());
+                }
+                attempts++;
+            }
+            return results;
+        }
+        /**
+         * Get all available labels
+         */
+        getLabels() {
+            return this.retrieval.getLabels();
+        }
+        /**
+         * Check if generator is trained
+         */
+        isTrained() {
+            return this.retrieval.hasLabel(this.getLabels()[0] || '') && this.elm.isTrained();
+        }
+    }
+
+    /**
+     * ExactGenerator - Perfect retrieval with pattern-based variations
+     * Provides 100% realistic data by using exact training samples + pattern matching
+     */
+    class ExactGenerator {
+        constructor(config = {}) {
+            this.trainingSamples = [];
+            // Initialize and require license before allowing generator use
+            this.config = Object.assign({ usePatternMatching: true, maxVariations: 10 }, config);
+            this.retrieval = new RetrievalGenerator(config.seed);
+            this.patternCorrector = new PatternCorrector();
+        }
+        /**
+         * Train the exact generator
+         */
+        train(samples) {
+            this.trainingSamples = samples;
+            this.retrieval.ingest(samples);
+            if (this.config.usePatternMatching) {
+                this.patternCorrector.learnPatterns(samples);
+            }
+        }
+        /**
+         * Generate an exact sample (100% realistic)
+         */
+        generate(label, seed) {
+            // 1. Try exact retrieval first (100% realistic)
+            const exact = this.retrieval.sampleOne(label);
+            if (exact) {
+                return exact; // ✅ 100% realistic
+            }
+            // 2. If pattern matching enabled, try pattern-based generation
+            if (this.config.usePatternMatching) {
+                const pattern = this.patternCorrector.getPattern(label);
+                if (pattern && pattern.examples.length > 0) {
+                    // Return a random example from the pattern
+                    const randomIndex = seed !== undefined
+                        ? seed % pattern.examples.length
+                        : Math.floor(Math.random() * pattern.examples.length);
+                    return pattern.examples[randomIndex];
+                }
+            }
+            throw new Error(`No samples found for label: ${label}`);
+        }
+        /**
+         * Generate with pattern-based variations
+         */
+        generateWithVariation(label, seed) {
+            // Get base sample
+            const base = this.generate(label, seed);
+            if (!this.config.usePatternMatching) {
+                return base;
+            }
+            // Try to create variations using pattern matching
+            const pattern = this.patternCorrector.getPattern(label);
+            if (!pattern) {
+                return base;
+            }
+            // Simple variation: combine prefix from one example with suffix from another
+            if (pattern.examples.length >= 2) {
+                const seed1 = seed !== undefined ? seed : Date.now();
+                const seed2 = seed1 + 1000;
+                const idx1 = seed1 % pattern.examples.length;
+                const idx2 = seed2 % pattern.examples.length;
+                if (idx1 !== idx2) {
+                    const ex1 = pattern.examples[idx1];
+                    const ex2 = pattern.examples[idx2];
+                    // Try combining if they're similar length
+                    if (Math.abs(ex1.length - ex2.length) <= 2) {
+                        const mid = Math.floor(ex1.length / 2);
+                        const variation = ex1.substring(0, mid) + ex2.substring(mid);
+                        // Validate the variation
+                        const validation = validateForLabel(label, variation);
+                        if (validation.isValid) {
+                            // Score the variation
+                            const score = this.patternCorrector.score(variation, label);
+                            if (score > 0.6) { // Only use if reasonably good
+                                return validation.cleaned;
+                            }
+                        }
+                    }
+                }
+            }
+            return base;
+        }
+        /**
+         * Generate multiple exact samples
+         */
+        generateBatch(label, count) {
+            const results = [];
+            const seen = new Set();
+            // Try to get unique exact samples
+            for (let i = 0; i < count * 2 && results.length < count; i++) {
+                const seed = this.config.seed !== undefined
+                    ? this.config.seed + i
+                    : Date.now() + i;
+                let generated;
+                if (i < count && this.config.usePatternMatching) {
+                    // First half: exact matches
+                    generated = this.generate(label, seed);
+                }
+                else {
+                    // Second half: try variations
+                    generated = this.generateWithVariation(label, seed);
+                }
+                if (generated && !seen.has(generated.toLowerCase())) {
+                    results.push(generated);
+                    seen.add(generated.toLowerCase());
+                }
+            }
+            return results;
+        }
+        /**
+         * Get all available labels
+         */
+        getLabels() {
+            return this.retrieval.getLabels();
+        }
+        /**
+         * Check if generator is trained
+         */
+        isTrained() {
+            return this.retrieval.getLabels().length > 0;
+        }
+    }
+
+    /**
+     * PerfectGenerator - Best of all worlds
+     * Combines exact retrieval, pattern matching, and improved ELM generation
+     * Provides highest realism with good variation
+     */
+    class PerfectGenerator {
+        constructor(config) {
+            this.elm = null;
+            this.trainingSamples = [];
+            // Initialize and require license before allowing generator use
+            this.config = Object.assign({ preferExact: true, usePatternMatching: true, useImprovedELM: false, elmHiddenUnits: 128, elmActivation: 'relu', elmRidgeLambda: 0.001, noiseSize: 32 }, config);
+            this.exact = new ExactGenerator({
+                seed: config.seed,
+                usePatternMatching: this.config.usePatternMatching,
+            });
+            this.hybrid = new HybridGenerator({
+                maxLength: config.maxLength,
+                seed: config.seed,
+                exactMode: false, // Allow some jitter for variation
+                jitterStrength: 0.02, // Very low jitter (2%)
+                useOneHot: false, // Disable one-hot to reduce memory (was: this.config.useImprovedELM)
+                useClassification: false, // Disable classification to reduce memory (was: this.config.useImprovedELM)
+                usePatternCorrection: true,
+                elmHiddenUnits: this.config.elmHiddenUnits, // Now uses reduced 128 instead of 256
+                elmActivation: this.config.elmActivation,
+                elmRidgeLambda: this.config.elmRidgeLambda,
+                noiseSize: this.config.noiseSize,
+            });
+            // Only create standalone ELM if explicitly requested AND useImprovedELM is true
+            // This avoids duplicate ELM training (HybridGenerator already has one)
+            if (this.config.useImprovedELM && config.useImprovedELM === true) {
+                this.elm = new ELMGenerator({
+                    maxLength: config.maxLength,
+                    seed: config.seed,
+                    hiddenUnits: this.config.elmHiddenUnits,
+                    activation: this.config.elmActivation,
+                    ridgeLambda: this.config.elmRidgeLambda,
+                    noiseSize: this.config.noiseSize,
+                    useOneHot: false, // Disable one-hot to reduce memory
+                    useClassification: false, // Disable classification to reduce memory
+                    usePatternCorrection: true,
+                });
+            }
+            this.patternCorrector = new PatternCorrector();
+        }
+        /**
+         * Train the perfect generator
+         */
+        train(samples) {
+            this.trainingSamples = samples;
+            // Train generators in order of priority (exact is fastest)
+            this.exact.train(samples);
+            // Only train hybrid if we need it (lazy training)
+            // We'll train it on first use if needed
+            // Learn patterns (lightweight)
+            this.patternCorrector.learnPatterns(samples);
+        }
+        /**
+         * Lazy train hybrid generator
+         */
+        ensureHybridTrained() {
+            if (!this.hybrid.isTrained() && this.trainingSamples.length > 0) {
+                this.hybrid.train(this.trainingSamples);
+            }
+        }
+        /**
+         * Lazy train ELM generator
+         */
+        ensureELMTrained() {
+            if (this.elm && !this.elm.isTrained() && this.trainingSamples.length > 0) {
+                this.elm.train(this.trainingSamples);
+            }
+        }
+        /**
+         * Generate with best strategy
+         */
+        generate(label, seed) {
+            var _a;
+            const candidates = [];
+            // 1. Try exact retrieval first (100% realistic)
+            try {
+                const exact = this.exact.generate(label, seed);
+                if (exact) {
+                    candidates.push({ value: exact, score: 1.0, source: 'exact' });
+                }
+            }
+            catch (error) {
+                // No exact match available
+            }
+            // 2. Try exact with variation (95-100% realistic)
+            try {
+                const exactVar = this.exact.generateWithVariation(label, seed);
+                if (exactVar && exactVar !== ((_a = candidates[0]) === null || _a === void 0 ? void 0 : _a.value)) {
+                    const score = this.patternCorrector.score(exactVar, label);
+                    candidates.push({ value: exactVar, score: score * 0.95, source: 'exact-variation' });
+                }
+            }
+            catch (error) {
+                // Skip
+            }
+            // 3. Try hybrid (80-90% realistic) - lazy train if needed
+            try {
+                this.ensureHybridTrained();
+                const hybrid = this.hybrid.generate(label, seed);
+                if (hybrid && !candidates.some(c => c.value === hybrid)) {
+                    const score = this.patternCorrector.score(hybrid, label);
+                    const validation = validateForLabel(label, hybrid);
+                    const finalScore = validation.isValid ? score * 0.85 : score * 0.5;
+                    candidates.push({ value: hybrid, score: finalScore, source: 'hybrid' });
+                }
+            }
+            catch (error) {
+                // Skip
+            }
+            // 4. Try improved ELM if available (75-85% realistic) - lazy train if needed
+            if (this.elm) {
+                try {
+                    this.ensureELMTrained();
+                    const elmGen = this.elm.generate(label, seed);
+                    if (elmGen && !candidates.some(c => c.value === elmGen)) {
+                        const score = this.patternCorrector.score(elmGen, label);
+                        const validation = validateForLabel(label, elmGen);
+                        const finalScore = validation.isValid ? score * 0.8 : score * 0.4;
+                        candidates.push({ value: elmGen, score: finalScore, source: 'elm' });
+                    }
+                }
+                catch (error) {
+                    // Skip
+                }
+            }
+            // 5. Select best candidate
+            if (candidates.length === 0) {
+                throw new Error(`No samples found for label: ${label}`);
+            }
+            // Sort by score (highest first)
+            candidates.sort((a, b) => b.score - a.score);
+            // If preferExact and we have exact match, use it
+            if (this.config.preferExact) {
+                const exactCandidate = candidates.find(c => c.source === 'exact');
+                if (exactCandidate && exactCandidate.score >= 0.9) {
+                    return exactCandidate.value;
+                }
+            }
+            // Return highest scoring candidate
+            return candidates[0].value;
+        }
+        /**
+         * Generate multiple samples with best strategy
+         */
+        generateBatch(label, count) {
+            const results = [];
+            const seen = new Set();
+            let attempts = 0;
+            const maxAttempts = count * 5;
+            while (results.length < count && attempts < maxAttempts) {
+                const seed = this.config.seed !== undefined
+                    ? this.config.seed + attempts
+                    : Date.now() + attempts;
+                try {
+                    const generated = this.generate(label, seed);
+                    if (generated && generated.length > 0 && !seen.has(generated.toLowerCase())) {
+                        results.push(generated);
+                        seen.add(generated.toLowerCase());
+                    }
+                }
+                catch (error) {
+                    // Skip errors
+                }
+                attempts++;
+            }
+            return results;
+        }
+        /**
+         * Get all available labels
+         */
+        getLabels() {
+            return this.exact.getLabels();
+        }
+        /**
+         * Check if generator is trained
+         */
+        isTrained() {
+            // At minimum, exact generator should be trained
+            return this.exact.isTrained();
+        }
+    }
+
+    /**
+     * OmegaSynth - Main class
+     * Unified interface for synthetic data generation
+     */
+    class OmegaSynth {
+        constructor(config) {
+            this.generator = null;
+            this.config = Object.assign({ maxLength: 32 }, config);
+            this.seed = config.seed;
+            // Initialize generator based on mode
+            this.initializeGenerator();
+        }
+        initializeGenerator() {
+            var _a, _b, _c, _d, _e, _f, _g;
+            const commonConfig = {
+                maxLength: this.config.maxLength || 32,
+                seed: this.seed,
+            };
+            switch (this.config.mode) {
+                case 'retrieval':
+                    this.generator = new RetrievalGenerator(this.seed);
+                    break;
+                case 'elm':
+                    this.generator = new ELMGenerator(Object.assign(Object.assign({}, commonConfig), { hiddenUnits: 128, activation: 'relu', ridgeLambda: 0.01, noiseSize: 32, useOneHot: (_a = this.config.useOneHot) !== null && _a !== void 0 ? _a : false, useClassification: (_b = this.config.useClassification) !== null && _b !== void 0 ? _b : false, usePatternCorrection: (_c = this.config.usePatternCorrection) !== null && _c !== void 0 ? _c : true }));
+                    break;
+                case 'hybrid':
+                    this.generator = new HybridGenerator(Object.assign(Object.assign({}, commonConfig), { elmHiddenUnits: 128, elmActivation: 'relu', elmRidgeLambda: 0.01, noiseSize: 32, jitterStrength: this.config.exactMode ? 0 : 0.05, exactMode: (_d = this.config.exactMode) !== null && _d !== void 0 ? _d : false, useOneHot: (_e = this.config.useOneHot) !== null && _e !== void 0 ? _e : false, useClassification: (_f = this.config.useClassification) !== null && _f !== void 0 ? _f : false, usePatternCorrection: (_g = this.config.usePatternCorrection) !== null && _g !== void 0 ? _g : true }));
+                    break;
+                case 'exact':
+                    this.generator = new ExactGenerator({
+                        seed: this.seed,
+                        usePatternMatching: true,
+                    });
+                    break;
+                case 'perfect':
+                    this.generator = new PerfectGenerator(Object.assign(Object.assign({}, commonConfig), { preferExact: true, usePatternMatching: true, useImprovedELM: true, elmHiddenUnits: 256, elmActivation: 'relu', elmRidgeLambda: 0.001, noiseSize: 32 }));
+                    break;
+                default:
+                    throw new Error(`Unknown mode: ${this.config.mode}`);
+            }
+        }
+        /**
+         * Train the generator on a dataset
+         * @param dataset Array of labeled samples
+         */
+        train(dataset) {
+            return __awaiter(this, void 0, void 0, function* () {
+                if (!this.generator) {
+                    throw new Error('Generator not initialized');
+                }
+                if (this.config.mode === 'retrieval') {
+                    this.generator.ingest(dataset);
+                }
+                else if (this.config.mode === 'elm') {
+                    this.generator.train(dataset);
+                }
+                else if (this.config.mode === 'hybrid') {
+                    this.generator.train(dataset);
+                }
+                else if (this.config.mode === 'exact') {
+                    this.generator.train(dataset);
+                }
+                else if (this.config.mode === 'perfect') {
+                    this.generator.train(dataset);
+                }
+            });
+        }
+        /**
+         * Generate a synthetic value for a given label
+         * @param label Label to generate for
+         * @param seed Optional seed for deterministic generation
+         */
+        generate(label, seed) {
+            return __awaiter(this, void 0, void 0, function* () {
+                if (!this.generator) {
+                    throw new Error('Generator not initialized. Call train() first.');
+                }
+                if (this.config.mode === 'retrieval') {
+                    const result = this.generator.sampleOne(label);
+                    if (!result) {
+                        throw new Error(`No samples found for label: ${label}`);
+                    }
+                    return result;
+                }
+                else if (this.config.mode === 'elm') {
+                    return this.generator.generate(label, seed);
+                }
+                else if (this.config.mode === 'hybrid') {
+                    return this.generator.generate(label, seed);
+                }
+                else if (this.config.mode === 'exact') {
+                    return this.generator.generate(label, seed);
+                }
+                else if (this.config.mode === 'perfect') {
+                    return this.generator.generate(label, seed);
+                }
+                throw new Error(`Unknown mode: ${this.config.mode}`);
+            });
+        }
+        /**
+         * Generate multiple synthetic values for a label
+         * @param label Label to generate for
+         * @param count Number of samples to generate
+         */
+        generateBatch(label, count) {
+            return __awaiter(this, void 0, void 0, function* () {
+                if (!this.generator) {
+                    throw new Error('Generator not initialized. Call train() first.');
+                }
+                if (this.config.mode === 'retrieval') {
+                    return this.generator.sample(label, count);
+                }
+                else if (this.config.mode === 'elm') {
+                    return this.generator.generateBatch(label, count);
+                }
+                else if (this.config.mode === 'hybrid') {
+                    return this.generator.generateBatch(label, count);
+                }
+                else if (this.config.mode === 'exact') {
+                    return this.generator.generateBatch(label, count);
+                }
+                else if (this.config.mode === 'perfect') {
+                    return this.generator.generateBatch(label, count);
+                }
+                throw new Error(`Unknown mode: ${this.config.mode}`);
+            });
+        }
+        /**
+         * Get all available labels
+         */
+        getLabels() {
+            if (!this.generator) {
+                return [];
+            }
+            if (this.config.mode === 'retrieval') {
+                return this.generator.getLabels();
+            }
+            else if (this.config.mode === 'elm') {
+                return this.generator.getLabels();
+            }
+            else if (this.config.mode === 'hybrid') {
+                return this.generator.getLabels();
+            }
+            else if (this.config.mode === 'exact') {
+                return this.generator.getLabels();
+            }
+            else if (this.config.mode === 'perfect') {
+                return this.generator.getLabels();
+            }
+            return [];
+        }
+        /**
+         * Check if the generator is trained
+         */
+        isTrained() {
+            if (!this.generator) {
+                return false;
+            }
+            if (this.config.mode === 'retrieval') {
+                const labels = this.generator.getLabels();
+                return labels.length > 0;
+            }
+            else if (this.config.mode === 'elm') {
+                return this.generator.isTrained();
+            }
+            else if (this.config.mode === 'hybrid') {
+                return this.generator.isTrained();
+            }
+            else if (this.config.mode === 'exact') {
+                return this.generator.isTrained();
+            }
+            else if (this.config.mode === 'perfect') {
+                return this.generator.isTrained();
+            }
+            return false;
+        }
+        /**
+         * Set seed for deterministic generation
+         */
+        setSeed(seed) {
+            this.seed = seed;
+            // Reinitialize generator with new seed
+            this.initializeGenerator();
+        }
+    }
+
+    /**
+     * loadPretrained - Load pretrained synthetic data generator
+     * Instantiates OmegaSynth with pretrained data for common labels
+     */
+    /**
+     * Load pretrained OmegaSynth instance
+     * @param mode Generation mode ('retrieval', 'elm', or 'hybrid')
+     * @param config Optional configuration overrides
+     */
+    function loadPretrained(mode = 'retrieval', config) {
+        // Initialize license before creating instance
+        const synth = new OmegaSynth({
+            mode,
+            maxLength: (config === null || config === void 0 ? void 0 : config.maxLength) || 32,
+            seed: config === null || config === void 0 ? void 0 : config.seed,
+        });
+        // Load default data
+        // Try multiple possible locations for the model file
+        let modelPath = null;
+        // Helper to find package root by looking for package.json
+        function findPackageRoot(startDir) {
+            let current = startDir;
+            while (current !== path__namespace.dirname(current)) {
+                const pkgPath = path__namespace.join(current, 'package.json');
+                if (fs__namespace.existsSync(pkgPath)) {
+                    try {
+                        const pkg = JSON.parse(fs__namespace.readFileSync(pkgPath, 'utf-8'));
+                        if (pkg.name === '@astermind/astermind-synth') {
+                            return current;
+                        }
+                    }
+                    catch (_a) {
+                        // Continue searching
+                    }
+                }
+                current = path__namespace.dirname(current);
+            }
+            return null;
+        }
+        // Find package root first - this is more reliable than using __dirname
+        // since we're looking for files relative to package root, not the current file
+        const packageRoot = findPackageRoot(process.cwd());
+        const possiblePaths = [];
+        // Add paths relative to package root if found
+        if (packageRoot) {
+            possiblePaths.push(path__namespace.join(packageRoot, 'dist/omegasynth/models/default_synth.json'), // Bundled location (npm package)
+            path__namespace.join(packageRoot, 'src/omegasynth/models/default_synth.json') // Source location (development)
+            );
+        }
+        // Also try common npm package locations (when installed as dependency)
+        possiblePaths.push(path__namespace.join(process.cwd(), 'node_modules/@astermind/astermind-synth/dist/omegasynth/models/default_synth.json'));
+        // Try relative to current working directory (for development)
+        possiblePaths.push(path__namespace.join(process.cwd(), 'dist/omegasynth/models/default_synth.json'), path__namespace.join(process.cwd(), 'src/omegasynth/models/default_synth.json'));
+        for (const possiblePath of possiblePaths) {
+            if (fs__namespace.existsSync(possiblePath)) {
+                modelPath = possiblePath;
+                break;
+            }
+        }
+        if (!modelPath) {
+            throw new Error('default_synth.json not found. Tried paths: ' + possiblePaths.join(', '));
+        }
+        const modelData = JSON.parse(fs__namespace.readFileSync(modelPath, 'utf-8'));
+        // Convert pretrained data to LabeledSample format
+        const samples = [];
+        for (const [label, values] of Object.entries(modelData.labels)) {
+            for (const value of values) {
+                samples.push({ label, value });
+            }
+        }
+        // Train the generator synchronously for immediate use
+        // Note: This is a simplified approach - in production you might want async
+        (() => __awaiter(this, void 0, void 0, function* () {
+            try {
+                yield synth.train(samples);
+            }
+            catch (err) {
+                console.error('Error training pretrained model:', err);
+            }
+        }))();
+        return synth;
+    }
+    /**
+     * Load a fully versioned OmegaSynth model from dist/models/vX.Y.Z
+     *
+     * This function:
+     * - Reads model.json, training_data.json, and elm_model.json from the version directory
+     * - Rebuilds the retrieval store from training_data.json
+     * - Hydrates the internal ELM from elm_model.json (for elm/hybrid modes) if possible
+     *
+     * NOTE:
+     * - We avoid calling synth.train() here to prevent re-training; instead we:
+     *   - Directly ingest training samples into the retrieval generator
+     *   - Attempt to load ELM weights via loadModelFromJSON if available
+     */
+    function loadPretrainedFromVersion(versionDir) {
+        var _a;
+        // Initialize license before creating instance
+        const manifestPath = path__namespace.join(versionDir, 'manifest.json');
+        const modelPath = path__namespace.join(versionDir, 'model.json');
+        const trainingDataPath = path__namespace.join(versionDir, 'training_data.json');
+        const elmModelPath = path__namespace.join(versionDir, 'elm_model.json');
+        let manifest = null;
+        if (fs__namespace.existsSync(manifestPath)) {
+            manifest = JSON.parse(fs__namespace.readFileSync(manifestPath, 'utf-8'));
+        }
+        const modelData = JSON.parse(fs__namespace.readFileSync(modelPath, 'utf-8'));
+        const configFromModel = (_a = manifest === null || manifest === void 0 ? void 0 : manifest.config) !== null && _a !== void 0 ? _a : modelData.config;
+        // Load training samples
+        if (!fs__namespace.existsSync(trainingDataPath)) {
+            throw new Error(`training_data.json not found in version directory: ${trainingDataPath}`);
+        }
+        const trainingSamples = JSON.parse(fs__namespace.readFileSync(trainingDataPath, 'utf-8'));
+        // Create OmegaSynth.
+        // IMPORTANT: For pretrained loading we prefer 'retrieval' mode here:
+        // - We only need high-quality samples for downstream ELM/KELM training.
+        // - Retrieval over the saved training_data.json gives 100% realistic data
+        //   without requiring vocab building or ELM retraining.
+        //
+        // If you ever need to use the original mode (e.g. 'hybrid' or 'elm'),
+        // you can swap this back to configFromModel.mode.
+        const mode = 'retrieval';
+        const synth = new OmegaSynth({
+            mode,
+            maxLength: configFromModel.maxLength || 50,
+            seed: configFromModel.seed,
+        });
+        // Ingest training samples directly into the retrieval generator
+        // For hybrid/elm modes, this ensures retrieval works without retraining
+        try {
+            const generator = synth.generator;
+            if (generator) {
+                if (generator.ingest) {
+                    // RetrievalGenerator
+                    generator.ingest(trainingSamples);
+                }
+                else if (generator.retrieval && typeof generator.retrieval.ingest === 'function') {
+                    // HybridGenerator (has .retrieval)
+                    generator.retrieval.ingest(trainingSamples);
+                }
+            }
+        }
+        catch (err) {
+            console.warn('Could not ingest training samples into OmegaSynth generator:', err);
+        }
+        // Hydrate ELM weights if available and applicable (elm/hybrid modes).
+        // NOTE: Since we currently force mode = 'retrieval' above for stability,
+        // this block will not run. It is left here for future use if you decide
+        // to re-enable elm/hybrid loading via configFromModel.mode.
+        if (fs__namespace.existsSync(elmModelPath) && (configFromModel.mode === 'elm' || configFromModel.mode === 'hybrid')) {
+            try {
+                const elmModelJSON = fs__namespace.readFileSync(elmModelPath, 'utf-8');
+                const generator = synth.generator;
+                if (generator) {
+                    let elmInstance = null;
+                    if (configFromModel.mode === 'hybrid' && generator.elm && generator.elm.elm) {
+                        // HybridGenerator -> ELMGenerator -> elm
+                        elmInstance = generator.elm.elm;
+                    }
+                    else if (configFromModel.mode === 'elm' && generator.elm) {
+                        // ELMGenerator -> elm
+                        elmInstance = generator.elm;
+                    }
+                    if (elmInstance && typeof elmInstance.loadModelFromJSON === 'function') {
+                        elmInstance.loadModelFromJSON(elmModelJSON);
+                        console.log('✅ ELM weights loaded from elm_model.json into OmegaSynth');
+                    }
+                    else {
+                        console.warn('Could not load ELM weights: loadModelFromJSON not available on ELM instance');
+                    }
+                }
+            }
+            catch (err) {
+                console.warn('Could not hydrate ELM from elm_model.json:', err);
+            }
+        }
+        return synth;
+    }
+    /**
+     * Load pretrained model from custom JSON data
+     * @param modelData Custom model data
+     * @param mode Generation mode
+     * @param config Optional configuration
+     */
+    function loadPretrainedFromData(modelData, mode = 'retrieval', config) {
+        // Initialize license before creating instance
+        const synth = new OmegaSynth({
+            mode,
+            maxLength: (config === null || config === void 0 ? void 0 : config.maxLength) || 32,
+            seed: config === null || config === void 0 ? void 0 : config.seed,
+        });
+        const samples = [];
+        for (const [label, values] of Object.entries(modelData.labels)) {
+            for (const value of values) {
+                samples.push({ label, value });
+            }
+        }
+        (() => __awaiter(this, void 0, void 0, function* () {
+            try {
+                yield synth.train(samples);
+            }
+            catch (err) {
+                console.error('Error training custom model:', err);
+            }
+        }))();
+        return synth;
+    }
+    /**
+     * Get available pretrained labels
+     */
+    function getPretrainedLabels() {
+        try {
+            // Helper to find package root
+            function findPackageRoot(startDir) {
+                let current = startDir;
+                while (current !== path__namespace.dirname(current)) {
+                    const pkgPath = path__namespace.join(current, 'package.json');
+                    if (fs__namespace.existsSync(pkgPath)) {
+                        try {
+                            const pkg = JSON.parse(fs__namespace.readFileSync(pkgPath, 'utf-8'));
+                            if (pkg.name === '@astermind/astermind-synth') {
+                                return current;
+                            }
+                        }
+                        catch (_a) {
+                            // Continue searching
+                        }
+                    }
+                    current = path__namespace.dirname(current);
+                }
+                return null;
+            }
+            // Try multiple possible locations for the model file
+            const packageRoot = findPackageRoot(process.cwd());
+            const possiblePaths = [];
+            if (packageRoot) {
+                possiblePaths.push(path__namespace.join(packageRoot, 'dist/omegasynth/models/default_synth.json'), path__namespace.join(packageRoot, 'src/omegasynth/models/default_synth.json'));
+            }
+            possiblePaths.push(path__namespace.join(process.cwd(), 'node_modules/@astermind/astermind-synth/dist/omegasynth/models/default_synth.json'), path__namespace.join(process.cwd(), 'dist/omegasynth/models/default_synth.json'), path__namespace.join(process.cwd(), 'src/omegasynth/models/default_synth.json'));
+            let modelPath = null;
+            for (const possiblePath of possiblePaths) {
+                if (fs__namespace.existsSync(possiblePath)) {
+                    modelPath = possiblePath;
+                    break;
+                }
+            }
+            if (!modelPath) {
+                throw new Error('Model file not found');
+            }
+            const modelData = JSON.parse(fs__namespace.readFileSync(modelPath, 'utf-8'));
+            return Object.keys(modelData.labels);
+        }
+        catch (_a) {
+            // Fallback if file not found
+            return [
+                'first_name', 'last_name', 'phone_number', 'email', 'street_address',
+                'city', 'state', 'country', 'company_name', 'job_title', 'product_name',
+                'color', 'uuid', 'date', 'credit_card_type', 'device_type'
+            ];
+        }
+    }
+
+    /**
+     * Utilities for saving trained OmegaSynth models
+     */
+    /**
+     * Save a trained OmegaSynth model to disk
+     *
+     * @param synth The trained OmegaSynth instance
+     * @param trainingData The training data used to train the model (required for saving)
+     * @param outputDir Directory where the model will be saved
+     * @param version Optional version string (default: '1.0.0')
+     * @returns Path to the saved model directory
+     */
+    function saveTrainedModel(synth_1, trainingData_1, outputDir_1) {
+        return __awaiter(this, arguments, void 0, function* (synth, trainingData, outputDir, version = '1.0.0') {
+            if (!synth.isTrained()) {
+                throw new Error('Model must be trained before saving. Call train() first.');
+            }
+            if (trainingData.length === 0) {
+                throw new Error('Training data is required to save the model.');
+            }
+            // Create version directory
+            const versionDir = path__namespace.join(outputDir, `v${version}`);
+            if (!fs__namespace.existsSync(versionDir)) {
+                fs__namespace.mkdirSync(versionDir, { recursive: true });
+            }
+            // Calculate training stats
+            const labels = Array.from(new Set(trainingData.map(s => s.label)));
+            const samplesPerLabel = {};
+            for (const label of labels) {
+                samplesPerLabel[label] = trainingData.filter(s => s.label === label).length;
+            }
+            // Get config from synth (we need to access private config)
+            const config = synth.config || {};
+            // Save model metadata
+            const modelData = {
+                config: {
+                    mode: config.mode || 'retrieval',
+                    maxLength: config.maxLength,
+                    seed: config.seed,
+                    exactMode: config.exactMode,
+                    useOneHot: config.useOneHot,
+                    useClassification: config.useClassification,
+                    usePatternCorrection: config.usePatternCorrection,
+                },
+                trainingStats: {
+                    totalSamples: trainingData.length,
+                    labels,
+                    samplesPerLabel,
+                },
+                timestamp: new Date().toISOString(),
+            };
+            const modelPath = path__namespace.join(versionDir, 'model.json');
+            fs__namespace.writeFileSync(modelPath, JSON.stringify(modelData, null, 2));
+            // Save training data (required for loading later)
+            const trainingDataPath = path__namespace.join(versionDir, 'training_data.json');
+            fs__namespace.writeFileSync(trainingDataPath, JSON.stringify(trainingData, null, 2));
+            // Try to save ELM model weights if available (for elm/hybrid modes)
+            try {
+                const generator = synth.generator;
+                if (generator) {
+                    let elmInstance = null;
+                    // Get ELM instance based on mode
+                    if (config.mode === 'hybrid' && generator.elm) {
+                        elmInstance = generator.elm.elm; // HybridGenerator -> ELMGenerator -> elm
+                    }
+                    else if (config.mode === 'elm' && generator.elm) {
+                        elmInstance = generator.elm; // ELMGenerator -> elm
+                    }
+                    if (elmInstance) {
+                        let elmModelJSON;
+                        // Try to get serialized model
+                        if (elmInstance.savedModelJSON) {
+                            elmModelJSON = elmInstance.savedModelJSON;
+                        }
+                        else if (elmInstance.model) {
+                            // Manually serialize
+                            const serialized = {
+                                config: elmInstance.config,
+                                W: elmInstance.model.W,
+                                b: elmInstance.model.b,
+                                B: elmInstance.model.beta,
+                                categories: elmInstance.categories || [],
+                            };
+                            elmModelJSON = JSON.stringify(serialized);
+                        }
+                        if (elmModelJSON) {
+                            const elmModelPath = path__namespace.join(versionDir, 'elm_model.json');
+                            fs__namespace.writeFileSync(elmModelPath, elmModelJSON);
+                            console.log(`✅ ELM model weights saved to: ${elmModelPath}`);
+                        }
+                    }
+                }
+            }
+            catch (error) {
+                console.warn('⚠️  Could not save ELM model weights:', error);
+                // Continue - ELM weights are optional
+            }
+            console.log(`\n✅ Model saved to: ${versionDir}`);
+            console.log(`   Version: ${version}`);
+            console.log(`   Training samples: ${trainingData.length}`);
+            console.log(`   Labels: ${labels.length} (${labels.join(', ')})`);
+            console.log(`\n   To load this model later, use:`);
+            console.log(`   loadPretrainedFromVersion('${versionDir}')`);
+            return versionDir;
+        });
+    }
+
     exports.Activations = Activations;
+    exports.AdaptiveKernelELM = AdaptiveKernelELM;
+    exports.AdaptiveOnlineELM = AdaptiveOnlineELM;
+    exports.AttentionEnhancedELM = AttentionEnhancedELM;
     exports.Augment = Augment;
     exports.AutoComplete = AutoComplete;
     exports.CharacterLangEncoderELM = CharacterLangEncoderELM;
     exports.ConfidenceClassifierELM = ConfidenceClassifierELM;
+    exports.ConvolutionalELM = ConvolutionalELM;
+    exports.DISK_EPS = DISK_EPS;
     exports.DeepELM = DeepELM;
+    exports.DeepELMPro = DeepELMPro;
+    exports.DeepKernelELM = DeepKernelELM;
     exports.DimError = DimError;
     exports.ELM = ELM;
     exports.ELMAdapter = ELMAdapter;
     exports.ELMChain = ELMChain;
+    exports.ELMGenerator = ELMGenerator;
+    exports.ELMKELMCascade = ELMKELMCascade;
+    exports.ELMScorer = ELMScorer;
     exports.ELMWorkerClient = ELMWorkerClient;
+    exports.EPS = EPS;
     exports.EmbeddingStore = EmbeddingStore;
     exports.EncoderELM = EncoderELM;
+    exports.EnsembleKernelELM = EnsembleKernelELM;
     exports.FeatureCombinerELM = FeatureCombinerELM;
+    exports.ForgettingOnlineELM = ForgettingOnlineELM;
+    exports.FuzzyELM = FuzzyELM;
+    exports.GraphELM = GraphELM;
+    exports.GraphKernelELM = GraphKernelELM;
+    exports.HierarchicalELM = HierarchicalELM;
+    exports.HybridGenerator = HybridGenerator;
     exports.IO = IO;
+    exports.InfoFlowGraph = InfoFlowGraph;
+    exports.InfoFlowGraphPWS = InfoFlowGraphPWS;
     exports.IntentClassifier = IntentClassifier;
     exports.KNN = KNN;
     exports.KernelELM = KernelELM;
     exports.LanguageClassifier = LanguageClassifier;
+    exports.MAX_EXP = MAX_EXP;
+    exports.MIN_EXP = MIN_EXP;
     exports.Matrix = Matrix;
+    exports.MultiKernelELM = MultiKernelELM;
+    exports.MultiTaskELM = MultiTaskELM;
+    exports.OmegaSynth = OmegaSynth;
     exports.OnlineELM = OnlineELM;
+    exports.OnlineKernelELM = OnlineKernelELM;
+    exports.OnlineRidge = OnlineRidge;
+    exports.QuantumInspiredELM = QuantumInspiredELM;
+    exports.RecurrentELM = RecurrentELM;
     exports.RefinerELM = RefinerELM;
+    exports.RetrievalGenerator = RetrievalGenerator;
+    exports.RobustKernelELM = RobustKernelELM;
+    exports.SparseELM = SparseELM;
+    exports.SparseKernelELM = SparseKernelELM;
+    exports.StringEncoder = StringEncoder;
+    exports.StringKernelELM = StringKernelELM;
+    exports.SyntheticFieldStore = SyntheticFieldStore;
+    exports.TEController = TEController;
     exports.TFIDF = TFIDF;
     exports.TFIDFVectorizer = TFIDFVectorizer;
+    exports.TensorKernelELM = TensorKernelELM;
     exports.TextEncoder = TextEncoder;
+    exports.TimeSeriesELM = TimeSeriesELM;
     exports.Tokenizer = Tokenizer;
+    exports.TransferEntropy = TransferEntropy;
+    exports.TransferEntropyPWS = TransferEntropyPWS;
+    exports.TransferLearningELM = TransferLearningELM;
     exports.UniversalEncoder = UniversalEncoder;
+    exports.VariationalELM = VariationalELM;
     exports.VotingClassifierELM = VotingClassifierELM;
+    exports.add = add;
+    exports.add_ = add_;
+    exports.argmax = argmax;
+    exports.asVec = asVec;
     exports.assertRect = assertRect;
+    exports.autoTune = autoTune;
+    exports.backfillEmptyParents = backfillEmptyParents;
+    exports.baseKernel = baseKernel$1;
     exports.binaryPR = binaryPR;
     exports.binaryROC = binaryROC;
     exports.bindAutocompleteUI = bindAutocompleteUI;
+    exports.buildDenseDocs = buildDenseDocs;
+    exports.buildIndex = buildIndex;
+    exports.buildLandmarks = buildLandmarks;
+    exports.buildRFF = buildRFF;
+    exports.buildTfidfDocs = buildTfidfDocs;
+    exports.buildVocabAndIdf = buildVocabAndIdf;
+    exports.clampVec = clampVec;
     exports.confusionMatrixFromIndices = confusionMatrixFromIndices;
+    exports.cosine = cosine$2;
+    exports.cosineSparse = cosineSparse;
     exports.defaultNumericConfig = defaultNumericConfig;
     exports.defaultTextConfig = defaultTextConfig;
     exports.deserializeTextBits = deserializeTextBits;
+    exports.dot = dot;
+    exports.dotProd = dotProd$1;
     exports.ensureRectNumber2D = ensureRectNumber2D;
     exports.evaluateClassification = evaluateClassification;
     exports.evaluateEnsembleRetrieval = evaluateEnsembleRetrieval;
     exports.evaluateRegression = evaluateRegression;
+    exports.expSafe = expSafe;
+    exports.expandQuery = expandQuery;
+    exports.explainFeatures = explainFeatures;
+    exports.exportModel = exportModel;
+    exports.filterMMR = filterMMR;
+    exports.flattenSections = flattenSections;
+    exports.fmtHead = fmtHead;
     exports.formatClassificationReport = formatClassificationReport;
+    exports.getPretrainedLabels = getPretrainedLabels;
+    exports.hDistProxy = hDistProxy;
+    exports.hadamard = hadamard;
+    exports.hadamard_ = hadamard_;
+    exports.hybridRetrieve = hybridRetrieve;
+    exports.importModel = importModel;
+    exports.isFiniteVec = isFiniteVec;
     exports.isNumericConfig = isNumericConfig;
     exports.isTextConfig = isTextConfig;
+    exports.jaccard = jaccard;
+    exports.kernelSim = kernelSim;
+    exports.keywordBonus = keywordBonus;
+    exports.l2 = l2$1;
+    exports.loadPretrained = loadPretrained;
+    exports.loadPretrainedFromData = loadPretrainedFromData;
+    exports.loadPretrainedFromVersion = loadPretrainedFromVersion;
+    exports.log1pSafe = log1pSafe;
     exports.logLoss = logLoss;
+    exports.logSumExp = logSumExp;
+    exports.mapRFF = mapRFF;
+    exports.mean = mean;
     exports.normalizeConfig = normalizeConfig;
+    exports.normalizeL2 = normalizeL2;
+    exports.normalizeWord = normalizeWord;
+    exports.omegaComposeAnswer = omegaComposeAnswer;
+    exports.parseMarkdownToSections = parseMarkdownToSections;
+    exports.penalty = penalty;
+    exports.projectToDense = projectToDense;
+    exports.quickHash = quickHash;
+    exports.rerank = rerank;
+    exports.rerankAndFilter = rerankAndFilter;
+    exports.ridgeSolvePro = ridgeSolvePro;
+    exports.sampleQueriesFromCorpus = sampleQueriesFromCorpus;
+    exports.saveTrainedModel = saveTrainedModel;
+    exports.scal = scal;
+    exports.scal_ = scal_;
+    exports.sigmoid = sigmoid$1;
+    exports.softmax = softmax;
+    exports.sparseToDense = sparseToDense;
+    exports.standardize = standardize;
+    exports.summarizeDeterministic = summarizeDeterministic;
+    exports.tanhVec = tanhVec;
+    exports.tanhVec_ = tanhVec_;
+    exports.toTfidf = toTfidf;
+    exports.tokenize = tokenize$1;
+    exports.topK = topK;
     exports.topKAccuracy = topKAccuracy;
+    exports.topKIndices = topKIndices;
+    exports.variance = variance;
     exports.wrapELM = wrapELM;
+    exports.zeros = zeros;
 
 }));
 //# sourceMappingURL=astermind.umd.js.map

@@ -1,7 +1,7 @@
 {
-  "name": "@astermind/astermind-elm",
-  "version": "2.1.1",
-  "description": "JavaScript Extreme Learning Machine (ELM) library for browser and Node.js.",
+  "name": "@astermind/astermind-community",
+  "version": "3.0.0",
+  "description": "AsterMind Community - Complete ELM library with 21+ advanced variants, Pro features (RAG, reranking, summarization), and OmegaSynth synthetic data generation. Free and open-source. Combines all features from AsterMind-ELM, AsterMind-Pro, AsterMind-Premium, and AsterMind-Synth.",
   "license": "MIT",
   "type": "module",
   "main": "dist/astermind.umd.js",
@@ -20,7 +20,8 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "docs"
   ],
   "scripts": {
     "build": "rollup -c && npm run build:types",
@@ -40,7 +41,8 @@
     "dev:form-autocomplete": "DEMO=practical-examples/03-smart-form-autocomplete vite",
     "dev:intent": "DEMO=practical-examples/04-user-intent-classification vite",
     "dev:recommendations": "DEMO=practical-examples/05-personalized-recommendations vite",
-    "test": "vitest"
+    "test": "vitest",
+    "prepublishOnly": "npm run clean && npm run build && npm test"
   },
   "publishConfig": {
     "access": "public",
@@ -48,19 +50,34 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/infiniteCrank/AsterMind-ELM.git"
+    "url": "git+https://github.com/infiniteCrank/AsterMind-Community.git"
   },
   "bugs": {
-    "url": "https://github.com/infiniteCrank/AsterMind-ELM/issues"
+    "url": "https://github.com/infiniteCrank/AsterMind-Community/issues"
   },
-  "homepage": "https://github.com/infiniteCrank/AsterMind-ELM#readme",
+  "homepage": "https://github.com/infiniteCrank/AsterMind-Community#readme",
   "keywords": [
     "elm",
     "extreme-learning-machine",
     "ml",
+    "machine-learning",
     "javascript",
     "browser",
-    "node"
+    "node",
+    "community",
+    "open-source",
+    "neural-networks",
+    "kernel-elm",
+    "online-learning",
+    "deep-learning",
+    "rag",
+    "retrieval-augmented-generation",
+    "embedding",
+    "classification",
+    "regression",
+    "synthetic-data",
+    "omega-synth",
+    "label-conditioned"
   ],
   "author": "Julian Wilkison-Duran <clockworksyler@gmail.com>",
   "company": "AsterMind AI Co.",

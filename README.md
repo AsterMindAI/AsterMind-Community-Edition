@@ -1,10 +1,12 @@
-# AsterMind-ELM
+# AsterMind-Community
 
-[![npm version](https://img.shields.io/npm/v/%40astermind/astermind-elm.svg)](https://www.npmjs.com/package/@astermind/astermind-elm)
-[![npm downloads](https://img.shields.io/npm/dm/%40astermind/astermind-elm.svg)](https://www.npmjs.com/package/@astermind/astermind-elm)
+[![npm version](https://img.shields.io/npm/v/%40astermind/astermind-community.svg)](https://www.npmjs.com/package/@astermind/astermind-community)
+[![npm downloads](https://img.shields.io/npm/dm/%40astermind/astermind-community.svg)](https://www.npmjs.com/package/@astermind/astermind-community)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](#license)
 
-A modular Extreme Learning Machine (ELM) library for JS/TS (browser + Node).
+**Complete ELM library with 21+ advanced variants, Pro features (RAG, reranking, summarization), and OmegaSynth synthetic data generation. Free and open-source.**
+
+AsterMind Community combines all features from AsterMind-ELM, AsterMind-Pro, AsterMind-Premium, and AsterMind-Synth into one unified, free, and open-source package under the MIT license.
 
 ---
 
@@ -23,20 +25,26 @@ AsterMind modernizes ELM with kernels, online learning, workerized training, rob
 
 ---
 
-## 🆕 New in this release
+## 🆕 New in v3.0.0 - Unified Community Edition
 
-- **Kernel ELMs (KELMs)** — exact and Nyström kernels (RBF/Linear/Poly/Laplacian/Custom) with ridge solve  
-- **Whitened Nyström** — optional \(K_{mm}^{-1/2}\) whitening via symmetric eigendecomposition  
-- **Online ELM (OS-ELM)** — streaming RLS updates with forgetting factor (no full retrain)  
-- **DeepELM** — multi-layer stacked ELM with non-linear projections  
-- **Web Worker adapter** — off-main-thread training/prediction for ELM and KELM  
-- **Matrix upgrades** — Jacobi eigendecomp, invSqrtSym, improved Cholesky  
-- **EmbeddingStore 2.0** — unit-norm vectors, ring buffer capacity, metadata filters  
-- **ELMChain+Embeddings** — safer chaining with dimension checks, JSON I/O  
-- **Activations** — added **linear** and **gelu**; centralized registry  
-- **Configs** — split into **Numeric** and **Text** configs; stronger typing  
-- **UMD exports** — `window.astermind` exposes `ELM`, `OnlineELM`, `KernelELM`, `DeepELM`, `KernelRegistry`, `EmbeddingStore`, `ELMChain`, etc.  
-- **Robust preprocessing** — safer encoder path, improved error handling
+**Major Release:** All features from Elm, Pro, Premium, and Synth are now free and open-source!
+
+- **21 Advanced ELM Variants** — Previously Premium-only, now free:
+  - Adaptive Online ELM, Forgetting Online ELM, Hierarchical ELM
+  - Attention-Enhanced ELM, Variational ELM, Time-Series ELM
+  - Transfer Learning ELM, Graph ELM, Graph Kernel ELM
+  - Adaptive Kernel ELM, Sparse Kernel ELM, Ensemble Kernel ELM
+  - Deep Kernel ELM, Robust Kernel ELM, ELM-KELM Cascade
+  - String Kernel ELM, Convolutional ELM, Recurrent ELM
+  - Fuzzy ELM, Quantum-Inspired ELM, Tensor Kernel ELM
+
+- **Pro Features** — RAG, Reranking, Summarization, Information Flow Analysis (now free!)
+
+- **OmegaSynth** — Label-conditioned synthetic data generation (now free!)
+
+- **All Core Features** — Kernel ELMs, Online ELM, DeepELM, Web Workers, and more
+
+- **MIT License** — Fully open-source, no license required!
 
 See [Releases](#releases) for full changelog.
 
@@ -108,6 +116,7 @@ AsterMind is designed for:
 <a id="features"></a>
 ## ✨ Features
 
+### Core Features
 - ✅ Modular Architecture  
 - ✅ Closed-form training (ridge / pseudoinverse)  
 - ✅ Activations: relu, leakyrelu, sigmoid, tanh, linear, gelu  
@@ -123,7 +132,30 @@ AsterMind is designed for:
 - ✅ Flexible preprocessing  
 - ✅ Lightweight deployment (ESM + UMD)  
 - ✅ Retrieval and classification utilities  
-- ✅ Zero server/GPU — private, on-device ML  
+- ✅ Zero server/GPU — private, on-device ML
+
+### Advanced ELM Variants (21 variants, now free!)
+- ✅ Adaptive Online ELM, Forgetting Online ELM
+- ✅ Hierarchical ELM, Attention-Enhanced ELM, Variational ELM
+- ✅ Time-Series ELM, Transfer Learning ELM
+- ✅ Graph ELM, Graph Kernel ELM
+- ✅ Adaptive/Sparse/Ensemble/Deep/Robust Kernel ELM
+- ✅ ELM-KELM Cascade, String Kernel ELM
+- ✅ Convolutional ELM, Recurrent ELM
+- ✅ Fuzzy ELM, Quantum-Inspired ELM, Tensor Kernel ELM
+
+### Pro Features (now free!)
+- ✅ RAG Pipeline (Retrieval-Augmented Generation)
+- ✅ Reranking
+- ✅ Summarization
+- ✅ Information Flow Analysis
+- ✅ Transfer Entropy
+
+### Synthetic Data Generation (now free!)
+- ✅ OmegaSynth - Label-conditioned synthetic data generation
+- ✅ Multiple generation modes (retrieval, ELM, hybrid, exact, perfect)
+- ✅ Pattern correction and sequence context
+- ✅ Character embeddings  
 
 ---
 
@@ -211,29 +243,34 @@ See [Workers](#workers-elmworker--elmworkerclient) for full API.
 
 **NPM (scoped package):**
 ```bash
-npm install @astermind/astermind-elm
+npm install @astermind/astermind-community
 # or
-pnpm add @astermind/astermind-elm
+pnpm add @astermind/astermind-community
 # or
-yarn add @astermind/astermind-elm
+yarn add @astermind/astermind-community
 ```
 
 **CDN / `<script>` (UMD global `astermind`):**
 ```html
 <!-- jsDelivr -->
-<script src="https://cdn.jsdelivr.net/npm/@astermind/astermind-elm/dist/astermind.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@astermind/astermind-community/dist/astermind.umd.js"></script>
 
 <!-- or unpkg -->
-<script src="https://unpkg.com/@astermind/astermind-elm/dist/astermind.umd.js"></script>
+<script src="https://unpkg.com/@astermind/astermind-community/dist/astermind.umd.js"></script>
 
 <script>
-  const { ELM, KernelELM } = window.astermind;
+  const { ELM, KernelELM, AdaptiveOnlineELM, OmegaSynth } = window.astermind;
 </script>
 ```
 
 **Repository:**
-- GitHub: https://github.com/infiniteCrank/AsterMind-ELM  
-- NPM: https://www.npmjs.com/package/@astermind/astermind-elm  
+- GitHub: https://github.com/infiniteCrank/AsterMind-Community  
+- NPM: https://www.npmjs.com/package/@astermind/astermind-community
+
+**Migration from old packages:**
+- See [Migration Guide](./docs/MIGRATION-FROM-ELM.md) for details
+- All old packages (`@astermind/astermind-elm`, `@astermind/astermind-pro`, `@astermind/astermind-premium`, `@astermind/astermind-synthetic-data`) are deprecated
+- Simply install `@astermind/astermind-community` and update your imports - no license required!  
 
 ---
 
@@ -243,7 +280,7 @@ yarn add @astermind/astermind-elm
 **Basic ELM Classifier**
 
 ```ts
-import { ELM } from "@astermind/astermind-elm";
+import { ELM } from "@astermind/astermind-community";
 
 const config = { categories: ['English', 'French'], hiddenUnits: 128 };
 const elm = new ELM(config);
@@ -253,9 +290,47 @@ const results = elm.predict("bonjour");
 console.log(results);
 ```
 
+**Advanced ELM Variants (Now Free!):**
+
+```ts
+import { AdaptiveOnlineELM, HierarchicalELM, TimeSeriesELM } from "@astermind/astermind-community";
+
+// Adaptive Online ELM - dynamically adjusts hidden units
+const adaptive = new AdaptiveOnlineELM({
+  categories: ['class1', 'class2'],
+  initialHiddenUnits: 128
+});
+
+// Hierarchical ELM - multi-level classification
+const hierarchical = new HierarchicalELM({
+  hierarchy: { 'root': ['animal', 'plant'], 'animal': ['mammal', 'bird'] },
+  rootCategories: ['root']
+});
+
+// Time-Series ELM - specialized for sequential data
+const timeSeries = new TimeSeriesELM({
+  categories: ['trend_up', 'trend_down', 'stable'],
+  sequenceLength: 10
+});
+```
+
+**Synthetic Data Generation (Now Free!):**
+
+```ts
+import { OmegaSynth } from "@astermind/astermind-community";
+
+const synth = new OmegaSynth({
+  mode: 'hybrid', // or 'elm', 'exact', 'retrieval', 'perfect'
+  maxLength: 32
+});
+
+await synth.train(dataset);
+const generated = await synth.generate('label', 10);
+```
+
 **CommonJS / Node:**
 ```js
-const { ELM } = require("@astermind/astermind-elm");
+const { ELM, AdaptiveOnlineELM, OmegaSynth } = require("@astermind/astermind-community");
 ```
 
 **Kernel ELM / DeepELM:** see above examples.
@@ -577,6 +652,8 @@ AsterMind ELM includes comprehensive documentation to help you get started and m
 ## 📄 License
 
 MIT License
+
+**All features are now free and open-source!** This package combines all features from the previous AsterMind packages (ELM, Pro, Premium, Synth) into one unified community edition under the MIT license. No license tokens or subscriptions required.
 
 ---
 
