@@ -68,8 +68,9 @@ See [Releases](#releases) for full changelog.
 22. [Workers: ELMWorker & ELMWorkerClient](#workers-elmworker--elmworkerclient)  
 23. [Example Demos and Scripts](#example-demos-and-scripts)  
 24. [Experiments and Results](#experiments-and-results)  
-25. [Releases](#releases)  
-26. [License](#license)
+25. [Documentation](#documentation)  
+26. [Releases](#releases)  
+27. [License](#license)
 
 ---
 
@@ -485,10 +486,87 @@ Results reported (Recall@1, Recall@5, MRR).
 
 ---
 
+<a id="documentation"></a>
+## 📚 Documentation
+
+AsterMind ELM includes comprehensive documentation to help you get started and master the library:
+
+### Getting Started
+
+- **[Quick Start Tutorial](./QUICK-START-TUTORIAL.md)** — Complete step-by-step guide covering all major features with practical examples
+  - Basic ELM, Kernel ELM, Online ELM, DeepELM
+  - Embeddings, ELM Chains, Web Workers
+  - Pre-built modules, model persistence
+  - Advanced features and troubleshooting
+
+- **[AsterMind ELM Overview](./docs/ASTERMIND-ELM-OVERVIEW.md)** — High-level overview of what AsterMind ELM is and why tiny neural networks matter
+  - Core capabilities (classification, regression, embeddings, online learning)
+  - The AsterMind ecosystem
+  - Technical architecture overview
+
+### Implementation & Integration
+
+- **[Implementation Models](./docs/IMPLEMENTATION-MODELS.md)** — Guide to different ways of implementing AsterMind
+  - **SDK/Library Implementation**: Integrating AsterMind into your applications
+  - **Standalone Applications**: Using pre-built example applications
+  - **Service Engagement**: Professional services for custom implementation
+  - How to choose the right approach for your needs
+
+- **[Technical Requirements](./docs/TECHNICAL-REQUIREMENTS.md)** — System requirements for different platforms
+  - Windows, Linux, and macOS requirements
+  - Browser compatibility
+  - Development and runtime requirements
+  - Troubleshooting common issues
+
+### Developer Resources
+
+- **[Code Walkthrough](./docs/CODE-WALKTHROUGH.md)** — Detailed code walkthrough for presentations and deep dives
+  - Entry points and exports
+  - Core architecture and configuration system
+  - Main ELM class implementation
+  - Training and prediction flows
+  - Key code snippets with line numbers
+
+- **[Data Requirements](./DATA-REQUIREMENTS.md)** — Guide to data requirements for training models
+  - Minimum viable data sizes
+  - Recommendations for better generalization
+  - Data collection strategies
+  - ELM-specific considerations
+
+### Additional Resources
+
+- **[Examples Directory](./examples/)** — Working demo applications
+  - Language classification
+  - Autocomplete chains
+  - News classification
+  - Music genre detection
+  - And more...
+
+- **[Node Examples](./node_examples/)** — Advanced Node.js examples
+  - Two-stage retrieval systems
+  - TF-IDF integration
+  - DeepELM + KernelELM retrieval
+  - Experimental architectures
+
+- **[Legal Information](./LEGAL.md)** — Licensing, patents, and legal notices
+
+### Documentation Quick Links
+
+| Document | Purpose | Audience |
+|----------|---------|----------|
+| [Quick Start Tutorial](./QUICK-START-TUTORIAL.md) | Learn how to use all features | Beginners |
+| [Overview](./docs/ASTERMIND-ELM-OVERVIEW.md) | Understand what AsterMind is | Everyone |
+| [Implementation Models](./docs/IMPLEMENTATION-MODELS.md) | Choose integration approach | Decision makers, developers |
+| [Technical Requirements](./docs/TECHNICAL-REQUIREMENTS.md) | System setup and requirements | DevOps, developers |
+| [Code Walkthrough](./docs/CODE-WALKTHROUGH.md) | Deep dive into code structure | Developers, presenters |
+| [Data Requirements](./DATA-REQUIREMENTS.md) | Training data guidelines | ML practitioners |
+
+---
+
 <a id="releases"></a>
 ## 📦 Releases
 
-### v2.1.0 — 2025-09-19
+### v2.1.0 — 2026-09-19
 **New features:** Kernel ELM, Nyström whitening, OnlineELM, DeepELM, Worker adapter, EmbeddingStore 2.0, activations linear/gelu, config split.  
 **Fixes:** Xavier init, encoder guards, dropout scaling.  
 **Breaking:** Config now `NumericConfig|TextConfig`.

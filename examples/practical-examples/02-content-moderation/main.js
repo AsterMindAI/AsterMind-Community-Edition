@@ -82,7 +82,7 @@
  * ============================================================================
  */
 
-// © 2025 AsterMind LLC – All Rights Reserved.
+// © 2026 AsterMind AI Co. – All Rights Reserved.
 // Patent Pending US 63/897,713
 
 const { ELM, UniversalEncoder } = window.astermind;

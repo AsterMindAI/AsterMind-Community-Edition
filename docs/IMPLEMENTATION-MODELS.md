@@ -195,7 +195,7 @@ npm run dev:news        # News classification
 
 ### What It Is
 
-Professional services where AsterMind LLC works directly with customers to implement AsterMind ELM in their applications. This includes consulting, custom development, integration assistance, and training.
+Professional services where AsterMind AI Co. works directly with customers to implement AsterMind ELM in their applications. This includes consulting, custom development, integration assistance, and training.
 
 ### Service Offerings
 
@@ -288,7 +288,7 @@ Professional services where AsterMind LLC works directly with customers to imple
 ### Contact for Services
 
 For service engagement inquiries, contact:
-- **Company**: AsterMind LLC
+- **Company**: AsterMind AI Co.
 - **Founder**: Julian Wilkison-Duran
 - **Email**: clockworksyler@gmail.com
 - **GitHub**: https://github.com/infiniteCrank/AsterMind-ELM
@@ -386,7 +386,7 @@ You can combine multiple models:
 
 ### For Service Engagement
 
-1. **Contact AsterMind LLC**: Reach out via email or GitHub
+1. **Contact AsterMind AI Co.**: Reach out via email or GitHub
 
 2. **Schedule consultation**: Discuss your requirements
 
@@ -427,5 +427,5 @@ All three models use the same core library (`@astermind/astermind-elm`), ensurin
 
 ---
 
-*Last updated: 2025-01-16*
+*Last updated: 2026-01-16*
 

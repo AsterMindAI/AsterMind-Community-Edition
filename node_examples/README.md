@@ -159,5 +159,5 @@ npx ts-node --esm node_examples/deepelm-kelm-retrieval.ts \
 Happy hacking!
 
 ## LEGAL
-- © 2025 AsterMind LLC – All Rights Reserved.
+- © 2026 AsterMind AI Co. – All Rights Reserved.
 - Patent Pending US 63/897,713

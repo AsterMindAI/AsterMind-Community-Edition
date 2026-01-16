@@ -488,5 +488,5 @@ The library is designed to be lightweight, fast, and accessible on any modern co
 
 ---
 
-*Last updated: 2025-01-16*
+*Last updated: 2026-01-16*
 

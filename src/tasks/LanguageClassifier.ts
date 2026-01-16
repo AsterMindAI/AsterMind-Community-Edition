@@ -1,4 +1,4 @@
-// © 2025 AsterMind LLC – All Rights Reserved.
+// © 2026 AsterMind AI Co. – All Rights Reserved.
 // Patent Pending US 63/897,713
 // LanguageClassifier.ts — upgraded for new ELM/OnlineELM APIs (with requireEncoder guard)
 

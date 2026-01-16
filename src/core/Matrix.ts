@@ -1,4 +1,4 @@
-// © 2025 AsterMind LLC – All Rights Reserved.
+// © 2026 AsterMind AI Co. – All Rights Reserved.
 // Patent Pending US 63/897,713
 // Matrix.ts — tolerant, safe helpers with dimension checks and stable ops
 
