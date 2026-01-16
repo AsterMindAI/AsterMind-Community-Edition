@@ -1,9 +1,9 @@
 # Legal Notice
 
-## © 2025 AsterMind LLC – All Rights Reserved
+## © 2026 AsterMind AI Co. – All Rights Reserved
 **Patent Pending:** US 63/897,713  
-**Incorporation Date:** October 10, 2025  
-**Company:** AsterMind LLC  
+**Incorporation Date:** October 10, 2026  
+**Company:** AsterMind AI Co.  
 **Founder:** Julian Wilkison-Duran  
 **Contact:** clockworksyler@gmail.com  
 
@@ -12,7 +12,7 @@
 ## Intellectual Property and Patent Statement
 
 This software and all related materials, source code, and documentation are the
-intellectual property of **AsterMind LLC** and its founder **Julian Wilkison-Duran**.
+intellectual property of **AsterMind AI Co.** and its founder **Julian Wilkison-Duran**.
 
 Portions of the technology described herein are subject to U.S. Patent Application
 No. **63/897,713**, titled *"Client-Side Kernel ELM Retrieval System for Energy-Efficient
@@ -33,7 +33,7 @@ This project is distributed under the **MIT License**:
 ```
 MIT License
 
-Copyright (c) 2025 AsterMind LLC
+Copyright (c) 2026 AsterMind AI Co.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -59,7 +59,7 @@ SOFTWARE.
 ## Trademark and Brand
 
 **AsterMind™**, **AsterMind ELM™**, and related marks, logos, and designs are trademarks
-of **AsterMind LLC**. Any unauthorized use of these marks without written consent is
+of **AsterMind AI Corp**. Any unauthorized use of these marks without written consent is
 strictly prohibited.
 
 ---
@@ -68,8 +68,8 @@ strictly prohibited.
 
 This software was created independently by **Julian Wilkison-Duran**, outside of his
 employment with Ippon Technology (USA), Inc., and without the use of company resources
-or confidential information. All rights to this invention are retained by AsterMind LLC.
+or confidential information. All rights to this invention are retained by AsterMind AI Corp.
 
 ---
 
-*Document Version: 1.0 – October 2025*
+*Document Version: 1.0 – October 2026*

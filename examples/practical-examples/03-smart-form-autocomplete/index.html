@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Form Autocomplete - AsterMind ELM</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        
+        .explanation {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 1.5rem;
+            margin: 0;
+        }
+        
+        .explanation h2 {
+            color: #667eea;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .explanation p {
+            color: #374151;
+            line-height: 1.7;
+            margin-bottom: 1rem;
+        }
+        
+        .explanation p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .explanation strong {
+            color: #667eea;
+        }
+        
+        .form-section {
+            padding: 2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .input-wrapper {
+            position: relative;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 10;
+            display: none;
+        }
+        
+        .suggestions.show {
+            display: block;
+        }
+        
+        .suggestion-item {
+            padding: 0.75rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f4f6;
+            transition: background 0.2s;
+        }
+        
+        .suggestion-item:hover,
+        .suggestion-item.selected {
+            background: #f3f4f6;
+        }
+        
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+        
+        .suggestion-text {
+            font-weight: 500;
+            color: #1f2937;
+        }
+        
+        .suggestion-match {
+            color: #667eea;
+        }
+        
+        .suggestion-hint {
+            font-size: 0.85rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+        
+        .form-submit {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .form-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .form-submit:active {
+            transform: translateY(0);
+        }
+        
+        .demo-section {
+            padding: 2rem;
+            background: #f9fafb;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .demo-title {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #374151;
+        }
+        
+        .demo-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        
+        .demo-btn {
+            padding: 0.5rem 1rem;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        
+        .demo-btn:hover {
+            background: #f3f4f6;
+            border-color: #9ca3af;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✨ Smart Form Autocomplete</h1>
+            <p>Intelligent form completion powered by AsterMind ELM. Learns from user patterns.</p>
+        </div>
+        
+        <div class="explanation">
+            <h2>What This Demo Does</h2>
+            <p>This demo shows <strong>intelligent autocomplete</strong> that learns from user input patterns. As you type in form fields (name, email, company, job title), it suggests completions based on what you've entered before. It understands partial input and provides context-aware suggestions, not just prefix matching.</p>
+            
+            <h2>Why AsterMind Makes This Possible</h2>
+            <p><strong>Hard-coded logic can't do this:</strong> Traditional autocomplete uses static dropdown lists or simple prefix matching. If you type "Joh", it might suggest "John" but won't understand that "john.smith@company.com" is related. You'd need to maintain separate lists for names, emails, companies, and manually create relationships. It can't learn new patterns or adapt to individual users.</p>
+            
+            <p><strong>AsterMind enables:</strong> The AutoComplete model learns patterns from historical input data. It understands that "john@tech.com" and "John Smith" are related, even though they're different fields. The model learns semantic relationships between inputs, so typing "Tech" in company field might suggest "tech@company.com" in email field. It adapts to each user's patterns over time, learning their specific email domains, company names, and job titles - something impossible with static rules.</p>
+        </div>
+        
+        <div class="form-section">
+            <form id="demoForm">
+                <div class="form-group">
+                    <label class="form-label" for="nameInput">Full Name</label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="text" 
+                            id="nameInput" 
+                            class="form-input" 
+                            placeholder="Start typing your name..."
+                            autocomplete="off"
+                        />
+                        <div class="suggestions" id="nameSuggestions"></div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="emailInput">Email Address</label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="email" 
+                            id="emailInput" 
+                            class="form-input" 
+                            placeholder="Start typing your email..."
+                            autocomplete="off"
+                        />
+                        <div class="suggestions" id="emailSuggestions"></div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="companyInput">Company</label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="text" 
+                            id="companyInput" 
+                            class="form-input" 
+                            placeholder="Start typing company name..."
+                            autocomplete="off"
+                        />
+                        <div class="suggestions" id="companySuggestions"></div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="jobInput">Job Title</label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="text" 
+                            id="jobInput" 
+                            class="form-input" 
+                            placeholder="Start typing job title..."
+                            autocomplete="off"
+                        />
+                        <div class="suggestions" id="jobSuggestions"></div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="form-submit">Submit Form</button>
+            </form>
+        </div>
+        
+        <div class="demo-section">
+            <div class="demo-title">Try these examples:</div>
+            <div class="demo-buttons">
+                <button class="demo-btn" data-field="name" data-value="John">John</button>
+                <button class="demo-btn" data-field="name" data-value="Sarah">Sarah</button>
+                <button class="demo-btn" data-field="email" data-value="john@">john@</button>
+                <button class="demo-btn" data-field="email" data-value="sarah@">sarah@</button>
+                <button class="demo-btn" data-field="company" data-value="Tech">Tech</button>
+                <button class="demo-btn" data-field="company" data-value="Design">Design</button>
+                <button class="demo-btn" data-field="job" data-value="Developer">Developer</button>
+                <button class="demo-btn" data-field="job" data-value="Manager">Manager</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@astermind/astermind-elm/dist/astermind.umd.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
+
+
+
+

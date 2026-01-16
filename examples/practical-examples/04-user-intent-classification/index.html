@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Intent Classification - AsterMind ELM</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 2rem;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        
+        .explanation {
+            background: #fef2f2;
+            border-left: 4px solid #f5576c;
+            padding: 1.5rem;
+            margin: 0;
+        }
+        
+        .explanation h2 {
+            color: #f5576c;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .explanation p {
+            color: #374151;
+            line-height: 1.7;
+            margin-bottom: 1rem;
+        }
+        
+        .explanation p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .explanation strong {
+            color: #f5576c;
+        }
+        
+        .input-section {
+            padding: 2rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .input-box {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 100px;
+            transition: border-color 0.3s;
+        }
+        
+        .input-box:focus {
+            outline: none;
+            border-color: #f5576c;
+        }
+        
+        .results-section {
+            padding: 2rem;
+        }
+        
+        .intent-card {
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border-left: 4px solid;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .intent-card:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .intent-card.purchase {
+            background: #dbeafe;
+            border-color: #3b82f6;
+        }
+        
+        .intent-card.support {
+            background: #fef3c7;
+            border-color: #f59e0b;
+        }
+        
+        .intent-card.inquiry {
+            background: #d1fae5;
+            border-color: #10b981;
+        }
+        
+        .intent-card.complaint {
+            background: #fee2e2;
+            border-color: #ef4444;
+        }
+        
+        .intent-card.compliment {
+            background: #fce7f3;
+            border-color: #ec4899;
+        }
+        
+        .intent-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+        
+        .intent-label {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .intent-score {
+            padding: 0.5rem 1rem;
+            background: rgba(255,255,255,0.7);
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        .intent-actions {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .action-btn {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            margin-right: 0.5rem;
+            background: white;
+            border: 1px solid rgba(0,0,0,0.2);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        
+        .action-btn:hover {
+            background: #f3f4f6;
+            transform: translateY(-1px);
+        }
+        
+        .all-intents {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .intent-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        
+        .intent-bar-label {
+            width: 120px;
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+        
+        .intent-bar-track {
+            flex: 1;
+            height: 24px;
+            background: #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 0 1rem;
+            position: relative;
+        }
+        
+        .intent-bar-fill {
+            height: 100%;
+            border-radius: 12px;
+            transition: width 0.3s;
+        }
+        
+        .intent-bar-value {
+            width: 60px;
+            text-align: right;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .examples {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .example-btn {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            margin: 0.25rem;
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        
+        .example-btn:hover {
+            background: #e5e7eb;
+            border-color: #9ca3af;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 User Intent Classification</h1>
+            <p>Understand what users want to do. Route requests, prioritize support, personalize experiences.</p>
+        </div>
+        
+        <div class="explanation">
+            <h2>What This Demo Does</h2>
+            <p>This demo classifies user messages into intents: <strong>Purchase</strong>, <strong>Support</strong>, <strong>Inquiry</strong>, <strong>Complaint</strong>, or <strong>Compliment</strong>. It understands the semantic meaning behind messages, so "I need help with my account" and "Can you assist me?" both classify as Support, even though they use different words. This enables automatic routing, prioritization, and personalized responses.</p>
+            
+            <h2>Why AsterMind Makes This Possible</h2>
+            <p><strong>Hard-coded logic can't do this:</strong> You'd need keyword lists for each intent: "buy", "purchase", "order" for Purchase; "help", "support", "assist" for Support. But "I want this" is Purchase while "I want help" is Support - same phrase, different intent. You'd need thousands of rules, handle synonyms, context, and still fail on edge cases. "Can I get a refund?" could be Purchase (buying refund) or Complaint (requesting refund) depending on context.</p>
+            
+            <p><strong>AsterMind enables:</strong> The ELM classifier learns semantic patterns from examples. It understands that "I'd like to purchase" and "Can I buy" express the same intent (Purchase) despite different wording. It recognizes context: "I need help buying" is Support, while "I want to buy" is Purchase. The model learns nuanced distinctions that keyword matching can't capture, enabling accurate intent classification that adapts to your specific use case and language patterns.</p>
+        </div>
+        
+        <div class="input-section">
+            <textarea 
+                id="userInput" 
+                class="input-box" 
+                placeholder="Enter user message or query to classify intent..."
+            ></textarea>
+        </div>
+        
+        <div class="results-section" id="resultsSection">
+            <div class="loading">Ready! Enter text above to classify intent...</div>
+        </div>
+        
+        <div class="input-section examples">
+            <strong>Try these examples:</strong><br>
+            <button class="example-btn" data-text="I want to buy this product">Purchase Intent</button>
+            <button class="example-btn" data-text="How do I reset my password?">Support Request</button>
+            <button class="example-btn" data-text="What are your business hours?">Inquiry</button>
+            <button class="example-btn" data-text="This product is broken and I want a refund">Complaint</button>
+            <button class="example-btn" data-text="I love your service, thank you!">Compliment</button>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@astermind/astermind-elm/dist/astermind.umd.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
+
+
+
+

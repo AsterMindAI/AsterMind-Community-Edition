@@ -13,7 +13,7 @@ const tsMain = typescript({
     clean: true,
     tsconfigOverride: {
         // keep tests/demos out of declaration emit
-        exclude: ['node_examples', 'examples', 'tests', 'public'],
+        exclude: ['node_examples', 'examples', 'tests', 'public', '**/examples/**', 'src/**/examples/**', '**/scripts/**', 'src/**/scripts/**'],
         compilerOptions: {
             rootDir: 'src',
             declaration: true,
@@ -28,7 +28,7 @@ const tsWorker = typescript({
     tsconfig: './tsconfig.json',
     clean: true,
     tsconfigOverride: {
-        exclude: ['node_examples', 'examples', 'tests', 'public'],
+        exclude: ['node_examples', 'examples', 'tests', 'public', '**/examples/**', 'src/**/examples/**', '**/scripts/**', 'src/**/scripts/**'],
         compilerOptions: {
             rootDir: 'src',
             declaration: false,
@@ -57,7 +57,7 @@ module.exports = [
     {
         input: 'src/core/ELMWorker.ts',
         output: {
-            file: 'dist/core/ELMWorker.js',
+            file: 'dist/workers/elm-worker.js',
             format: 'esm',
             sourcemap: true,
         },

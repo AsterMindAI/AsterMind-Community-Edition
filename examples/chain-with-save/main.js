@@ -1,4 +1,4 @@
-// © 2025 AsterMind LLC – All Rights Reserved.
+// © 2026 AsterMind AI Co. – All Rights Reserved.
 // Patent Pending US 63/897,713
 /* ELM Showcase 2.0 — main thread
    - Orchestrates UI and a Web Worker that trains/evaluates

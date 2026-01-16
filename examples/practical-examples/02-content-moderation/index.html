@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Moderation - AsterMind ELM</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 2rem;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        
+        .explanation {
+            background: #fef2f2;
+            border-left: 4px solid #f5576c;
+            padding: 1.5rem;
+            margin: 0;
+        }
+        
+        .explanation h2 {
+            color: #f5576c;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .explanation p {
+            color: #374151;
+            line-height: 1.7;
+            margin-bottom: 1rem;
+        }
+        
+        .explanation p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .explanation strong {
+            color: #f5576c;
+        }
+        
+        .input-section {
+            padding: 2rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .text-area {
+            width: 100%;
+            min-height: 150px;
+            padding: 1rem;
+            font-size: 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+        
+        .text-area:focus {
+            outline: none;
+            border-color: #f5576c;
+        }
+        
+        .result-section {
+            padding: 2rem;
+        }
+        
+        .result-card {
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        
+        .result-card.safe {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+        }
+        
+        .result-card.warning {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .result-card.unsafe {
+            background: #fee2e2;
+            border-left: 4px solid #ef4444;
+        }
+        
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        
+        .result-header.safe { color: #065f46; }
+        .result-header.warning { color: #92400e; }
+        .result-header.unsafe { color: #991b1b; }
+        
+        .confidence-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            transition: width 0.3s;
+        }
+        
+        .confidence-fill.safe { background: #10b981; }
+        .confidence-fill.warning { background: #f59e0b; }
+        .confidence-fill.unsafe { background: #ef4444; }
+        
+        .details {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            font-size: 0.9rem;
+        }
+        
+        .detail-label {
+            color: #6b7280;
+        }
+        
+        .detail-value {
+            font-weight: 600;
+        }
+        
+        .examples {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .example-btn {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            margin: 0.25rem;
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        
+        .example-btn:hover {
+            background: #e5e7eb;
+            border-color: #9ca3af;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ Content Moderation</h1>
+            <p>Real-time toxicity detection powered by AsterMind ELM. Privacy-first, on-device moderation.</p>
+        </div>
+        
+        <div class="explanation">
+            <h2>What This Demo Does</h2>
+            <p>This demo classifies text as <strong>Safe</strong>, <strong>Warning</strong>, or <strong>Unsafe</strong> based on toxicity and appropriateness. It learns from your feedback - give it a thumbs up/down and it retrains automatically, getting smarter over time. The model understands context, not just keywords, so it can distinguish between "I hate this product" (warning) and "I hate you" (unsafe).</p>
+            
+            <h2>Why AsterMind Makes This Possible</h2>
+            <p><strong>Hard-coded logic can't do this:</strong> You'd need to maintain massive blacklists of profanity, create complex regex patterns for every variation, and still miss context. "This is fucking amazing" vs "fuck you" - same word, different intent. Hard-coded rules can't understand sarcasm, context, or cultural nuances. You'd need thousands of if-statements and still fail on edge cases.</p>
+            
+            <p><strong>AsterMind enables:</strong> The ELM classifier learns patterns from examples, understanding semantic relationships and context. It can distinguish between negative feedback and personal attacks, recognize profanity in context, and adapt to your specific moderation needs through feedback. The model learns that "stupid product" (warning) is different from "you're stupid" (unsafe) - something impossible with keyword matching. Plus, it improves with each feedback, learning your specific standards automatically.</p>
+        </div>
+        
+        <div class="input-section">
+            <textarea 
+                id="contentInput" 
+                class="text-area" 
+                placeholder="Enter text to check for inappropriate content..."
+            ></textarea>
+        </div>
+        
+        <div class="result-section" id="resultSection">
+            <div class="loading">Ready! Enter text above to check...</div>
+        </div>
+        
+        <div class="input-section examples">
+            <strong>Try these examples:</strong><br>
+            <button class="example-btn" data-text="This is a great product!">Safe Example</button>
+            <button class="example-btn" data-text="I hate this stupid website">Warning Example</button>
+            <button class="example-btn" data-text="You are an idiot and should go away">Unsafe Example</button>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@astermind/astermind-elm/dist/astermind.umd.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
+
+
+
+

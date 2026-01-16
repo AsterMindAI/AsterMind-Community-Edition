@@ -1,4 +1,4 @@
-// © 2025 AsterMind LLC – All Rights Reserved.
+// © 2026 AsterMind AI Co. – All Rights Reserved.
 // Patent Pending US 63/897,713
 /* =========================================================
    elm-demo.js — UI/App script for the ELM primer deck

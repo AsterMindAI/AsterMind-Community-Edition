@@ -15,5 +15,5 @@ This version avoids Web Workers and loads your UMD exactly like your working dem
 Your previous error came from the worker trying to `importScripts` the UMD (origin/CORS/export issues). Here we call `window.astermind` directly, like your working reference demo, so those issues disappear.
 
 ## LEGAL
-- © 2025 AsterMind LLC – All Rights Reserved.
+- © 2026 AsterMind AI Co. – All Rights Reserved.
 - Patent Pending US 63/897,713

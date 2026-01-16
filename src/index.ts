@@ -1,4 +1,4 @@
-// © 2025 AsterMind LLC – All Rights Reserved.
+// © 2026 AsterMind AI Co. – All Rights Reserved.
 // Patent Pending US 63/897,713
 /**
  * AsterMind-ELM — Public API Surface
@@ -61,3 +61,15 @@ export * from "./utils/Augment";
 
 /* ------------------------------ UI ------------------------------- */
 export * from "./ui/components/BindUI";
+
+/* ------------------------- Advanced ELM Variants ------------------------- */
+// 21 advanced ELM variants (previously Premium features, now free!)
+export * from "./elm/index";
+
+/* ------------------------- Pro Features ------------------------- */
+// RAG, Reranking, Summarization, Information Flow Analysis (previously Pro features, now free!)
+export * from "./pro/index";
+
+/* ------------------------- Synthetic Data Generation ------------------------- */
+// OmegaSynth - Label-conditioned synthetic data generator (previously Synth features, now free!)
+export * from "./synth/index";

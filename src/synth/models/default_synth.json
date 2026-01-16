@@ -1,0 +1,87 @@
+{
+  "version": "1.0.0",
+  "labels": {
+    "first_name": [
+      "James", "Mary", "John", "Patricia", "Robert", "Jennifer", "Michael", "Linda",
+      "William", "Elizabeth", "David", "Barbara", "Richard", "Susan", "Joseph", "Jessica",
+      "Thomas", "Sarah", "Charles", "Karen", "Christopher", "Nancy", "Daniel", "Lisa",
+      "Matthew", "Betty", "Anthony", "Margaret", "Mark", "Sandra", "Donald", "Ashley",
+      "Steven", "Kimberly", "Paul", "Emily", "Andrew", "Donna", "Joshua", "Michelle"
+    ],
+    "last_name": [
+      "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis",
+      "Rodriguez", "Martinez", "Hernandez", "Lopez", "Wilson", "Anderson", "Thomas", "Taylor",
+      "Moore", "Jackson", "Martin", "Lee", "Thompson", "White", "Harris", "Sanchez",
+      "Clark", "Ramirez", "Lewis", "Robinson", "Walker", "Young", "Allen", "King"
+    ],
+    "phone_number": [
+      "555-0100", "555-0101", "555-0102", "555-0103", "555-0104", "555-0105",
+      "555-0200", "555-0201", "555-0202", "555-0203", "555-0204", "555-0205",
+      "555-0300", "555-0301", "555-0302", "555-0303", "555-0304", "555-0305",
+      "(555) 123-4567", "(555) 234-5678", "(555) 345-6789", "(555) 456-7890"
+    ],
+    "email": [
+      "user@example.com", "admin@example.com", "test@example.com", "info@example.com",
+      "contact@example.com", "support@example.com", "sales@example.com", "help@example.com",
+      "john.doe@email.com", "jane.smith@email.com", "bob.jones@email.com", "alice.brown@email.com"
+    ],
+    "street_address": [
+      "123 Main St", "456 Oak Ave", "789 Elm St", "321 Pine Rd", "654 Maple Dr",
+      "987 Cedar Ln", "147 Birch Way", "258 Spruce Ct", "369 Willow St", "741 Ash Ave"
+    ],
+    "city": [
+      "New York", "Los Angeles", "Chicago", "Houston", "Phoenix", "Philadelphia",
+      "San Antonio", "San Diego", "Dallas", "San Jose", "Austin", "Jacksonville",
+      "San Francisco", "Indianapolis", "Columbus", "Fort Worth", "Charlotte", "Seattle"
+    ],
+    "state": [
+      "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut",
+      "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa",
+      "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan"
+    ],
+    "country": [
+      "United States", "Canada", "United Kingdom", "Australia", "Germany", "France",
+      "Italy", "Spain", "Japan", "China", "India", "Brazil", "Mexico", "Netherlands"
+    ],
+    "company_name": [
+      "Acme Corp", "Tech Solutions", "Global Industries", "Innovation Labs", "Digital Systems",
+      "Future Enterprises", "Smart Technologies", "Advanced Solutions", "Prime Services",
+      "Elite Group", "Mega Corp", "Super Industries", "Ultra Systems", "Pro Services"
+    ],
+    "job_title": [
+      "Software Engineer", "Data Scientist", "Product Manager", "Designer", "Marketing Manager",
+      "Sales Representative", "Accountant", "HR Manager", "Operations Manager", "CEO",
+      "CTO", "CFO", "Project Manager", "Business Analyst", "Consultant", "Developer"
+    ],
+    "product_name": [
+      "Widget Pro", "Super Tool", "Magic Box", "Power Device", "Smart Gadget",
+      "Ultra Widget", "Mega Tool", "Elite Box", "Prime Device", "Advanced Gadget",
+      "Premium Widget", "Deluxe Tool", "Professional Box", "Enterprise Device"
+    ],
+    "color": [
+      "red", "blue", "green", "yellow", "orange", "purple", "pink", "brown",
+      "black", "white", "gray", "grey", "navy", "teal", "maroon", "lime"
+    ],
+    "uuid": [
+      "550e8400-e29b-41d4-a716-446655440000", "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+      "6ba7b811-9dad-11d1-80b4-00c04fd430c8", "6ba7b812-9dad-11d1-80b4-00c04fd430c8"
+    ],
+    "date": [
+      "2024-01-15", "2024-02-20", "2024-03-10", "2024-04-05", "2024-05-12",
+      "2024-06-18", "2024-07-22", "2024-08-30", "2024-09-14", "2024-10-25"
+    ],
+    "credit_card_type": [
+      "Visa", "Mastercard", "American Express", "Discover", "JCB", "Diners Club"
+    ],
+    "device_type": [
+      "iPhone", "Android", "iPad", "Tablet", "Laptop", "Desktop", "Smartwatch",
+      "Smart TV", "Gaming Console", "Router", "Printer", "Camera"
+    ]
+  }
+}
+
+
+
+
+
+

@@ -1,4 +1,4 @@
-// © 2025 AsterMind LLC – All Rights Reserved.
+// © 2026 AsterMind AI Co. – All Rights Reserved.
 // Patent Pending US 63/897,713
 // EmbeddingStore.ts — Powerful in-memory vector store with fast KNN, thresholds, and JSON I/O
 
