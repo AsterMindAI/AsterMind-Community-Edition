@@ -29,15 +29,6 @@ AsterMind modernizes ELM with kernels, online learning, workerized training, rob
 
 **Major Release:** All features from Elm, Pro, Premium, and Synth are now free and open-source!
 
-- **21 Advanced ELM Variants** — Previously Premium-only, now free:
-  - Adaptive Online ELM, Forgetting Online ELM, Hierarchical ELM
-  - Attention-Enhanced ELM, Variational ELM, Time-Series ELM
-  - Transfer Learning ELM, Graph ELM, Graph Kernel ELM
-  - Adaptive Kernel ELM, Sparse Kernel ELM, Ensemble Kernel ELM
-  - Deep Kernel ELM, Robust Kernel ELM, ELM-KELM Cascade
-  - String Kernel ELM, Convolutional ELM, Recurrent ELM
-  - Fuzzy ELM, Quantum-Inspired ELM, Tensor Kernel ELM
-
 - **Pro Features** — RAG, Reranking, Summarization, Information Flow Analysis (now free!)
 
 - **OmegaSynth** — Label-conditioned synthetic data generation (now free!)
@@ -133,16 +124,6 @@ AsterMind is designed for:
 - ✅ Lightweight deployment (ESM + UMD)  
 - ✅ Retrieval and classification utilities  
 - ✅ Zero server/GPU — private, on-device ML
-
-### Advanced ELM Variants (21 variants, now free!)
-- ✅ Adaptive Online ELM, Forgetting Online ELM
-- ✅ Hierarchical ELM, Attention-Enhanced ELM, Variational ELM
-- ✅ Time-Series ELM, Transfer Learning ELM
-- ✅ Graph ELM, Graph Kernel ELM
-- ✅ Adaptive/Sparse/Ensemble/Deep/Robust Kernel ELM
-- ✅ ELM-KELM Cascade, String Kernel ELM
-- ✅ Convolutional ELM, Recurrent ELM
-- ✅ Fuzzy ELM, Quantum-Inspired ELM, Tensor Kernel ELM
 
 ### Pro Features (now free!)
 - ✅ RAG Pipeline (Retrieval-Augmented Generation)
@@ -259,7 +240,7 @@ yarn add @astermind/astermind-community
 <script src="https://unpkg.com/@astermind/astermind-community/dist/astermind.umd.js"></script>
 
 <script>
-  const { ELM, KernelELM, AdaptiveOnlineELM, OmegaSynth } = window.astermind;
+  const { ELM, KernelELM, OmegaSynth } = window.astermind;
 </script>
 ```
 
@@ -290,30 +271,6 @@ const results = elm.predict("bonjour");
 console.log(results);
 ```
 
-**Advanced ELM Variants (Now Free!):**
-
-```ts
-import { AdaptiveOnlineELM, HierarchicalELM, TimeSeriesELM } from "@astermind/astermind-community";
-
-// Adaptive Online ELM - dynamically adjusts hidden units
-const adaptive = new AdaptiveOnlineELM({
-  categories: ['class1', 'class2'],
-  initialHiddenUnits: 128
-});
-
-// Hierarchical ELM - multi-level classification
-const hierarchical = new HierarchicalELM({
-  hierarchy: { 'root': ['animal', 'plant'], 'animal': ['mammal', 'bird'] },
-  rootCategories: ['root']
-});
-
-// Time-Series ELM - specialized for sequential data
-const timeSeries = new TimeSeriesELM({
-  categories: ['trend_up', 'trend_down', 'stable'],
-  sequenceLength: 10
-});
-```
-
 **Synthetic Data Generation (Now Free!):**
 
 ```ts
@@ -330,7 +287,7 @@ const generated = await synth.generate('label', 10);
 
 **CommonJS / Node:**
 ```js
-const { ELM, AdaptiveOnlineELM, OmegaSynth } = require("@astermind/astermind-community");
+const { ELM, OmegaSynth } = require("@astermind/astermind-community");
 ```
 
 **Kernel ELM / DeepELM:** see above examples.

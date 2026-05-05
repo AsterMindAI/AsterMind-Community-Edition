@@ -62,10 +62,6 @@ export * from "./utils/Augment";
 /* ------------------------------ UI ------------------------------- */
 export * from "./ui/components/BindUI";
 
-/* ------------------------- Advanced ELM Variants ------------------------- */
-// 21 advanced ELM variants (previously Premium features, now free!)
-export * from "./elm/index";
-
 /* ------------------------- Pro Features ------------------------- */
 // RAG, Reranking, Summarization, Information Flow Analysis (previously Pro features, now free!)
 export * from "./pro/index";
