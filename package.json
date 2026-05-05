@@ -1,7 +1,7 @@
 {
   "name": "@astermind/astermind-community",
-  "version": "3.0.0",
-  "description": "AsterMind Community - Complete ELM library with 21+ advanced variants, Pro features (RAG, reranking, summarization), and OmegaSynth synthetic data generation. Free and open-source. Combines all features from AsterMind-ELM, AsterMind-Pro, AsterMind-Premium, and AsterMind-Synth.",
+  "version": "4.0.0",
+  "description": "Tiny, on-device machine learning for the web. TypeScript Extreme Learning Machine library — train classifiers in the browser in milliseconds, no GPU, no server. Bundles core ELM models, kernel/online/deep variants, retrieval and reranking (Pro features), and OmegaSynth synthetic-data generation. MIT licensed.",
   "license": "MIT",
   "type": "module",
   "main": "dist/astermind.umd.js",
@@ -52,12 +52,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/infiniteCrank/AsterMind-Community.git"
+    "url": "git+https://github.com/AsterMindAI/AsterMind-Community-Edition.git"
   },
   "bugs": {
-    "url": "https://github.com/infiniteCrank/AsterMind-Community/issues"
+    "url": "https://github.com/AsterMindAI/AsterMind-Community-Edition/issues"
   },
-  "homepage": "https://github.com/infiniteCrank/AsterMind-Community#readme",
+  "homepage": "https://github.com/AsterMindAI/AsterMind-Community-Edition#readme",
   "keywords": [
     "elm",
     "extreme-learning-machine",
