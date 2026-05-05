@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Lesson Template — AsterMind</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="../_shared/lesson.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <h1>Lesson Template — Replace this title</h1>
+        <div class="nav">
+          <button id="prevBtn">◀ Back</button>
+          <div class="chip" id="slideLabel">Slide 1 / 1</div>
+          <button id="nextBtn">Next ▶</button>
+          <button id="notesToggle" title="Show / hide speaker notes">Notes</button>
+        </div>
+      </header>
+
+      <main>
+        <!-- =================================================================
+             SLIDE 1 — Welcome
+             Each <section class="slide"> becomes one deck slide.
+             The id must match the corresponding entry in slides.json.
+             ================================================================= -->
+        <section class="slide" id="welcome">
+          <h2>Welcome to your lesson</h2>
+          <p>
+            This is the AsterMind lesson template. Copy this directory to
+            <code>examples/lessons/L&lt;NN&gt;-&lt;slug&gt;/</code>, edit the
+            five files, and you have a new lesson.
+          </p>
+          <p>The five files in every lesson:</p>
+          <ul>
+            <li><code>index.html</code> — the deck shell (this file)</li>
+            <li><code>slides.json</code> — slide list as data</li>
+            <li><code>live-demo.js</code> — interactive demos wired to slides</li>
+            <li><code>speaker-notes.js</code> — what to emphasize per slide</li>
+            <li><code>README.md</code> — pitch, prereqs, learning outcomes, you-try</li>
+          </ul>
+          <p>Use the <strong>Next</strong> button or arrow keys to advance.</p>
+        </section>
+
+        <!-- =================================================================
+             SLIDE 2 — How to add a slide
+             ================================================================= -->
+        <section class="slide" id="how-to-add-slides">
+          <h2>How to add a slide</h2>
+          <p>Three places to edit, in any order:</p>
+          <pre><code>// 1. index.html — add a section
+&lt;section class="slide" id="my-new-slide"&gt;
+  &lt;h2&gt;My new slide&lt;/h2&gt;
+&lt;/section&gt;
+
+// 2. slides.json — add the slide to the order
+{ "id": "my-new-slide", "title": "My new slide" }
+
+// 3. speaker-notes.js — add notes (optional)
+"my-new-slide": { left: "...", right: "..." }</code></pre>
+          <p>
+            If you forget to add the slide to <code>slides.json</code>, the
+            deck falls back to DOM order. If you forget speaker notes, the
+            slide just won't have any. Nothing crashes.
+          </p>
+        </section>
+
+        <!-- =================================================================
+             SLIDE 3 — Live demo + you-try
+             The 'demo' field in slides.json points at the function name in
+             live-demo.js that will run when this slide is shown.
+             ================================================================= -->
+        <section class="slide" id="live-demo-example">
+          <h2>Live demos and "you try" blocks</h2>
+          <p>
+            Lessons should have at least one interactive moment. Here's the
+            simplest possible one:
+          </p>
+
+          <div class="demo">
+            <button id="demoButton">Click me</button>
+            <div class="demo-output" id="demoOutput">(output appears here)</div>
+          </div>
+
+          <div class="you-try">
+            <h3>You try</h3>
+            <ol>
+              <li>Click the button a few times. What changes?</li>
+              <li>
+                Open <code>live-demo.js</code> and find the
+                <code>helloDemo</code> function. Change one number. Reload.
+              </li>
+              <li>Add a third action and wire it up.</li>
+            </ol>
+          </div>
+        </section>
+      </main>
+
+      <div class="footerBar">
+        <div class="progress"><div class="bar" id="progressBar"></div></div>
+      </div>
+    </div>
+
+    <script src="speaker-notes.js"></script>
+    <script src="live-demo.js"></script>
+    <script src="../_shared/lesson-deck.js"></script>
+  </body>
+</html>

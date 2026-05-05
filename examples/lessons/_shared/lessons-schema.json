@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://astermind.ai/schemas/lessons.json",
+  "title": "AsterMind Lesson — slides.json",
+  "description": "Schema for the slides.json file in every lesson under examples/lessons/L*.",
+  "type": "array",
+  "minItems": 1,
+  "items": {
+    "type": "object",
+    "required": ["id", "title"],
+    "additionalProperties": false,
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*$",
+        "description": "Stable identifier; must match the section element's id attribute in index.html."
+      },
+      "title": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Human-readable title shown in the deck."
+      },
+      "stage": {
+        "type": "string",
+        "description": "Optional grouping or animation stage hint (e.g. 'overview', 'demo', 'cta')."
+      },
+      "body": {
+        "type": "string",
+        "description": "Optional inline HTML body. Most lessons leave this empty and put rich content directly in index.html."
+      },
+      "demo": {
+        "type": "string",
+        "description": "Optional name of an exported function in live-demo.js to run when this slide is shown."
+      },
+      "notes_id": {
+        "type": "string",
+        "description": "Optional override for which key in speaker-notes.js to look up. Defaults to id."
+      }
+    }
+  }
+}

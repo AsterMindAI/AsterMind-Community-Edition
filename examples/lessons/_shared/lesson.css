@@ -1,0 +1,283 @@
+/* ==========================================================================
+   AsterMind Lesson Deck — Shared Stylesheet
+   --------------------------------------------------------------------------
+   Used by every lesson under examples/lessons/L*. Distilled from the original
+   elm-explination demo. Each lesson can add its own per-slide styles in its
+   own <style> block; this file owns the deck shell and tokens.
+   ========================================================================== */
+
+/* === Design tokens ====================================================== */
+:root {
+  --bg: #050c1f;
+  --panel: #0b1633;
+  --ink: #e5efff;
+  --muted: #a7b8e8;
+  --accent: #5ad1ff;
+  --good: #6ee7a2;
+  --warn: #facc15;
+  --bad: #fb7185;
+  --chip: #0c1a3d;
+  --chip-border: #203a7c;
+  --header-h: 64px;
+  --radius: 12px;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* === Resets ============================================================= */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  background: radial-gradient(1200px 700px at 50% -200px, #0b1633 0%, #050c1f 55%, #020614 100%);
+  min-height: 100vh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* === App shell ========================================================== */
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+header {
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 16px;
+  background: linear-gradient(180deg, #071332 0%, #050c1f 100%);
+  border-bottom: 1px solid #13244f;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.nav {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* === Buttons ============================================================ */
+button {
+  background: #102043;
+  color: var(--ink);
+  border: 1px solid #1f3570;
+  border-radius: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font: inherit;
+  transition: background 0.15s ease;
+}
+
+button:hover {
+  background: #12265a;
+}
+
+button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.chip {
+  background: var(--chip);
+  border: 1px solid var(--chip-border);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* === Main layout ======================================================== */
+main {
+  flex: 1;
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+  grid-template-columns: 1fr;
+  align-items: stretch;
+}
+
+/* === Slide section ====================================================== */
+.slide {
+  display: none;
+  background: var(--panel);
+  border: 1px solid #16285a;
+  border-radius: var(--radius);
+  padding: 28px 32px;
+  box-shadow: var(--shadow);
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+  min-height: 60vh;
+}
+
+.slide.active {
+  display: block;
+}
+
+.slide h2 {
+  margin: 0 0 8px;
+  font-size: 1.6rem;
+  color: var(--accent);
+}
+
+.slide h3 {
+  margin: 18px 0 6px;
+  color: var(--ink);
+}
+
+.slide p,
+.slide li {
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.slide code {
+  background: var(--chip);
+  border: 1px solid var(--chip-border);
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 0.9em;
+  color: var(--ink);
+}
+
+.slide pre {
+  background: #061029;
+  border: 1px solid #16285a;
+  border-radius: 8px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+
+.slide pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+/* === Demo panels (inline interactive widgets) =========================== */
+.demo {
+  margin-top: 18px;
+  padding: 16px;
+  background: #061029;
+  border: 1px dashed var(--chip-border);
+  border-radius: 10px;
+}
+
+.demo-output {
+  margin-top: 10px;
+  font-family: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9rem;
+  color: var(--good);
+  min-height: 1.6em;
+  white-space: pre-wrap;
+}
+
+/* === You-try block ====================================================== */
+.you-try {
+  margin-top: 24px;
+  padding: 16px 18px;
+  background: rgba(250, 204, 21, 0.06);
+  border: 1px solid rgba(250, 204, 21, 0.4);
+  border-radius: 10px;
+}
+
+.you-try h3 {
+  margin-top: 0;
+  color: var(--warn);
+}
+
+/* === Speaker notes panel ================================================ */
+.notes {
+  display: none;
+  margin: 12px auto 0;
+  max-width: 1100px;
+  background: #07142e;
+  border: 1px solid #16285a;
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  font-size: 0.95rem;
+}
+
+body.show-notes .notes {
+  display: block;
+}
+
+.notes h3 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  color: var(--accent);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.notes-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 800px) {
+  .notes-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* === Footer / progress bar ============================================= */
+.footerBar {
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(0deg, #050c1f 0%, rgba(5, 12, 31, 0) 100%);
+  padding: 10px 16px;
+}
+
+.progress {
+  height: 4px;
+  background: #0e1c40;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress > .bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent), #2a64ff);
+  transition: width 0.2s ease;
+}

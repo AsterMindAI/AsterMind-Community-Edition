@@ -1,0 +1,18 @@
+[
+  {
+    "id": "welcome",
+    "title": "Welcome",
+    "stage": "intro"
+  },
+  {
+    "id": "how-to-add-slides",
+    "title": "How to add a slide",
+    "stage": "meta"
+  },
+  {
+    "id": "live-demo-example",
+    "title": "Live demos and you-try",
+    "stage": "demo",
+    "demo": "helloDemo"
+  }
+]
