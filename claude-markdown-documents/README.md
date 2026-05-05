@@ -15,7 +15,8 @@ Planning and narrative artifacts for the AsterMind-Community repository. Three k
 | # | ADR | Plan | Topic |
 |---|-----|------|-------|
 | 0001 | [Consolidate repo and prepare for interns](./ADRs/ADR-0001-consolidate-repo-and-prepare-for-interns.md) | [Plan 0001](./implementation-plans/IMPL-0001-consolidate-repo-and-prepare-for-interns.md) | Drop the 21 variant scaffolds, reconcile /pro/elm/ duplicates, rewrite docs for newcomers |
-| 0002 | [elm-explination as the canonical lesson model](./ADRs/ADR-0002-elm-explination-as-canonical-lesson-model.md) | [Plan 0002](./implementation-plans/IMPL-0002-canonical-lesson-series.md) | Build a beginner intern curriculum modelled on the existing slide-deck demo |
+| 0002 | [elm-explination as the canonical lesson model](./ADRs/ADR-0002-elm-explination-as-canonical-lesson-model.md) | [Plan 0002](./implementation-plans/IMPL-0002-canonical-lesson-series.md) | Lesson format + A-SMART/TSDR/Backward-Design pedagogy. (Phase 0–1 shipped; later phases superseded by IMPL-0003.) |
+| 0003 | [Summer 2026 curriculum structure](./ADRs/ADR-0003-summer-2026-curriculum-structure.md) | [Plan 0003](./implementation-plans/IMPL-0003-summer-2026-curriculum-execution.md) | 7-lesson curriculum (L00–L06) + per-intern capstone lanes, fitted to the June 1 – July 24 cohort window |
 
 ### Research notebooks
 

@@ -2,7 +2,7 @@
 
 - **Linked ADR:** [ADR-0002](../ADRs/ADR-0002-elm-explination-as-canonical-lesson-model.md)
 - **Depends on:** [IMPL-0001](./IMPL-0001-consolidate-repo-and-prepare-for-interns.md) Phase 1–2 (the cleanup) should land first so lessons don't reference retired classes.
-- **Status:** Proposed
+- **Status:** **Phase 0–1 ✅ Implemented; Phases 2–5 superseded by [IMPL-0003](./IMPL-0003-summer-2026-curriculum-execution.md)** (2026-05-05) — once we knew the cohort and the fixed June 1 – July 24 program window, the 10-lesson sequential hypothesis no longer fit. The curriculum format and pedagogy from ADR-0002 still apply; only the lesson count, sequence, and capstone shape changed.
 - **Owner:** Julian Wilkison-Duran (with intern co-authorship encouraged from L4 onward)
 - **Estimated effort:** 8–12 lessons × 1–2 days each = ~3 weeks elapsed for a complete first pass; first 4 lessons in ~1 week.
 
