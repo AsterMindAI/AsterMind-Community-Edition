@@ -134,7 +134,10 @@ const generated = await synth.generate('product_name', 10);
 |----------|----------------|
 | [Quick Start Tutorial](./docs/QUICK-START-TUTORIAL.md) | Step-by-step walkthrough of all major features |
 | [AsterMind Overview](./docs/ASTERMIND-ELM-OVERVIEW.md) | What AsterMind is, why ELMs |
-| [Code Walkthrough](./docs/CODE-WALKTHROUGH.md) | Architecture tour for developers |
+| [Architecture](./ARCHITECTURE.md) | Repo layout, build pipeline, how a training run flows |
+| [Contributing](./CONTRIBUTING.md) | Local setup, conventions, PR expectations |
+| [Glossary](./GLOSSARY.md) | ML terms defined for non-ML readers |
+| [Code Walkthrough](./docs/CODE-WALKTHROUGH.md) | Detailed code tour with line numbers |
 | [Implementation Models](./docs/IMPLEMENTATION-MODELS.md) | SDK vs standalone vs services |
 | [Technical Requirements](./docs/TECHNICAL-REQUIREMENTS.md) | Browser, Node, OS support |
 | [Data Requirements](./docs/DATA-REQUIREMENTS.md) | Training-data sizing guidance |
