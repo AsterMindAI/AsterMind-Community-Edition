@@ -1,0 +1,10 @@
+[
+  { "id": "welcome", "title": "L04 — Online learning with OnlineELM", "stage": "tell" },
+  { "id": "why-online", "title": "When retraining isn't an option", "stage": "tell" },
+  { "id": "rls-intuition", "title": "RLS, plainly", "stage": "tell" },
+  { "id": "forgetting-factor", "title": "The forgetting factor λ", "stage": "show" },
+  { "id": "the-api", "title": "init + update + predict", "stage": "show" },
+  { "id": "live-stream", "title": "You try — stream, drift, tune", "stage": "do", "demo": "streamDemo" },
+  { "id": "connection-to-capstone", "title": "Why Thomas's capstone needs this", "stage": "review" },
+  { "id": "next-steps", "title": "Next — confidence and kernels", "stage": "review" }
+]

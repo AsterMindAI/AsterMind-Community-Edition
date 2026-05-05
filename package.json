@@ -39,6 +39,7 @@
     "dev:lesson:01": "DEMO=lessons vite --open /L01-js-ts-in-this-repo/",
     "dev:lesson:02": "DEMO=lessons vite --open /L02-first-classifier/",
     "dev:lesson:03": "DEMO=lessons vite --open /L03-embeddings-similarity/",
+    "dev:lesson:04": "DEMO=lessons vite --open /L04-online-learning/",
     "dev:lang": "DEMO=language-awareness-demo vite",
     "dev:search": "DEMO=practical-examples/01-smart-search-filtering vite",
     "dev:moderation": "DEMO=practical-examples/02-content-moderation vite",

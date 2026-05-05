@@ -277,11 +277,12 @@ This syllabus is delivered with the following attachments:
 2. **L01 — JS/TS in this repo** (lesson README)
 3. **L02 — Your first classifier** (lesson README)
 4. **L03 — Embeddings + similarity** (lesson README)
-5. **Capstone STARTER — Thomas (Adaptive RPS)**
-6. **Capstone STARTER — Jarrett (LOTL classifier)**
-7. **Capstone STARTER — Nolan (Infrastructure + RFF)**
-8. **ADR-0003** — the curriculum-structure decision record
-9. **IMPL-0003** — the 8-week execution plan
+5. **L04 — Online learning with `OnlineELM`** (lesson README)
+6. **Capstone STARTER — Thomas (Adaptive RPS)**
+7. **Capstone STARTER — Jarrett (LOTL classifier)**
+8. **Capstone STARTER — Nolan (Infrastructure + RFF)**
+9. **ADR-0003** — the curriculum-structure decision record
+10. **IMPL-0003** — the 8-week execution plan
 
 These attachments are also live in the public repository at <https://github.com/AsterMindAI/AsterMind-Community-Edition>.
 

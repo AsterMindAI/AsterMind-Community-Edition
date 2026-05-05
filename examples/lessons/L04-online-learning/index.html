@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>L04 — Online learning — AsterMind</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="../_shared/lesson.css" />
+    <style>
+      .panel {
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        margin: 0.75rem 0;
+      }
+      .panel h4 {
+        margin: 0 0 0.5rem 0;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: rgba(255, 255, 255, 0.65);
+      }
+
+      .stream-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+      @media (max-width: 720px) {
+        .stream-grid { grid-template-columns: 1fr; }
+      }
+
+      .canvas-wrap {
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 0.5rem;
+        position: relative;
+      }
+      .canvas-wrap canvas { display: block; width: 100%; height: auto; border-radius: 4px; }
+      .canvas-label {
+        position: absolute; top: 0.5rem; left: 0.75rem;
+        font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;
+        color: rgba(255, 255, 255, 0.55);
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      }
+
+      .controls { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin: 0.75rem 0; }
+      .controls button {
+        padding: 0.5rem 1rem; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2);
+        background: #2563eb; color: white; cursor: pointer; font: inherit;
+      }
+      .controls button:hover { background: #1d4ed8; }
+      .controls button:disabled { opacity: 0.5; cursor: not-allowed; }
+      .controls button.warn { background: #ea580c; }
+      .controls button.warn:hover { background: #c2410c; }
+      .controls button.subtle-btn { background: transparent; border-color: rgba(255, 255, 255, 0.25); color: inherit; }
+
+      .lambda-row { display: flex; align-items: center; gap: 0.75rem; margin: 0.5rem 0; }
+      .lambda-row label { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.85rem; }
+      .lambda-row input[type="range"] { flex: 1; }
+      .lambda-val {
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-size: 0.95rem; min-width: 4rem; text-align: right;
+      }
+
+      .stat-row { display: flex; gap: 1rem; flex-wrap: wrap; margin: 0.5rem 0; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+      .stat-row .stat-cell {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 0.4rem 0.7rem; border-radius: 6px;
+      }
+      .stat-row .stat-cell .lbl { font-size: 0.7rem; opacity: 0.6; text-transform: uppercase; }
+      .stat-row .stat-cell .val { font-size: 1.05rem; }
+
+      .legend-row { display: flex; gap: 1rem; flex-wrap: wrap; margin: 0.5rem 0; font-size: 0.8rem; }
+      .legend-row span { display: inline-flex; align-items: center; gap: 0.4rem; }
+      .swatch { display: inline-block; width: 0.75rem; height: 0.75rem; border-radius: 50%; }
+      .swatch.gray { background: #9ca3af; }
+      .swatch.orange { background: #f59e0b; border-radius: 2px; height: 0.4rem; width: 1rem; }
+
+      .observe-area {
+        width: 100%; min-height: 4rem;
+        padding: 0.6rem 0.8rem; font: inherit;
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 6px; color: inherit; resize: vertical;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <h1>L04 — Online learning with <code>OnlineELM</code></h1>
+        <div class="nav">
+          <button id="prevBtn">◀ Back</button>
+          <div class="chip" id="slideLabel">Slide 1 / 8</div>
+          <button id="nextBtn">Next ▶</button>
+          <button id="notesToggle" title="Show / hide speaker notes">Notes</button>
+        </div>
+      </header>
+
+      <main>
+        <!-- ===== TELL ===== -->
+
+        <section class="slide" id="welcome">
+          <h2>What you'll be able to do in 45 minutes</h2>
+          <ol>
+            <li>Stream points into a model one at a time and watch its accuracy climb live.</li>
+            <li>Trigger concept drift and watch the model break, then recover.</li>
+            <li>Tune the forgetting factor and pick the right one for your situation.</li>
+          </ol>
+          <p>This is the lesson Thomas's capstone is built on. Pay extra attention if RPS-with-adaptive-opponent is your lane.</p>
+        </section>
+
+        <section class="slide" id="why-online">
+          <h2>When retraining isn't an option</h2>
+          <p>L02 trained a classifier in one shot: collect data, call <code>train</code>, predict. That works when:</p>
+          <ul>
+            <li>You have all the training data up front, and</li>
+            <li>The world isn't changing under you.</li>
+          </ul>
+          <p>Real systems often don't have either. Examples:</p>
+          <ul>
+            <li>A user types a message; the autocomplete should adapt to their style as they go.</li>
+            <li>Sensors stream data; new readings arrive every second; you can't pause for batch retraining.</li>
+            <li>A game opponent should learn the player's strategy round by round (Thomas's capstone).</li>
+          </ul>
+          <p><strong>Online learning</strong> is the answer: update the model one example (or small batch) at a time, without retraining from scratch.</p>
+        </section>
+
+        <section class="slide" id="rls-intuition">
+          <h2>RLS, plainly</h2>
+          <p>OS-ELM (the algorithm under the hood) uses <strong>Recursive Least Squares</strong> — RLS — to do online updates.</p>
+          <p>The intuition without the algebra: the model keeps two pieces of state instead of just the weights.</p>
+          <ul>
+            <li><code>β</code> — the weights (what the model has learned so far).</li>
+            <li><code>P</code> — a matrix that tracks how confident the model is about each direction in feature space. Roughly: "I've seen this before; small update needed" vs "this is new; pay attention."</li>
+          </ul>
+          <p>When a new example arrives, RLS uses <code>P</code> to figure out how much to nudge <code>β</code> — efficiently, without re-touching all prior examples.</p>
+          <p>You don't need to read the math today. You just need to know that updates are <em>O(1)</em> in the dataset size — they don't get slower as the model sees more data.</p>
+        </section>
+
+        <!-- ===== SHOW ===== -->
+
+        <section class="slide" id="forgetting-factor">
+          <h2>The forgetting factor <code>λ</code></h2>
+          <p>RLS gives equal weight to every past sample by default. That's fine when the world is stable. It's bad when the world changes — old data starts to lie about what the world looks like now.</p>
+          <p><strong>The forgetting factor</strong> <code>λ ∈ (0, 1]</code> exponentially down-weights old samples:</p>
+          <ul>
+            <li><code>λ = 1.0</code> → never forget. Every sample weighs the same forever.</li>
+            <li><code>λ = 0.99</code> → mild forgetting. After 100 samples, the oldest carries ~37% the weight of the newest.</li>
+            <li><code>λ = 0.9</code> → aggressive forgetting. After 10 samples, the oldest carries ~35% weight.</li>
+          </ul>
+          <p>It's a tradeoff:</p>
+          <ul>
+            <li><strong>Lower λ</strong> = adapts faster to change, but accuracy is jumpier when the world is stable (over-fits to recent noise).</li>
+            <li><strong>Higher λ</strong> = stable on stationary data, slow to recover from drift.</li>
+          </ul>
+          <p>You'll feel this tradeoff hands-on in You-Try 3.</p>
+        </section>
+
+        <section class="slide" id="the-api">
+          <h2>init → update → predict</h2>
+          <pre><code>const { OnlineELM } = window.astermind;
+
+const ol = new OnlineELM({
+  inputDim: 2,
+  outputDim: 2,
+  hiddenUnits: 16,
+  forgettingFactor: 0.99,   // lambda
+});
+
+// Step 1: seed batch — RLS needs initial P estimate.
+ol.init(seedX, seedY);
+
+// Step 2: stream new examples one at a time.
+ol.update([[0.7, 0.4]], [[0, 1]]);  // single sample as 1×D / 1×K matrices
+
+// Step 3: predict any time.
+const probs = ol.predictProbaFromVectors([[0.5, 0.5]]);
+// probs === [[0.12, 0.88]]  // softmax-normalized class probabilities</code></pre>
+          <p>Three rules to remember:</p>
+          <ol>
+            <li><code>init</code> requires a small batch (we'll use 4 points) before any <code>update</code> can be called.</li>
+            <li><code>update</code> takes 2D arrays even for single samples — wrap your row in another array.</li>
+            <li><code>predict</code> returns probability rows; use <code>argmax</code> to get a class label.</li>
+          </ol>
+        </section>
+
+        <!-- ===== DO ===== -->
+
+        <section class="slide" id="live-stream">
+          <h2>You-Try — stream, drift, tune</h2>
+
+          <div class="demo">
+            <div class="panel">
+              <h4>The stream</h4>
+              <div class="stream-grid">
+                <div class="canvas-wrap">
+                  <div class="canvas-label">Scatter (2D inputs, true class)</div>
+                  <canvas id="scatterCanvas" width="320" height="320"></canvas>
+                </div>
+                <div class="canvas-wrap">
+                  <div class="canvas-label">Accuracy over time</div>
+                  <canvas id="accCanvas" width="320" height="320"></canvas>
+                </div>
+              </div>
+
+              <div class="legend-row">
+                <span><span class="swatch gray"></span> cumulative accuracy</span>
+                <span><span class="swatch orange"></span> recent 20-point accuracy</span>
+              </div>
+
+              <div class="stat-row">
+                <div class="stat-cell"><div class="lbl">Streamed</div><div class="val" id="statN">0</div></div>
+                <div class="stat-cell"><div class="lbl">Cumulative acc</div><div class="val" id="statCum">—</div></div>
+                <div class="stat-cell"><div class="lbl">Recent acc</div><div class="val" id="statRecent">—</div></div>
+                <div class="stat-cell"><div class="lbl">λ</div><div class="val" id="statLambda">1.00</div></div>
+              </div>
+
+              <div class="lambda-row">
+                <label for="lambdaSlider">forgetting factor λ:</label>
+                <input type="range" id="lambdaSlider" min="0.85" max="1.00" step="0.01" value="1.00" />
+                <div class="lambda-val" id="lambdaVal">1.00</div>
+              </div>
+
+              <div class="controls">
+                <button id="startBtn">Start streaming</button>
+                <button id="pauseBtn" disabled>Pause</button>
+                <button id="flipBtn" class="warn" disabled>Flip boundary</button>
+                <button id="resetBtn" class="subtle-btn">Reset</button>
+              </div>
+            </div>
+
+            <div class="panel">
+              <h4>Your observation</h4>
+              <p>After running all three you-trys (stream → drift → λ tune), write one sentence: which λ recovered fastest, and what does lower λ cost you on stable data?</p>
+              <textarea class="observe-area" id="observeArea"
+                placeholder="One sentence: lower λ → faster recovery, but ___."></textarea>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== REVIEW ===== -->
+
+        <section class="slide" id="connection-to-capstone">
+          <h2>This is Thomas's capstone, in pieces</h2>
+          <p>The 2D streaming demo you just built is structurally identical to RPS-with-adaptive-opponent:</p>
+          <ul>
+            <li>Each round = one streamed example.</li>
+            <li>Player's history (last few moves) = the input vector.</li>
+            <li>Player's actual move that round = the label to update against.</li>
+            <li>Concept drift = the player suddenly switching strategies (rock-spammer becomes scissors-spammer).</li>
+            <li>Forgetting factor = how quickly the agent should chase strategy shifts.</li>
+          </ul>
+          <p>For an RPS opponent that feels alive but not chaotic, λ ≈ 0.95 is a sensible starting point. Tune from there.</p>
+        </section>
+
+        <section class="slide" id="next-steps">
+          <h2>What's next</h2>
+          <p>You can now train, predict, embed, and stream-update. The next two lessons branch by capstone lane:</p>
+          <ul>
+            <li><strong>Jarrett</strong> → <a href="../L05-classification-confidence/">L05 — Classification with confidence</a> (his lane's required pick).</li>
+            <li><strong>Nolan</strong> → <a href="../L06-kernels-nystrom/">L06 — Kernels and Nyström</a> (his lane's required pick).</li>
+            <li><strong>Thomas</strong> → already done with required lessons. Go scope your capstone.</li>
+          </ul>
+        </section>
+      </main>
+
+      <div class="footerBar">
+        <div class="progress"><div class="bar" id="progressBar"></div></div>
+      </div>
+    </div>
+
+    <script src="/astermind.umd.js"></script>
+    <script src="../_shared/lesson-deck.js"></script>
+    <script src="speaker-notes.js"></script>
+    <script src="live-demo.js"></script>
+  </body>
+</html>
