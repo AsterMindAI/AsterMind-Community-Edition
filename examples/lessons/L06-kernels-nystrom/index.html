@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>L06 — Kernels and Nyström — AsterMind</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="../_shared/lesson.css" />
+    <style>
+      .panel {
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        margin: 0.75rem 0;
+      }
+      .panel h4 {
+        margin: 0 0 0.5rem 0;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: rgba(255, 255, 255, 0.65);
+      }
+
+      .canvas-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+      @media (max-width: 720px) {
+        .canvas-grid { grid-template-columns: 1fr; }
+      }
+
+      .canvas-wrap {
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 0.5rem;
+        position: relative;
+      }
+      .canvas-wrap canvas { display: block; width: 100%; height: auto; border-radius: 4px; }
+      .canvas-label {
+        position: absolute; top: 0.5rem; left: 0.75rem;
+        font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;
+        color: rgba(255, 255, 255, 0.55);
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      }
+
+      .controls { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin: 0.75rem 0; }
+      .controls button {
+        padding: 0.5rem 1rem; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2);
+        background: #2563eb; color: white; cursor: pointer; font: inherit;
+      }
+      .controls button:hover { background: #1d4ed8; }
+      .controls button:disabled { opacity: 0.5; cursor: not-allowed; }
+      .controls button.kernel { background: #7c3aed; }
+      .controls button.kernel:hover { background: #6d28d9; }
+      .controls button.nystrom { background: #059669; }
+      .controls button.nystrom:hover { background: #047857; }
+
+      .m-row { display: flex; align-items: center; gap: 0.75rem; margin: 0.5rem 0; }
+      .m-row label { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.85rem; }
+      .m-row input[type="range"] { flex: 1; }
+      .m-val {
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-size: 1.05rem; min-width: 4rem; text-align: right;
+      }
+
+      .stats-grid {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin: 0.5rem 0;
+      }
+      .stat-cell {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 0.5rem 0.75rem; border-radius: 6px;
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      }
+      .stat-cell .lbl { font-size: 0.7rem; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.05em; }
+      .stat-cell .val { font-size: 1.1rem; margin-top: 0.15rem; }
+      .stat-cell .val.good { color: #22c55e; }
+      .stat-cell .val.warn { color: #f59e0b; }
+      .stat-cell .val.bad { color: #ef4444; }
+
+      .runs-list {
+        max-height: 12rem; overflow-y: auto;
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-size: 0.82rem;
+      }
+      .runs-list .run-row {
+        display: grid; grid-template-columns: 8rem 1fr 5rem 5rem;
+        gap: 0.5rem; padding: 0.3rem 0.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      .runs-list .run-row.head { font-size: 0.7rem; opacity: 0.55; text-transform: uppercase; letter-spacing: 0.05em; }
+      .runs-list .acc { color: #22c55e; }
+
+      .observe-area {
+        width: 100%; min-height: 4rem;
+        padding: 0.6rem 0.8rem; font: inherit;
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 6px; color: inherit; resize: vertical;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <h1>L06 — Kernels and Nyström</h1>
+        <div class="nav">
+          <button id="prevBtn">◀ Back</button>
+          <div class="chip" id="slideLabel">Slide 1 / 9</div>
+          <button id="nextBtn">Next ▶</button>
+          <button id="notesToggle" title="Show / hide speaker notes">Notes</button>
+        </div>
+      </header>
+
+      <main>
+        <!-- ===== TELL ===== -->
+
+        <section class="slide" id="welcome">
+          <h2>What you'll be able to do in 60 minutes</h2>
+          <ol>
+            <li>See a linear classifier fail on data that isn't linearly separable.</li>
+            <li>Switch to a kernel classifier and watch the decision boundary curve.</li>
+            <li>Trade off speed vs accuracy with the Nyström approximation, finding the right number of landmarks.</li>
+          </ol>
+          <p>Nolan: this is your lane's foundational lesson. Your RFF research notebook (NB-005) builds directly on the kernel-trick framing and the speed/accuracy tradeoff you'll see in You-Try 3.</p>
+        </section>
+
+        <section class="slide" id="linear-fails">
+          <h2>When a straight line just can't</h2>
+          <p>L02 trained a classifier on text greetings — the model figured it out, no drama. That's because language has lots of features that line up neatly with class. Underneath, the model drew a (high-dimensional) <em>straight line</em> through feature space, with English on one side and French on the other.</p>
+          <p>Now picture a 2D dataset like this:</p>
+          <pre><code>     class 0 (inner ring)         class 1 (outer ring)
+         . . .                          . . .
+       .       .                      .       .
+      .  . . .  .                    .  ⊙ ⊙ ⊙  .
+       .       .                      .       .
+         . . .                          . . .
+                                ↑ same center, larger radius</code></pre>
+          <p>No straight line in (x, y) space separates an inner ring from an outer ring. Try drawing one — wherever you put it, half of each ring is on the wrong side.</p>
+          <p>This is the canonical "linearly inseparable" geometry. Real-world data has versions of this all over the place: pixel intensities for digits, audio spectra for words, cybersecurity event sequences. Linear classifiers fail; we need something stronger.</p>
+        </section>
+
+        <section class="slide" id="kernel-trick">
+          <h2>The kernel trick</h2>
+          <p>What if we mapped each 2D point into a higher-dimensional space where the rings <em>are</em> linearly separable?</p>
+          <p>For the rings, an obvious lift is:</p>
+          <pre><code>(x, y)  →  (x, y, x² + y²)   // add radius² as a third dim</code></pre>
+          <p>In 3D, the inner ring sits at low <code>x² + y²</code>; the outer ring at high. A flat plane separates them. Solved.</p>
+          <p>The problem: we don't always know what mapping to use, and useful mappings are often very high-dimensional (sometimes infinite). Computing them explicitly is expensive or impossible.</p>
+          <p><strong>The kernel trick:</strong> we never compute the mapping. We compute only <em>pairwise inner products</em> in the lifted space — and we get those for free from a <em>kernel function</em>.</p>
+          <pre><code>K(a, b)  =  ⟨φ(a), φ(b)⟩   // for some implicit φ we never name</code></pre>
+          <p>Algorithms that depend only on inner products (linear regression with a tweak — that's what KernelELM does) get the benefit of the lifted space without the cost. That's the whole idea.</p>
+        </section>
+
+        <!-- ===== SHOW ===== -->
+
+        <section class="slide" id="rbf-intuition">
+          <h2>RBF — local similarity</h2>
+          <p>The most-used kernel is <strong>RBF (radial basis function)</strong>:</p>
+          <pre><code>K(a, b) = exp(-γ · ||a - b||²)</code></pre>
+          <p>Read it as: <em>"how close are <code>a</code> and <code>b</code>?"</em></p>
+          <ul>
+            <li><code>a = b</code> → distance 0 → K = 1.0 (max similarity)</li>
+            <li><code>a, b</code> far apart → distance large → K → 0 (no similarity)</li>
+          </ul>
+          <p>The hyperparameter <code>γ</code> controls the bandwidth: large γ = sharply local (only very close points feel similar); small γ = wider influence.</p>
+          <p>Mental model: imagine a Gaussian bump centered on each training point. The model decides a new point's class by which training points it's "close to" in the RBF sense. Curved decision regions emerge naturally — they're the boundaries between sets of overlapping bumps.</p>
+        </section>
+
+        <section class="slide" id="cost-of-kernels">
+          <h2>What kernels cost</h2>
+          <p>Kernels are powerful, but pairwise inner products mean computing the kernel between <em>every pair of training points</em>. With N training points:</p>
+          <ul>
+            <li>Build the N × N kernel matrix → <strong>O(N²)</strong> kernel evaluations.</li>
+            <li>Solve the regularized linear system on it → <strong>O(N³)</strong> arithmetic.</li>
+            <li>Predict: kernel evaluations against all N training points per test point.</li>
+          </ul>
+          <p>Numbers to ground this:</p>
+          <ul>
+            <li>N = 100 → 10,000 kernel evals. Trivial.</li>
+            <li>N = 10,000 → 100,000,000 evals + a 10,000³ solve. Doable with care.</li>
+            <li>N = 1,000,000 → 10¹² evals. Off the table.</li>
+          </ul>
+          <p>Approximations let us keep the kernel benefit at lower cost. Today: Nyström. Tomorrow (in your capstone notebook): Random Fourier Features.</p>
+        </section>
+
+        <section class="slide" id="nystrom-intuition">
+          <h2>Nyström — ask a few representatives</h2>
+          <p>Instead of computing the full N × N kernel matrix, pick a small number of <strong>landmark points</strong> (call it <code>m</code>, where m &lt;&lt; N). Then:</p>
+          <ol>
+            <li>Compute kernel values from each training point to each landmark only — that's an N × m matrix.</li>
+            <li>Use linear algebra (SVD-based whitening, in our implementation) to reconstruct the rest.</li>
+            <li>Train as if we had the full kernel, but at <strong>O(N · m)</strong> cost instead of <strong>O(N²)</strong>.</li>
+          </ol>
+          <p>The intuition: landmarks act as "representative neighbors." Most training points are well-described by their kernel similarity to a few landmarks; you don't need to compute every pairwise comparison.</p>
+          <p>The tradeoff is approximation quality:</p>
+          <ul>
+            <li><strong>Small m</strong> (5, 10) → very fast; loses accuracy if landmarks happen to miss important structure.</li>
+            <li><strong>Large m</strong> (~100) → close to exact-RBF accuracy; still much faster than full kernel.</li>
+            <li><strong>m → N</strong> → identical to exact RBF (and identically expensive).</li>
+          </ul>
+          <p>In You-Try 3 you'll find the right m for this dataset. For different problems the answer is different — there's no universal "best m."</p>
+        </section>
+
+        <!-- ===== DO ===== -->
+
+        <section class="slide" id="live-kernels">
+          <h2>You-Try — linear vs RBF vs Nyström</h2>
+
+          <div class="demo">
+            <div class="panel">
+              <h4>The data + the boundary</h4>
+              <div class="canvas-grid">
+                <div class="canvas-wrap">
+                  <div class="canvas-label">Training data (2 rings)</div>
+                  <canvas id="dataCanvas" width="280" height="280"></canvas>
+                </div>
+                <div class="canvas-wrap">
+                  <div class="canvas-label">Decision boundary (latest model)</div>
+                  <canvas id="boundaryCanvas" width="280" height="280"></canvas>
+                </div>
+              </div>
+
+              <div class="stats-grid">
+                <div class="stat-cell"><div class="lbl">Last model</div><div class="val" id="statKind">—</div></div>
+                <div class="stat-cell"><div class="lbl">Held-out acc</div><div class="val" id="statAcc">—</div></div>
+                <div class="stat-cell"><div class="lbl">Train time</div><div class="val" id="statMs">—</div></div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <h4>Train a model</h4>
+              <div class="m-row">
+                <label for="mSlider">Nyström landmarks m:</label>
+                <input type="range" id="mSlider" min="5" max="100" step="5" value="20" />
+                <div class="m-val" id="mVal">20</div>
+              </div>
+              <div class="controls">
+                <button id="trainLinearBtn">Train Linear</button>
+                <button id="trainRbfBtn" class="kernel">Train RBF (exact)</button>
+                <button id="trainNystromBtn" class="nystrom">Train RBF (Nyström, m=<span id="mLabel">20</span>)</button>
+                <button id="resampleBtn">Resample data</button>
+              </div>
+            </div>
+
+            <div class="panel">
+              <h4>Run history</h4>
+              <div class="runs-list">
+                <div class="run-row head">
+                  <div>kind</div><div>params</div><div>acc</div><div>ms</div>
+                </div>
+                <div id="runRows">
+                  <div class="run-row" style="opacity: 0.5;"><div>—</div><div>(no runs yet)</div><div>—</div><div>—</div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <h4>Pick the right m</h4>
+              <p>You-Try 3: which landmark count m hits accuracy within 5 percentage points of exact RBF? Write the value + your one-sentence rationale below.</p>
+              <textarea class="observe-area" id="observeArea"
+                placeholder="e.g. m = 20 — within 3 pp of exact RBF and ~3× faster; below m=10 accuracy degraded sharply."></textarea>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== REVIEW ===== -->
+
+        <section class="slide" id="connection-to-rff">
+          <h2>RFF, your capstone, and how this lesson connects</h2>
+          <p>You just felt the kernel-cost tradeoff hands-on. Your <a href="../../capstones/nolan-infrastructure/STARTER.md">capstone notebook (NB-005)</a> takes that tradeoff into the math.</p>
+          <p>Random Fourier Features is a different way to approximate the same kernel:</p>
+          <pre><code>// Nyström: pick m landmarks, compute kernel against landmarks
+// RFF:     sample D random projections (cos/sin), use as features
+
+// Same goal: get RBF-like accuracy at linear cost
+// Different machinery: data-dependent (Nyström) vs data-independent (RFF)</code></pre>
+          <p>The clean comparison your notebook should make:</p>
+          <table>
+            <tr><th>Method</th><th>Cost</th><th>Idea</th></tr>
+            <tr><td>Linear ELM</td><td>O(N)</td><td>No kernel; works only when data is linearly separable</td></tr>
+            <tr><td>Exact RBF</td><td>O(N²) memory, O(N³) solve</td><td>Full kernel matrix; expensive but accurate</td></tr>
+            <tr><td>Nyström RBF</td><td>O(N · m)</td><td>Approximation via landmarks; data-dependent</td></tr>
+            <tr><td>RFF + linear</td><td>O(N · D)</td><td>Approximation via Bochner's theorem; data-independent</td></tr>
+          </table>
+          <p>You've now built rows 1–3 in your hands. Row 4 is your notebook.</p>
+        </section>
+
+        <section class="slide" id="next-steps">
+          <h2>What's next</h2>
+          <p>You've completed the cohort's required curriculum. Time to head into capstone territory:</p>
+          <ul>
+            <li><strong>Nolan</strong> (you) → start NB-005 outline; PUBLISHING.md draft; Discussions go-live.</li>
+            <li><strong>Thomas</strong> → already in capstone build (since end of L04).</li>
+            <li><strong>Jarrett</strong> → in capstone build (since end of L05).</li>
+          </ul>
+          <p>Friday demos continue. Dry-run is Jul 17; on-site is Jul 24. Good hunting.</p>
+        </section>
+      </main>
+
+      <div class="footerBar">
+        <div class="progress"><div class="bar" id="progressBar"></div></div>
+      </div>
+    </div>
+
+    <script src="/astermind.umd.js"></script>
+    <script src="../_shared/lesson-deck.js"></script>
+    <script src="speaker-notes.js"></script>
+    <script src="live-demo.js"></script>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+[
+  { "id": "welcome", "title": "L06 — Kernels and Nyström", "stage": "tell" },
+  { "id": "linear-fails", "title": "When a straight line just can't", "stage": "tell" },
+  { "id": "kernel-trick", "title": "The kernel trick", "stage": "tell" },
+  { "id": "rbf-intuition", "title": "RBF — local similarity", "stage": "show" },
+  { "id": "cost-of-kernels", "title": "What kernels cost", "stage": "show" },
+  { "id": "nystrom-intuition", "title": "Nyström — ask a few representatives", "stage": "show" },
+  { "id": "live-kernels", "title": "You try — linear vs RBF vs Nyström", "stage": "do", "demo": "kernelDemo" },
+  { "id": "connection-to-rff", "title": "RFF, your capstone, and how this lesson connects", "stage": "review" },
+  { "id": "next-steps", "title": "Next — capstone build", "stage": "review" }
+]

@@ -18,7 +18,7 @@ The intern (and self-taught learner) curriculum for AsterMind. Each lesson is a 
 | [L03](./L03-embeddings-similarity/) | Embeddings + similarity | ✅ shipped | 45 min | Encode text to vectors; query an `EmbeddingStore` by cosine; spot the lexical-vs-semantic limit |
 | [L04](./L04-online-learning/) | Online learning with `OnlineELM` | ✅ shipped | 45 min | RLS + forgetting factor; live 2D streaming demo with concept drift (Thomas-lane required) |
 | [L05](./L05-classification-confidence/) | Classification with confidence | ✅ shipped | 45 min | Threshold tuning + live precision/recall + confusion matrix on a binary support-ticket dataset (Jarrett-lane required) |
-| L06 | Kernels and the Nyström approximation | 🟡 (Phase 1) | 60 min | RBF, Nyström, when kernels help (Nolan-lane primary) |
+| [L06](./L06-kernels-nystrom/) | Kernels and the Nyström approximation | ✅ shipped | 60 min | Linear vs RBF (exact) vs Nyström approximation on 2D rings, with live decision-boundary visualization (Nolan-lane required) |
 
 ### Capstones (per-intern lanes)
 
@@ -39,6 +39,7 @@ npm run dev:lesson:02       # L02 — Your first classifier
 npm run dev:lesson:03       # L03 — Embeddings + similarity
 npm run dev:lesson:04       # L04 — Online learning
 npm run dev:lesson:05       # L05 — Classification with confidence
+npm run dev:lesson:06       # L06 — Kernels and Nyström
 npm run dev:lesson:template # the empty template (verify the deck infra)
 ```
 

@@ -41,6 +41,7 @@
     "dev:lesson:03": "DEMO=lessons vite --open /L03-embeddings-similarity/",
     "dev:lesson:04": "DEMO=lessons vite --open /L04-online-learning/",
     "dev:lesson:05": "DEMO=lessons vite --open /L05-classification-confidence/",
+    "dev:lesson:06": "DEMO=lessons vite --open /L06-kernels-nystrom/",
     "dev:lang": "DEMO=language-awareness-demo vite",
     "dev:search": "DEMO=practical-examples/01-smart-search-filtering vite",
     "dev:moderation": "DEMO=practical-examples/02-content-moderation vite",
