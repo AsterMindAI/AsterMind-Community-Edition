@@ -101,8 +101,10 @@
       </div>
     </div>
 
+    <!-- lesson-deck.js must load FIRST so window.Lesson is defined before
+         live-demo.js calls onSlide(). Order matters here. -->
+    <script src="../_shared/lesson-deck.js"></script>
     <script src="speaker-notes.js"></script>
     <script src="live-demo.js"></script>
-    <script src="../_shared/lesson-deck.js"></script>
   </body>
 </html>

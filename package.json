@@ -41,8 +41,8 @@
     "dev:form-autocomplete": "DEMO=practical-examples/03-smart-form-autocomplete vite",
     "dev:intent": "DEMO=practical-examples/04-user-intent-classification vite",
     "dev:recommendations": "DEMO=practical-examples/05-personalized-recommendations vite",
-    "dev:lesson": "DEMO=lessons/${LESSON_DIR:-_template} vite",
-    "dev:lesson:template": "DEMO=lessons/_template vite",
+    "dev:lesson": "DEMO=lessons vite --open /${LESSON_DIR:-_template}/",
+    "dev:lesson:template": "DEMO=lessons vite --open /_template/",
     "test": "vitest",
     "prepublishOnly": "npm run clean && npm run build && npm test"
   },

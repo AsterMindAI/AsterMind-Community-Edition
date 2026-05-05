@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>AsterMind Lessons</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="./_shared/lesson.css" />
+    <style>
+      .curriculum {
+        max-width: 900px;
+        margin: 32px auto;
+        padding: 24px 28px;
+        background: var(--panel);
+        border: 1px solid #16285a;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+      }
+      .curriculum h1 {
+        margin-top: 0;
+        color: var(--accent);
+      }
+      .lesson-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+      }
+      .lesson-table th,
+      .lesson-table td {
+        text-align: left;
+        padding: 10px 12px;
+        border-bottom: 1px solid #16285a;
+      }
+      .lesson-table th {
+        color: var(--muted);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+      .lesson-table td:first-child {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        color: var(--accent);
+      }
+      .lesson-table a {
+        color: var(--ink);
+        text-decoration: none;
+      }
+      .lesson-table a:hover {
+        color: var(--accent);
+      }
+      .status {
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      .status.ready {
+        color: var(--good);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="curriculum">
+      <h1>AsterMind Lessons</h1>
+      <p>
+        The intern curriculum. Work through them in order — each builds on the last. Lessons not yet shipped are marked
+        <em>planned</em>; their links won't load until they exist.
+      </p>
+
+      <table class="lesson-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Title</th>
+            <th>Time</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>L00</td>
+            <td><a href="./L00-elm-primer/">ELM Primer — what an ELM is and why it's clever</a></td>
+            <td>45 min</td>
+            <td class="status">🚧 being refactored from elm-explination</td>
+          </tr>
+          <tr>
+            <td>L01</td>
+            <td><a href="./L01-js-and-ts-for-ml/">JavaScript &amp; TypeScript for ML newcomers</a></td>
+            <td>30 min</td>
+            <td class="status">🟡 planned</td>
+          </tr>
+          <tr>
+            <td>L02</td>
+            <td><a href="./L02-your-first-classifier/">Your first classifier</a></td>
+            <td>45 min</td>
+            <td class="status">🟡 planned</td>
+          </tr>
+          <tr>
+            <td>L03</td>
+            <td><a href="./L03-embeddings/">Embeddings — turning words into vectors</a></td>
+            <td>45 min</td>
+            <td class="status">🟡 planned</td>
+          </tr>
+          <tr>
+            <td>L04</td>
+            <td><a href="./L04-search-with-embeddings/">Search with embeddings</a></td>
+            <td>45 min</td>
+            <td class="status">🟡 planned</td>
+          </tr>
+          <tr>
+            <td>L05</td>
+            <td><a href="./L05-online-learning/">When data keeps coming — Online ELM</a></td>
+            <td>45 min</td>
+            <td class="status">🟡 planned</td>
+          </tr>
+          <tr>
+            <td>L06</td>
+            <td><a href="./L06-kernel-elm/">The kernel trick — KernelELM</a></td>
+            <td>60 min</td>
+            <td class="status">🟡 planned</td>
+          </tr>
+          <tr>
+            <td>L07</td>
+            <td><a href="./L07-deep-elm/">Going deeper — DeepELM</a></td>
+            <td>60 min</td>
+            <td class="status">🟡 planned</td>
+          </tr>
+          <tr>
+            <td>L08</td>
+            <td><a href="./L08-tfidf-and-hybrid-retrieval/">TF-IDF and hybrid retrieval</a></td>
+            <td>45 min</td>
+            <td class="status">🟡 planned</td>
+          </tr>
+          <tr>
+            <td>L09</td>
+            <td><a href="./L09-web-workers/">Off the main thread — Web Workers</a></td>
+            <td>45 min</td>
+            <td class="status">🟡 planned</td>
+          </tr>
+          <tr>
+            <td>L10</td>
+            <td><a href="./L10-capstone/">Build something real (capstone)</a></td>
+            <td>1–3 hrs</td>
+            <td class="status">🟡 planned</td>
+          </tr>
+          <tr>
+            <td>—</td>
+            <td><a href="./_template/">Lesson template (the format every lesson uses)</a></td>
+            <td>—</td>
+            <td class="status ready">✅ ready</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
