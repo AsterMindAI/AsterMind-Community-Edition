@@ -42,6 +42,72 @@ Concretely:
 
 5. **Treat lesson code as first-class citizens.** Lessons live in version control, get linted, are runnable from `npm run dev:lesson:<NN>`, and break the build if the underlying library API drifts. They are not throwaway docs.
 
+6. **Adopt a defined pedagogy** — see the next section. The format alone isn't enough; we need explicit conventions for *what* goes in the slides and *how* outcomes are written.
+
+## Lesson pedagogy
+
+The format decision above leaves *what to teach in the slide arc* and *how to write outcomes* underspecified. After researching established educational practice (literature survey: 2026-05-05), we adopt three layered conventions.
+
+### 1. A-SMART learning outcomes (objective-writing rubric)
+
+Every lesson README opens with 1–3 outcomes written in the **A-SMART** form — **A**ction-oriented, **S**pecific, **M**easurable, **A**chievable, **R**elevant, **T**ime-bound — using the Johns Hopkins template:
+
+> *"By [time], the [audience] will [observable action verb + performance] as measured by [assessment + criteria]."*
+
+The leading **A** (from Khogali et al., [PMC11589412](https://pmc.ncbi.nlm.nih.gov/articles/PMC11589412/)) is non-negotiable: it forces a Bloom-aligned action verb (*apply, build, analyze, train, classify*) and bans non-observable verbs like *understand* or *be familiar with*. If a learner can't demonstrate the outcome to a peer, it's not A-SMART.
+
+**Worked example for L02 (Your first classifier):**
+
+> *"By the end of this 45-minute lesson, the intern will train an `ELM` classifier on the provided 10-example greeting dataset in the live demo, achieve ≥80% accuracy on a 3-example held-out set, and export the trained model as JSON."*
+
+In this format:
+- **Time-bound** anchors to *lesson length*, not a course deadline (so async learners aren't blocked).
+- **Measurable** ties to the **You Try** exercise's pass condition (an accuracy number, expected console output, a downloadable artifact).
+- **Action verb** comes from Bloom levels 2–4 (apply, analyze) — appropriate for beginners doing live demos. Avoid level-1 (remember) verbs except in glossary lessons.
+
+### 2. TSDR slide arc (lesson structure)
+
+The slide arc inside every lesson follows **TSDR — Tell, Show, Do, Review** — the well-supported direct-instruction shape (the I-do / We-do / You-do pattern, codified by [Maestro's Tell-Show-Do-Review](https://maestrolearning.com/blogs/tell-show-do-review/)):
+
+| Beat | Slides | Purpose |
+|------|--------|---------|
+| **Tell** | 2–4 | Motivate the concept. What problem does it solve? Why should the learner care? |
+| **Show** | 3–5 | Walk a worked example, narrated. Visual metaphors over equations (the elm-explination "city grid" / "GPS" approach). |
+| **Do** | 1–2 + live demo | Learner runs the **You Try** exercise — the A-SMART outcome's assessment. Code editor open. |
+| **Review** | 1–2 | "What did you observe? What surprised you? What would you change?" Reflection prompts, not summarization. |
+
+**We explicitly reject SMART-as-a-lesson-cycle.** Variants like "Show, Model, Apply, Reflect, Test" appear in some folk practice but are not in the recognized education literature. Coining a homemade acronym would confuse anyone who already knows SMART (which is everyone in L&D). TSDR is established and unambiguous.
+
+### 3. Backward Design as the authoring workflow
+
+Lessons are written **outcome → assessment → exposition**, in that order — Wiggins & McTighe's *Understanding by Design*. The author's checklist:
+
+1. **Write the A-SMART outcome first.** What can the learner do at the end?
+2. **Design the You-Try exercise that proves it.** This is the assessment. If the outcome can't be assessed by a small browser exercise, the outcome is wrong.
+3. **Then design the slide arc (Tell + Show)** that gets the learner ready to do the You-Try.
+4. **Add the Review** prompts that surface what the learner noticed.
+
+Combined with A-SMART, this is the workflow that produces lessons that *don't drift into "stuff I find interesting."* It is documented as the canonical pairing in the A-SMART paper.
+
+### Critique we accept
+
+- **SMART can flatten learning** when wielded mechanically (Skillshub, Scissortail, [Swann et al. 2022](https://www.tandfonline.com/doi/full/10.1080/17437199.2021.2023608)). Mitigation: the **Review** beat in TSDR exists precisely to surface meaning beyond what's measurable.
+- **Self-paced learners lose the "Time" anchor** if it's tied to a presenter's pacing. Mitigation: every A-SMART outcome's time-bound clause anchors to *lesson length* (`30 min`, `45 min`), which the learner sees up front and can re-time themselves.
+
+### Sources
+
+Research brief that informed this section (2026-05-05):
+
+- Johns Hopkins SPH CTL — [Writing SMART Learning Objectives](https://ctl.jhsph.edu/blog/posts/SMART-learning-objectives/)
+- Khogali et al. — [A-SMART Learning Outcomes and Backward Design (PMC11589412)](https://pmc.ncbi.nlm.nih.gov/articles/PMC11589412/)
+- Chatterjee & Corral — [How to Write Well-Defined Learning Objectives (PMC5944406)](https://pmc.ncbi.nlm.nih.gov/articles/PMC5944406/)
+- Boston College CTE — [Learning Objectives](https://cteresources.bc.edu/documentation/learning-objectives/)
+- University of Arkansas TIPS — [Bloom's Taxonomy for Objectives](https://tips.uark.edu/using-blooms-taxonomy/)
+- Wiggins & McTighe, *Understanding by Design* (Backward Design)
+- Anderson & Krathwohl 2001 — revised Bloom's Taxonomy
+- Maestro Learning — [Tell, Show, Do, Review](https://maestrolearning.com/blogs/tell-show-do-review/)
+- Swann et al. 2022 — [(Over)use of SMART Goals (Health Psychology Review)](https://www.tandfonline.com/doi/full/10.1080/17437199.2021.2023608)
+
 ## Why this and not something else
 
 We considered four alternatives:
@@ -87,6 +153,8 @@ We considered four alternatives:
 
 - A new intern who has never trained a model successfully completes lessons L0–L3 in their first three days, unaided.
 - Each lesson runs in the browser via `npm run dev:lesson:<NN>` with no console errors.
+- Each lesson README has 1–3 A-SMART outcomes that pass review (action verb is observable, measurability is explicit, time-bound matches the deck length).
+- Each lesson's slide arc visibly follows TSDR — a reviewer can label which slides are Tell / Show / Do / Review without help.
 - Speaker notes pass a "could a different person teach from this?" review.
 - The first intern PR after onboarding cites a specific lesson as the source of their understanding.
 - After 3 months, the lessons are referenced from at least one external blog post or talk.
@@ -96,3 +164,7 @@ We considered four alternatives:
 - [ADR-0001](./ADR-0001-consolidate-repo-and-prepare-for-interns.md) — the cleanup that makes the lesson surface trustworthy.
 - [IMPL-0002](../implementation-plans/IMPL-0002-canonical-lesson-series.md) — the lesson sequence and execution plan.
 - The existing [`examples/elm-explination/`](../../examples/elm-explination/) — the artifact this ADR canonizes.
+
+## Revisions
+
+- **2026-05-05** — Added the "Lesson pedagogy" section establishing A-SMART outcomes, the TSDR slide arc, and Backward Design as the authoring workflow. Validation criteria expanded to require A-SMART outcomes and visible TSDR structure per lesson. Driven by research into established education practice; the homemade "SMART-as-lesson-cycle" interpretation was explicitly rejected.

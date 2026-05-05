@@ -37,12 +37,22 @@ examples/lessons/L01-what-is-a-neural-net/
 ```markdown
 # Lesson NN — <Title>
 
-**Time:** 30–45 min
+**Time budget:** 45 minutes
 **Prerequisites:** Lesson NN-1 complete; `npm install` run in the repo root.
-**You'll learn:**
-- What X is and why it matters.
-- How to use Y in code.
-- One thing that surprised the author when they first learned this.
+
+## Learning outcomes (A-SMART)
+
+By the end of this lesson, the intern will:
+
+1. **[Action verb]** [specific concept/artifact] in the live demo, achieving [measurable criterion], in under [time].
+2. **[Action verb]** [second outcome].
+3. (optional) **[Action verb]** [third outcome — keep to 1–3 total].
+
+See [ADR-0002 § Lesson pedagogy](../../claude-markdown-documents/ADRs/ADR-0002-elm-explination-as-canonical-lesson-model.md) for the rationale and a worked example.
+
+## Slide arc (TSDR)
+
+Slides follow Tell → Show → Do → Review (per ADR-0002). The structure lives in the slides themselves; nothing more is needed here.
 
 ## Run it
 
@@ -50,14 +60,9 @@ examples/lessons/L01-what-is-a-neural-net/
 npm run dev:lesson:NN
 ```
 
-## After this lesson, you'll be able to:
-
-- Explain Z in one paragraph.
-- Modify the live demo to do W.
-
 ## You try
 
-Three small tasks at the end. Open the demo, change something, observe the result. No grading; just notice what changes.
+Each You-Try block maps 1:1 to a learning outcome above. Doing all of them is the assessment that proves the outcomes.
 ```
 
 ### The `slides.json` schema:

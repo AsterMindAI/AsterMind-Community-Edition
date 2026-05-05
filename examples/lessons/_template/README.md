@@ -42,31 +42,56 @@ Every lesson has the same shape so:
 
 ## What every lesson README should contain
 
+Lessons use **A-SMART learning outcomes** (Action-oriented, Specific, Measurable, Achievable, Relevant, Time-bound) and a **TSDR slide arc** (Tell, Show, Do, Review). See [ADR-0002 § Lesson pedagogy](../../../claude-markdown-documents/ADRs/ADR-0002-elm-explination-as-canonical-lesson-model.md) for the full rationale.
+
 When you replace this README for your lesson, follow this shape:
 
 ```markdown
 # Lesson <NN> — <Title>
 
-**Time:** ~30 minutes
+**Time budget:** 45 minutes
 **Prerequisites:** Lesson <NN-1> complete; `npm install` run.
-**You'll learn:** one concrete capability the learner walks away with.
+
+## Learning outcomes (A-SMART)
+
+By the end of this lesson, the intern will:
+
+1. **[Action verb]** [specific concept/artifact] in the live demo, achieving [measurable criterion], in under [time budget].
+
+   _Worked example (L02):_ "Train an `ELM` classifier on the provided 10-example greeting dataset, reach ≥80% accuracy on a 3-example held-out set, and export the trained model as JSON — all inside the live demo, in under 20 minutes."
+
+2. (1–3 outcomes total. Use Bloom levels 2–4 verbs: apply, build, train, classify, analyze. Avoid "understand", "be familiar with", "learn about" — they're not observable.)
+
+## Slide arc (TSDR)
+
+The slides follow **Tell → Show → Do → Review**:
+
+- **Tell** (2–4 slides): motivate the concept. What problem does it solve?
+- **Show** (3–5 slides): walk a worked example. Visual metaphors over equations.
+- **Do** (1–2 slides + live demo): the You-Try — the assessment that proves the outcomes.
+- **Review** (1–2 slides): "What did you observe? What surprised you?"
 
 ## Run it
 
 \`\`\`bash
-npm run dev:lesson:<NN>
+LESSON_DIR=L<NN>-<slug> npm run dev:lesson
 \`\`\`
-
-## After this lesson, you'll be able to:
-
-- Bullet 1 — concrete, observable.
-- Bullet 2 — concrete, observable.
-- Bullet 3 — concrete, observable.
 
 ## You try
 
-Three small exercises the learner does inside the live demo. No grading.
+One You-Try block per learning outcome. Each one is small, runs in the live demo, and produces a measurable result the learner can self-check.
 ```
+
+## Authoring workflow (Backward Design)
+
+Write the lesson in this order:
+
+1. **Outcome first.** Write the A-SMART outcome — what can the learner do at the end?
+2. **Assessment second.** Design the You-Try exercise that proves the outcome. If the outcome can't be assessed by a small browser exercise, the outcome is wrong.
+3. **Exposition third.** Build the Tell + Show slides that get the learner ready for the You-Try.
+4. **Review last.** Write the prompts that surface what the learner noticed.
+
+This sequence (outcome → assessment → exposition) is Wiggins & McTighe's *Understanding by Design*. It produces lessons that don't drift into "stuff the author finds interesting."
 
 ## Naming conventions
 
