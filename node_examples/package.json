@@ -13,7 +13,6 @@
   "type": "module",
   "dependencies": {
     "@astermind/astermind-elm": "file:..",
-    "@xenova/transformers": "^2.17.2",
     "csv-parse": "^5.6.0"
   },
   "devDependencies": {

@@ -56,8 +56,5 @@ export { exportModel, importModel, quickHash } from './utils/model-serialization
 export { topKIndices } from './retrieval/hybrid-retriever.js';
 export * from './utils/elm-scorer.js';
 
-// Pro ELM Variants (5 variants)
-export * from './elm/index.js';
-
 // Types (excluding ELMConfig which is already exported from core)
 export type * from './types.js';
