@@ -17,7 +17,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { Worker } from 'node:worker_threads';
-import { ELM } from "../../core/ELM.js"';
+import { ELM } from '../../core/ELM.js';
+import { KernelELM } from '../../core/KernelELM.js';
+import { DeepELM } from '../../core/DeepELM.js';
+import { ELMChain } from '../../core/ELMChain.js';
+import { wrapELM } from '../../core/ELMAdapter.js';
 
 // Type definitions for ELM (avoid naming clash with imported class)
 type ELMConfig = {
@@ -177,33 +181,10 @@ async function trainELM(
   console.log(`Labels: ${uniqueLabels.length} (${uniqueLabels.join(', ')})`);
   console.log(`Training samples: ${texts.length}`);
   
-  // Try to load ELM or KernelELM from bundled AsterMind files
-  // Resolve path relative to project root
-  const currentFileDir = __dirname || path.dirname(require.main?.filename || process.cwd());
-  const PROJECT_ROOT = path.resolve(currentFileDir, '../../../');
-  
-  let ELMClass: any;
-  let KernelELMClass: any;
-  try {
-    // Use ESM/TS import bindings
-    ELMClass = ELM as any;
-    // Import KernelELM statically at module scope if needed; here resolve once
-    KernelELMClass = (require('@astermind/astermind-elm') as any).KernelELM;
-  } catch {
-    // Try global (browser or different setup)
-    if (typeof global !== 'undefined' && (global as any).ELM) {
-      ELMClass = (global as any).ELM;
-      KernelELMClass = (global as any).KernelELM;
-    } else if (typeof globalThis !== 'undefined' && (globalThis as any).ELM) {
-      ELMClass = (globalThis as any).ELM;
-      KernelELMClass = (globalThis as any).KernelELM;
-    }
-  }
-  
-  if (!ELMClass) {
-    throw new Error('ELM class not found. Please ensure the "@astermind/astermind-elm" npm package is installed.');
-  }
-  
+  // ELM and KernelELM are imported statically at top of file.
+  const ELMClass: any = ELM;
+  const KernelELMClass: any = KernelELM;
+
   // Use KernelELM if requested
   if (config?.useKELM && KernelELMClass) {
     console.log('Using KernelELM for better non-linear pattern recognition...');
@@ -383,9 +364,6 @@ async function trainKernelELM(
  * - Feeding both ELM and KernelELM (via vector-based APIs)
  */
 function buildSharedEncoder(uniqueLabels: string[]) {
-  const currentFileDir = __dirname || path.dirname(require.main?.filename || process.cwd());
-  // ELM is imported at top from @astermind/astermind-elm
-
   const tempELM = new ELM({
     useTokenizer: true,
     hiddenUnits: 128,
@@ -457,9 +435,7 @@ async function trainKernelELMFromVectors(
     nystromMultiplier?: number;
   }
 ): Promise<KernelELM> {
-  const currentFileDir = __dirname || path.dirname(require.main?.filename || process.cwd());
-  const PROJECT_ROOT = path.resolve(currentFileDir, '../../../');
-  const { KernelELM: KernelELMClass } = require('@astermind/astermind-elm');
+  const KernelELMClass = KernelELM;
 
   if (X.length === 0) {
     throw new Error('No training data provided to trainKernelELMFromVectors');
@@ -1025,10 +1001,7 @@ async function trainDeepELM(
 ): Promise<{ deepELM: DeepELM; encoder: any; uniqueLabels: string[] }> {
   console.log('\nTraining DeepELM (stacked autoencoders + classifier)...');
   
-  // Load DeepELM class
-  const currentFileDir = __dirname || path.dirname(require.main?.filename || process.cwd());
-  const PROJECT_ROOT = path.resolve(currentFileDir, '../../../');
-  const { DeepELM: DeepELMClass } = require('@astermind/astermind-elm');
+  const DeepELMClass = DeepELM;
   
   // Get unique labels
   const uniqueLabels = Array.from(new Set(labels));
@@ -1242,10 +1215,8 @@ async function trainELMChain(
 ): Promise<{ chain: ELMChain; encoder: any; uniqueLabels: string[]; classifier: ELMModel }> {
   console.log('\nTraining ELMChain (chained encoders)...');
   
-  // Load classes
-  const currentFileDir = __dirname || path.dirname(require.main?.filename || process.cwd());
-  const PROJECT_ROOT = path.resolve(currentFileDir, '../../../');
-  const { ELMChain: ELMChainClass, wrapELM } = require('@astermind/astermind-elm');
+  const ELMChainClass = ELMChain;
+  // wrapELM is imported at top of file
   
   // Get unique labels
   const uniqueLabels = Array.from(new Set(labels));
