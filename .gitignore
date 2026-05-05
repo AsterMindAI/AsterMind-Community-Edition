@@ -131,6 +131,13 @@ dist
 # AI-generated plans and documentation
 ai-plans/
 
+# Claude Code agent harness (per-checkout, not part of the repo)
+.claude/
+
+# macOS finder noise
+.DS_Store
+**/.DS_Store
+
 # yarn v2
 .yarn/cache
 .yarn/unplugged

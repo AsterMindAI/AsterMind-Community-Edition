@@ -28,8 +28,7 @@ AsterMind is a TypeScript library that bundles to ESM and UMD. There are no runt
 │   └── config/                # Presets
 ├── tests/                     # vitest suite (TypeScript)
 ├── examples/
-│   ├── elm-explination/       # The L00 lesson primer (slide deck)
-│   ├── lessons/               # Lesson curriculum (template + curriculum index)
+│   ├── lessons/               # Lesson curriculum (L00 primer + template + curriculum index)
 │   └── practical-examples/    # 5 working application demos
 ├── node_examples/             # Node.js TF-IDF + retrieval experiments (sub-package)
 ├── docs/                      # User-facing documentation

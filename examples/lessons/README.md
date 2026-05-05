@@ -2,7 +2,7 @@
 
 The intern (and self-taught learner) curriculum for AsterMind. Each lesson is a self-contained, runnable slide deck with live demos. Work through them in order.
 
-> **New here?** Start with **Lesson L00 — ELM Primer** as soon as it lands (currently being refactored from [`examples/elm-explination/`](../elm-explination/) per [IMPL-0002 Phase 1](../../claude-markdown-documents/implementation-plans/IMPL-0002-canonical-lesson-series.md)).
+> **New here?** Start with [Lesson L00 — ELM Primer](./L00-elm-primer/). Run `npm run dev:elm` from the repo root and click through.
 
 ## Curriculum
 
@@ -10,7 +10,7 @@ The intern (and self-taught learner) curriculum for AsterMind. Each lesson is a 
 
 | # | Title | Status | Time | Concept |
 |---|-------|--------|------|---------|
-| L00 | ELM Primer | 🚧 (being refactored) | 45 min | What an ELM is and why it's clever |
+| [L00](./L00-elm-primer/) | ELM Primer | ✅ shipped | 45 min | What an ELM is and why it's clever |
 | L01 | JavaScript & TypeScript for ML newcomers | 🟡 | 30 min | Just enough TS to read this codebase |
 | L02 | Your first classifier | 🟡 | 45 min | Train, predict, evaluate |
 | L03 | Embeddings — turning words into vectors | 🟡 | 45 min | What an embedding is, intuitively |
@@ -24,16 +24,17 @@ The intern (and self-taught learner) curriculum for AsterMind. Each lesson is a 
 
 ## How to run a lesson
 
-Once a lesson is shipped, run it with:
+Run a shipped lesson with its per-lesson script:
+
+```bash
+npm run dev:lesson:00       # L00 — ELM Primer (also: npm run dev:elm)
+npm run dev:lesson:template # the empty template (verify the deck infra)
+```
+
+Or use the generic script with a lesson directory:
 
 ```bash
 LESSON_DIR=L00-elm-primer npm run dev:lesson
-```
-
-Or use the per-lesson convenience script if one exists in `package.json`:
-
-```bash
-npm run dev:lesson:00
 ```
 
 The deck opens at `http://localhost:5173`. Use the **Next / Back** buttons or arrow keys to navigate. Toggle **Notes** to see speaker notes alongside each slide.
