@@ -1,0 +1,10 @@
+[
+  { "id": "welcome", "title": "L05 — Classification with confidence", "stage": "tell" },
+  { "id": "confidence-not-just-label", "title": "Every prediction has a confidence", "stage": "tell" },
+  { "id": "precision-recall", "title": "Two ways to be wrong", "stage": "tell" },
+  { "id": "the-threshold", "title": "The threshold knob", "stage": "show" },
+  { "id": "pr-curve", "title": "What the tradeoff looks like", "stage": "show" },
+  { "id": "live-threshold", "title": "You try — train, sweep, choose", "stage": "do", "demo": "thresholdDemo" },
+  { "id": "connection-to-capstone", "title": "Why Jarrett's capstone needs this", "stage": "review" },
+  { "id": "next-steps", "title": "Next — kernels", "stage": "review" }
+]

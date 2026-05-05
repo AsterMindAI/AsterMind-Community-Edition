@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>L05 — Classification with confidence — AsterMind</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="../_shared/lesson.css" />
+    <style>
+      .panel {
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        margin: 0.75rem 0;
+      }
+      .panel h4 {
+        margin: 0 0 0.5rem 0;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: rgba(255, 255, 255, 0.65);
+      }
+
+      .controls { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin: 0.5rem 0; }
+      .controls button {
+        padding: 0.5rem 1rem; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2);
+        background: #2563eb; color: white; cursor: pointer; font: inherit;
+      }
+      .controls button:hover { background: #1d4ed8; }
+      .controls button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+      .threshold-row { display: flex; align-items: center; gap: 0.75rem; margin: 0.5rem 0; }
+      .threshold-row label { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.85rem; }
+      .threshold-row input[type="range"] { flex: 1; }
+      .threshold-val {
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-size: 1.05rem; min-width: 4rem; text-align: right;
+      }
+
+      .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+        margin: 0.75rem 0;
+      }
+      .metric-cell {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 0.6rem 0.85rem; border-radius: 6px;
+      }
+      .metric-cell .lbl { font-size: 0.7rem; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.05em; }
+      .metric-cell .val {
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-size: 1.4rem; font-weight: 600; margin-top: 0.15rem;
+      }
+      .metric-cell .val.good { color: #22c55e; }
+      .metric-cell .val.warn { color: #f59e0b; }
+      .metric-cell .val.bad { color: #ef4444; }
+
+      .confusion-grid {
+        display: grid;
+        grid-template-columns: 5rem 1fr 1fr;
+        gap: 0.4rem;
+        margin: 0.5rem 0;
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-size: 0.85rem;
+      }
+      .confusion-grid .head { opacity: 0.55; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+      .confusion-grid .cell {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 0.5rem 0.7rem; border-radius: 4px;
+      }
+      .confusion-grid .cell.tp { background: rgba(34, 197, 94, 0.15); }
+      .confusion-grid .cell.fn { background: rgba(239, 68, 68, 0.15); }
+      .confusion-grid .cell.fp { background: rgba(239, 68, 68, 0.15); }
+      .confusion-grid .cell.tn { background: rgba(34, 197, 94, 0.15); }
+
+      .holdout-list { max-height: 16rem; overflow-y: auto; margin-top: 0.5rem; }
+      .holdout-row {
+        display: grid;
+        grid-template-columns: 1fr 5rem 4rem 5rem;
+        gap: 0.5rem; align-items: center;
+        padding: 0.4rem 0.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        font-size: 0.85rem;
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      }
+      .holdout-row .text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .holdout-row .truth, .holdout-row .pred, .holdout-row .conf { text-align: center; }
+      .holdout-row .badge { padding: 0.15rem 0.45rem; border-radius: 4px; font-size: 0.75rem; }
+      .holdout-row .badge.urgent { background: rgba(239, 68, 68, 0.25); color: #fca5a5; }
+      .holdout-row .badge.low { background: rgba(148, 163, 184, 0.25); color: #cbd5e1; }
+      .holdout-row .accept { color: #22c55e; }
+      .holdout-row .reject { color: #6b7280; }
+      .holdout-row.correct .conf { color: #22c55e; }
+      .holdout-row.incorrect .conf { color: #ef4444; }
+
+      .predict-input {
+        width: 100%; padding: 0.6rem 0.8rem; font: inherit;
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 6px; color: inherit;
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      }
+      .live-pred {
+        margin-top: 0.5rem; font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-size: 0.9rem;
+      }
+
+      .observe-area {
+        width: 100%; min-height: 4rem;
+        padding: 0.6rem 0.8rem; font: inherit;
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 6px; color: inherit; resize: vertical;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <h1>L05 — Classification with confidence</h1>
+        <div class="nav">
+          <button id="prevBtn">◀ Back</button>
+          <div class="chip" id="slideLabel">Slide 1 / 8</div>
+          <button id="nextBtn">Next ▶</button>
+          <button id="notesToggle" title="Show / hide speaker notes">Notes</button>
+        </div>
+      </header>
+
+      <main>
+        <!-- ===== TELL ===== -->
+
+        <section class="slide" id="welcome">
+          <h2>What you'll be able to do in 45 minutes</h2>
+          <ol>
+            <li>Train a binary classifier and read each prediction's confidence value.</li>
+            <li>Sweep a threshold and watch precision and recall trade off live.</li>
+            <li>Pick a threshold that meets a real operational bar — and explain the tradeoff out loud.</li>
+          </ol>
+          <p>Jarrett: this is your lane's foundational lesson. Your LOTL capstone has a threshold knob that does exactly what we'll build today.</p>
+        </section>
+
+        <section class="slide" id="confidence-not-just-label">
+          <h2>Every prediction has a confidence</h2>
+          <p>L02 had us calling <code>predict</code> and reading the top label. But the API returns <em>more</em> than that:</p>
+          <pre><code>const result = clf.predict("login slow today", 2);
+// result === [
+//   { label: "urgent", prob: 0.62 },   // ← this is the confidence
+//   { label: "low",    prob: 0.38 },
+// ]</code></pre>
+          <p>The <code>prob</code> field is the model's confidence. It's been there all along; we just ignored it. Today we use it.</p>
+          <p>For a binary classifier (two classes), confidence is in <code>[0.5, 1.0]</code>:</p>
+          <ul>
+            <li><strong>Near 1.0</strong> — model is sure about the top class.</li>
+            <li><strong>Near 0.5</strong> — model is on the fence; could go either way.</li>
+          </ul>
+          <p>Confidence ≠ correctness. A confident prediction can still be wrong; a borderline one can be right. But on average, confidence correlates with reliability — and that's enough to be useful.</p>
+        </section>
+
+        <section class="slide" id="precision-recall">
+          <h2>Two ways to be wrong</h2>
+          <p>Imagine a support-ticket triage system. The model flags tickets as "urgent." Two distinct mistakes:</p>
+          <ul>
+            <li><strong>False positive (FP):</strong> flagged "urgent", actually low priority. → wastes the on-call's time.</li>
+            <li><strong>False negative (FN):</strong> flagged "low", actually urgent. → real problem missed.</li>
+          </ul>
+          <p>Two metrics that pin down which kind of error you're making:</p>
+          <ul>
+            <li><strong>Precision</strong> = of the items I flagged urgent, what fraction were actually urgent? <em>(Penalises FP.)</em></li>
+            <li><strong>Recall</strong> = of the truly urgent items, what fraction did I flag? <em>(Penalises FN.)</em></li>
+          </ul>
+          <p>You can't max both. Improving one usually hurts the other. The threshold knob is how you choose.</p>
+        </section>
+
+        <!-- ===== SHOW ===== -->
+
+        <section class="slide" id="the-threshold">
+          <h2>The threshold knob</h2>
+          <p>A threshold <code>τ</code> in <code>[0.5, 1.0]</code> says: "only accept the urgent prediction if its confidence is at least τ." Otherwise, treat as low priority (or "I don't know" — depends on your domain).</p>
+          <pre><code>function decide(text, tau) {
+  const result = clf.predict(text, 2);
+  const top = result[0];
+  if (top.label === 'urgent' && top.prob >= tau) return 'urgent';
+  return 'low';
+}</code></pre>
+          <p>Two extreme cases:</p>
+          <ul>
+            <li><strong>τ = 0.50</strong> → accept any "urgent" the model leans toward. <strong>Highest recall</strong>, lowest precision. The on-call gets every alert.</li>
+            <li><strong>τ = 0.99</strong> → only the most confident "urgent" predictions count. <strong>Highest precision</strong>, lowest recall. Quiet alerts; some urgents slip through.</li>
+          </ul>
+          <p>Production systems pick somewhere in between. The "right" τ depends on the cost of FP vs FN <em>in your domain</em>.</p>
+        </section>
+
+        <section class="slide" id="pr-curve">
+          <h2>What the tradeoff looks like</h2>
+          <p>Sweep τ from 0.5 to 1.0 and plot (recall, precision) at each point. You get the <strong>precision-recall curve</strong>:</p>
+          <pre><code>τ = 0.50  →  precision 0.70  recall 1.00
+τ = 0.70  →  precision 0.83  recall 0.83
+τ = 0.85  →  precision 0.92  recall 0.67
+τ = 0.95  →  precision 1.00  recall 0.33</code></pre>
+          <p>The shape isn't a straight line — it depends on the dataset and the model. A flat-ish curve in the upper right is what you want; a steep dropoff means choosing τ is fragile.</p>
+          <p class="subtle">In the live demo you'll feel this directly. Drag the slider; watch the numbers move. There's no formula to memorise — the geometry is the thing.</p>
+        </section>
+
+        <!-- ===== DO ===== -->
+
+        <section class="slide" id="live-threshold">
+          <h2>You-Try — train, sweep, choose</h2>
+
+          <div class="demo">
+            <div class="panel">
+              <h4>Step 1 — Train and read confidences</h4>
+              <p>Click Train. Each row in the held-out test set below shows the predicted class and the confidence the model has in it.</p>
+              <div class="controls">
+                <button id="trainBtn">Train</button>
+                <span id="trainStatus" class="subtle"></span>
+              </div>
+              <div class="holdout-list" id="holdoutList">
+                <div class="subtle" style="padding: 0.5rem;">(click Train to populate)</div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <h4>Step 2 — Sweep the threshold</h4>
+              <p>Drag the slider. Precision, recall, and the confusion matrix update live on the held-out set above.</p>
+              <div class="threshold-row">
+                <label for="thresholdSlider">τ:</label>
+                <input type="range" id="thresholdSlider" min="0.50" max="0.99" step="0.01" value="0.50" disabled />
+                <div class="threshold-val" id="thresholdVal">0.50</div>
+              </div>
+
+              <div class="metric-grid">
+                <div class="metric-cell">
+                  <div class="lbl">Precision (urgent)</div>
+                  <div class="val" id="precVal">—</div>
+                </div>
+                <div class="metric-cell">
+                  <div class="lbl">Recall (urgent)</div>
+                  <div class="val" id="recVal">—</div>
+                </div>
+              </div>
+
+              <div class="confusion-grid">
+                <div class="head"></div>
+                <div class="head">predicted urgent</div>
+                <div class="head">predicted low</div>
+
+                <div class="head">actual urgent</div>
+                <div class="cell tp">TP <span id="tpVal">0</span></div>
+                <div class="cell fn">FN <span id="fnVal">0</span></div>
+
+                <div class="head">actual low</div>
+                <div class="cell fp">FP <span id="fpVal">0</span></div>
+                <div class="cell tn">TN <span id="tnVal">0</span></div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <h4>Step 3 — Try the live input</h4>
+              <p>Type any ticket-style text. Confidence + accept/reject decision shown live.</p>
+              <input type="text" class="predict-input" id="liveInput"
+                placeholder="e.g. 'login slow today' or 'database is on fire'" disabled />
+              <div class="live-pred" id="livePred"></div>
+            </div>
+
+            <div class="panel">
+              <h4>Step 4 — Pick a threshold</h4>
+              <p>Find a τ where <strong>precision ≥ 0.85 and recall ≥ 0.50</strong>. Write it + a one-sentence rationale below.</p>
+              <textarea class="observe-area" id="observeArea"
+                placeholder="e.g. τ = 0.78 — higher precision means fewer false alarms; we trade some recall."></textarea>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== REVIEW ===== -->
+
+        <section class="slide" id="connection-to-capstone">
+          <h2>Jarrett's capstone, in pieces</h2>
+          <p>Your LOTL command classifier has the same shape as the support-ticket triage you just built:</p>
+          <ul>
+            <li><strong>Class 0 / 1</strong> = benign / malicious instead of low / urgent.</li>
+            <li><strong>Confidence</strong> = same field on the predict result.</li>
+            <li><strong>Threshold τ</strong> = same slider, doing the same job.</li>
+          </ul>
+          <p>The bar in your STARTER.md says "≥85% accuracy on a held-out set." Accuracy is the easy metric to hit. The harder, more honest metric for a security classifier is <em>precision at acceptable recall</em> — exactly what today's lesson taught you to compute.</p>
+          <p>For your capstone presentation: include precision and recall at three threshold values in your deck. That's the credible-security-engineer move.</p>
+        </section>
+
+        <section class="slide" id="next-steps">
+          <h2>What's next</h2>
+          <p>You've covered classifier confidence and threshold tuning — the operational machinery around predictions.</p>
+          <p>If you're on Nolan's lane, head to <a href="../L06-kernels-nystrom/">L06 — Kernels and Nyström</a>. If you're Jarrett, you've completed your required curriculum — go scope your capstone and start the dataset walk-through with Julian.</p>
+        </section>
+      </main>
+
+      <div class="footerBar">
+        <div class="progress"><div class="bar" id="progressBar"></div></div>
+      </div>
+    </div>
+
+    <script src="/astermind.umd.js"></script>
+    <script src="../_shared/lesson-deck.js"></script>
+    <script src="speaker-notes.js"></script>
+    <script src="live-demo.js"></script>
+  </body>
+</html>
