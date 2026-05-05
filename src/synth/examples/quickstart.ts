@@ -9,25 +9,12 @@
  * will work correctly when customers install the package.
  */
 
-import { 
-  OmegaSynth, 
-  loadPretrained, 
-  getPretrainedLabels, 
-  setLicenseTokenFromString,
-  type LabeledSample 
+import {
+  OmegaSynth,
+  loadPretrained,
+  getPretrainedLabels,
+  type LabeledSample
 } from '../synth/index.js';
-
-// Set your license token once before using OmegaSynth
-// Option 1: Set via environment variable (recommended)
-//   export ASTERMIND_LICENSE_TOKEN="your-license-token-here"
-// Option 2: Set programmatically once at application startup (example below)
-async function setupLicense() {
-  // Replace with your actual license token
-  // Note: This only needs to be called once per application - the license runtime is a singleton
-  const licenseToken = process.env.ASTERMIND_LICENSE_TOKEN || 'your-license-token-here';
-  if (licenseToken && licenseToken !== 'your-license-token-here') {
-    await   }
-}
 
 /**
  * Example 1: Using pretrained model in retrieval mode
@@ -111,10 +98,6 @@ export async function exampleDeterministic() {
  * Run all examples
  */
 export async function runAllExamples() {
-  // Set license token once at the start (license runtime is a singleton)
-  // If using environment variable, this step is optional
-  await setupLicense();
-  
   try {
     await examplePretrainedRetrieval();
     console.log('\n');

@@ -1479,16 +1479,6 @@ function testELMChain(
  * Main function
  */
 async function main() {
-  // Example: Loading license token from environment variable (recommended approach)
-  // Set ASTERMIND_LICENSE_TOKEN environment variable before running:
-  //   export ASTERMIND_LICENSE_TOKEN="your-license-token-here"
-  // 
-  // Alternatively, you can set it programmatically (see quickstart.ts for that pattern)
-  const { setLicenseTokenFromString } = await import('@astermind/astermind-synthetic-data');
-  const licenseToken = process.env.ASTERMIND_LICENSE_TOKEN || 'your-license-token-here';
-  if (licenseToken && licenseToken !== 'your-license-token-here') {
-    await   }
-  
   console.log('='.repeat(60));
   console.log('OmegaSynth → AsterMind ELM Training Pipeline');
   console.log('='.repeat(60));

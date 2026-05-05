@@ -452,14 +452,6 @@ function generateReport(evaluation: OverallEvaluation): string {
  * Main function
  */
 async function main() {
-  // Example: Loading license token from environment variable (recommended approach)
-  // Set ASTERMIND_LICENSE_TOKEN environment variable before running:
-  //   export ASTERMIND_LICENSE_TOKEN="your-license-token-here"
-  // 
-  // Alternatively, you can set it programmatically (see quickstart.ts for that pattern)
-  // License setup removed - all features are now free!
-  // No license token needed
-  
   console.log('='.repeat(60));
   console.log('OmegaSynth Generated Data Quality Evaluation');
   console.log('='.repeat(60));
