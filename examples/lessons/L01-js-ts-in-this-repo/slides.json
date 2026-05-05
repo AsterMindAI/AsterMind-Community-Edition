@@ -1,0 +1,12 @@
+[
+  { "id": "welcome", "title": "L01 — JS/TS in this repo", "stage": "tell" },
+  { "id": "why-typescript", "title": "Why TypeScript?", "stage": "tell" },
+  { "id": "what-is-npm", "title": "What npm actually does", "stage": "tell" },
+  { "id": "repo-tour", "title": "A tour of this repo", "stage": "show" },
+  { "id": "live-types", "title": "Watch a type error appear", "stage": "show", "demo": "typeCheckDemo" },
+  { "id": "build-pipeline", "title": "From src/ to dist/", "stage": "show" },
+  { "id": "tests-explained", "title": "How vitest runs", "stage": "show" },
+  { "id": "do-clone-install", "title": "You try — clone + install + test", "stage": "do" },
+  { "id": "do-edit-and-pr", "title": "You try — break a test, ship a PR", "stage": "do" },
+  { "id": "review", "title": "Review — what surprised you?", "stage": "review" }
+]

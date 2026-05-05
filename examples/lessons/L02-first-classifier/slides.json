@@ -1,0 +1,11 @@
+[
+  { "id": "welcome", "title": "L02 — Your first classifier", "stage": "tell" },
+  { "id": "what-is-classification", "title": "What classification means", "stage": "tell" },
+  { "id": "meet-intent-classifier", "title": "Meet IntentClassifier", "stage": "tell" },
+  { "id": "the-data", "title": "The training data", "stage": "show" },
+  { "id": "the-api", "title": "The API: train + predict", "stage": "show" },
+  { "id": "accuracy-explained", "title": "What 'accuracy' actually counts", "stage": "show" },
+  { "id": "live-classifier", "title": "You try — train, add, export", "stage": "do", "demo": "classifierDemo" },
+  { "id": "things-to-notice", "title": "Things to notice", "stage": "review" },
+  { "id": "next-steps", "title": "Next — embeddings", "stage": "review" }
+]

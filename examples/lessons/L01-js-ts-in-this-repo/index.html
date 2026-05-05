@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>L01 — JS/TS in this repo — AsterMind</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="../_shared/lesson.css" />
+    <style>
+      /* Lesson-specific styles only. Shared deck styles live in _shared/lesson.css. */
+      .filetree {
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+        margin: 1rem 0;
+      }
+      .filetree .dim { opacity: 0.55; }
+      .filetree .accent { color: #ffd86b; }
+
+      .typecheck-row {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        margin: 0.5rem 0;
+      }
+      .typecheck-row .toggle {
+        padding: 0.4rem 0.75rem;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.05);
+        color: inherit;
+        cursor: pointer;
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      }
+      .typecheck-row .toggle.active {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: white;
+      }
+      .typecheck-output {
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        margin-top: 0.5rem;
+        white-space: pre-wrap;
+      }
+      .typecheck-output.ok {
+        background: rgba(34, 197, 94, 0.12);
+        border-left: 3px solid #22c55e;
+      }
+      .typecheck-output.err {
+        background: rgba(239, 68, 68, 0.12);
+        border-left: 3px solid #ef4444;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <h1>L01 — JavaScript & TypeScript in this repo</h1>
+        <div class="nav">
+          <button id="prevBtn">◀ Back</button>
+          <div class="chip" id="slideLabel">Slide 1 / 10</div>
+          <button id="nextBtn">Next ▶</button>
+          <button id="notesToggle" title="Show / hide speaker notes">Notes</button>
+        </div>
+      </header>
+
+      <main>
+        <!-- ===== TELL ===== -->
+
+        <section class="slide" id="welcome">
+          <h2>What you'll be able to do in 45 minutes</h2>
+          <ol>
+            <li>Clone this repo, install its dependencies, and run all 106+ tests to green.</li>
+            <li>Make a one-line edit, watch a test fail, undo it, watch it pass.</li>
+            <li>Open a draft pull request with a green CI check.</li>
+          </ol>
+          <p>
+            No ML in this lesson. Today is purely about <em>fluency in the dev
+            loop</em> — the same loop you'll use for every lesson and every
+            capstone day after this.
+          </p>
+          <p class="subtle">
+            If you already do this on autopilot in another language (Python, C,
+            Godot scripting), the goal is to confirm the JS/TS version maps onto
+            your existing mental model, not to start from scratch.
+          </p>
+        </section>
+
+        <section class="slide" id="why-typescript">
+          <h2>Why TypeScript instead of plain JS?</h2>
+          <p>One reason, then the others: <strong>errors at edit time, not at runtime.</strong></p>
+          <p>JavaScript is happy to run this:</p>
+          <pre><code>const labels = ['cat', 'dog'];
+labels.push(42);          // runs fine
+console.log(labels[2].toUpperCase());  // 💥 crashes here</code></pre>
+          <p>TypeScript catches the bad <code>push</code> on the line where it happens, before you ever run the code. That moment-of-correction is what makes a beginner faster.</p>
+          <p>Other reasons (lower priority for today): autocomplete that actually knows what's available; safe refactors across files; documentation that lives in the type signatures.</p>
+        </section>
+
+        <section class="slide" id="what-is-npm">
+          <h2>What npm actually does</h2>
+          <p>Three things, in this order:</p>
+          <ol>
+            <li>
+              Reads <code>package.json</code> to learn which third-party
+              packages this project depends on.
+            </li>
+            <li>
+              Downloads them into <code>node_modules/</code> (a directory you
+              never edit and never commit).
+            </li>
+            <li>
+              Lets you run <em>scripts</em> defined in <code>package.json</code>
+              with <code>npm run &lt;name&gt;</code>.
+            </li>
+          </ol>
+          <p>
+            We have <strong>0 runtime dependencies</strong> in this repo (look
+            at the <code>"dependencies"</code> field — it's empty). The only
+            packages we install are dev tools: rollup, typescript, vitest, vite.
+          </p>
+          <p class="subtle">
+            That's deliberate. Less to break, less attack surface, no surprise
+            updates.
+          </p>
+        </section>
+
+        <!-- ===== SHOW ===== -->
+
+        <section class="slide" id="repo-tour">
+          <h2>What's where</h2>
+          <div class="filetree">
+            AsterMind-Community-Edition/<br>
+            ├── <span class="accent">src/</span>           ← the library code (what gets shipped)<br>
+            │   ├── <span class="accent">core/</span>      ← ELM, KernelELM, OnlineELM, Matrix, ...<br>
+            │   ├── tasks/         ← IntentClassifier, AutoComplete, ...<br>
+            │   ├── pro/           ← omega/, retrieval/, math/, infoflow/<br>
+            │   ├── synth/         ← OmegaSynth (synthetic data generation)<br>
+            │   └── index.ts       ← the public API surface<br>
+            ├── <span class="accent">tests/</span>         ← vitest tests (this is what you'll edit today)<br>
+            ├── <span class="accent">examples/</span>      ← demos, lessons (you're in here right now), capstones<br>
+            ├── <span class="accent">dist/</span>          ← <span class="dim">build output. don't edit.</span><br>
+            ├── docs/          ← architecture, glossary, history<br>
+            ├── claude-markdown-documents/  ← ADRs, plans, notebooks<br>
+            ├── <span class="accent">package.json</span>   ← scripts + deps<br>
+            └── tsconfig.json  ← TS compiler settings
+          </div>
+          <p>
+            The first folders to memorise: <code>src/</code> (where the code
+            is), <code>tests/</code> (where the tests are), and
+            <code>package.json</code> (where the scripts are).
+          </p>
+        </section>
+
+        <section class="slide" id="live-types">
+          <h2>Watch a type error appear</h2>
+          <p>The TypeScript snippet below pushes a value into an array of strings. Toggle what we push:</p>
+          <pre><code>const labels: string[] = ['cat', 'dog'];
+labels.push(<span id="tcSlot">"bird"</span>);</code></pre>
+
+          <div class="demo">
+            <div class="typecheck-row">
+              <button class="toggle active" data-tc="bird">"bird"</button>
+              <button class="toggle" data-tc="42">42</button>
+              <button class="toggle" data-tc="undefined">undefined</button>
+            </div>
+            <div class="typecheck-output ok" id="tcOutput">✔ tsc: no errors</div>
+          </div>
+
+          <div class="you-try">
+            <h3>You try (in your head)</h3>
+            <ol>
+              <li>Click <code>42</code>. Read the error.</li>
+              <li>Click <code>undefined</code>. Read that one too.</li>
+              <li>
+                What would the error message <em>not</em> tell you that you'd
+                still want to know?
+              </li>
+            </ol>
+          </div>
+        </section>
+
+        <section class="slide" id="build-pipeline">
+          <h2>From <code>src/</code> to <code>dist/</code></h2>
+          <p>The library ships as JavaScript, not TypeScript. There's a build step in between.</p>
+          <pre><code>src/        →   rollup -c                →   dist/astermind.umd.js
+                rollup -c                    dist/astermind.esm.js
+            →   tsc -p tsconfig.types.json   dist/index.d.ts</code></pre>
+          <p>Two outputs from rollup (UMD + ESM bundles), one output from tsc (the type declarations <code>.d.ts</code>). The lesson decks load <code>dist/astermind.umd.js</code> via a <code>&lt;script&gt;</code> tag — that's why the next two lessons can write <code>window.astermind.IntentClassifier</code> without an import.</p>
+          <p>You don't have to run any of this manually. <code>npm run build</code> does it all.</p>
+        </section>
+
+        <section class="slide" id="tests-explained">
+          <h2>How <code>npm test</code> works</h2>
+          <p>
+            <code>vitest</code> finds every <code>*.test.ts</code> file under
+            <code>tests/</code> and runs it. A test file looks like:
+          </p>
+          <pre><code>import { describe, it, expect } from 'vitest';
+import { IntentClassifier } from '../src/index';
+
+describe('IntentClassifier', () => {
+  it('predicts greetings', () => {
+    const clf = new IntentClassifier({ /* ... */ });
+    clf.train([{ text: 'hello', label: 'greeting' }]);
+    const result = clf.predict('hi', 1);
+    expect(result[0].label).toBe('greeting');
+  });
+});</code></pre>
+          <p>
+            <code>describe</code> groups, <code>it</code> declares one test,
+            <code>expect</code> asserts. If <code>expect</code> sees something
+            it didn't expect, the test fails and the whole run goes red.
+          </p>
+        </section>
+
+        <!-- ===== DO ===== -->
+
+        <section class="slide" id="do-clone-install">
+          <h2>You-Try 1 — clone, install, test</h2>
+          <p>Open a terminal. Run these four commands:</p>
+          <pre><code>git clone git@github.com:AsterMindAI/AsterMind-Community-Edition.git astermind-l01
+cd astermind-l01
+npm install
+npm test</code></pre>
+          <p>
+            <strong>Pass condition:</strong> vitest prints ≥106 passing, 0
+            failing. Time yourself — should be under 5 minutes.
+          </p>
+          <p class="subtle">
+            If <code>git clone</code> fails because of SSH, swap to the HTTPS
+            URL: <code>https://github.com/AsterMindAI/AsterMind-Community-Edition.git</code>.
+            If <code>npm install</code> fails, check <code>node --version</code> is 18+.
+          </p>
+        </section>
+
+        <section class="slide" id="do-edit-and-pr">
+          <h2>You-Try 2 — break a test, fix it, ship a PR</h2>
+          <ol>
+            <li>Open <code>src/core/Activations.ts</code>. Find <code>relu</code>.</li>
+            <li>Change <code>return Math.max(0, x);</code> to <code>return Math.max(1, x);</code>.</li>
+            <li>Run <code>npm test</code>. Watch <code>Activations.test.ts</code> turn red.</li>
+            <li>Revert the change. Run <code>npm test</code>. Watch it go green.</li>
+            <li>
+              Now open the root <code>README.md</code>. Find a typo or a
+              sentence you'd improve. Fix it.
+            </li>
+            <li>
+              <pre><code>git checkout -b l01-yourname-readme
+git commit -am "L01 you-try: README fix"
+git push -u origin l01-yourname-readme</code></pre>
+            </li>
+            <li>Open a draft PR targeting the <code>lesson-pr-target</code> branch.</li>
+            <li>Wait for CI to go green.</li>
+          </ol>
+          <p>
+            <strong>Pass condition:</strong> Draft PR exists, CI is green. Tag
+            yourself in the description as "L01 you-try 2 — [your name]".
+          </p>
+        </section>
+
+        <!-- ===== REVIEW ===== -->
+
+        <section class="slide" id="review">
+          <h2>Review</h2>
+          <p>Three questions for your notes (no right answer):</p>
+          <ol>
+            <li>What's something you noticed about TypeScript that you weren't expecting?</li>
+            <li>Did <code>npm install</code> feel slow, fast, or about right? What did it actually do?</li>
+            <li>
+              When you broke <code>relu</code>, which test failed first? What
+              does that tell you about how the test file is organized?
+            </li>
+          </ol>
+          <p class="subtle">
+            Bring the answers to your next standup. You don't need to write
+            them down formally — a few lines in your notes is fine.
+          </p>
+          <p>
+            <strong>Next up:</strong> <a href="../L02-first-classifier/">L02 — Your first classifier</a>.
+          </p>
+        </section>
+      </main>
+
+      <div class="footerBar">
+        <div class="progress"><div class="bar" id="progressBar"></div></div>
+      </div>
+    </div>
+
+    <!-- lesson-deck.js must load FIRST so window.Lesson is defined before
+         live-demo.js calls onSlide(). Order matters. -->
+    <script src="../_shared/lesson-deck.js"></script>
+    <script src="speaker-notes.js"></script>
+    <script src="live-demo.js"></script>
+  </body>
+</html>

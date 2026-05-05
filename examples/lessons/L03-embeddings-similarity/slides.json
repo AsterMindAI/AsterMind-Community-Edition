@@ -1,0 +1,10 @@
+[
+  { "id": "welcome", "title": "L03 — Embeddings + similarity", "stage": "tell" },
+  { "id": "text-as-numbers", "title": "Why text becomes a vector", "stage": "tell" },
+  { "id": "cosine-intuition", "title": "Cosine, intuitively", "stage": "tell" },
+  { "id": "the-encoder", "title": "UniversalEncoder", "stage": "show" },
+  { "id": "the-store", "title": "EmbeddingStore", "stage": "show" },
+  { "id": "live-similarity", "title": "You try — encode, query, find the limit", "stage": "do", "demo": "similarityDemo" },
+  { "id": "caveat-lexical-vs-semantic", "title": "What this similarity does NOT capture", "stage": "review" },
+  { "id": "next-steps", "title": "Next — online learning", "stage": "review" }
+]

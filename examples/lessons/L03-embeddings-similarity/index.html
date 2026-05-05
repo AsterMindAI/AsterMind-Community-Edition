@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>L03 — Embeddings + similarity — AsterMind</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="../_shared/lesson.css" />
+    <style>
+      .panel {
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        margin: 0.75rem 0;
+      }
+      .panel h4 {
+        margin: 0 0 0.5rem 0;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: rgba(255, 255, 255, 0.65);
+      }
+
+      .phrase-grid {
+        display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0;
+      }
+      .phrase-chip {
+        padding: 0.4rem 0.75rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        cursor: pointer;
+        font: inherit;
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-size: 0.85rem;
+        color: inherit;
+      }
+      .phrase-chip:hover { background: rgba(255, 255, 255, 0.12); }
+      .phrase-chip.active { background: #2563eb; border-color: #2563eb; color: white; }
+
+      .vec-display { margin-top: 0.75rem; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.85rem; }
+      .vec-display .dim-label { color: rgba(255, 255, 255, 0.55); margin-bottom: 0.5rem; }
+
+      .vec-bars { display: flex; align-items: flex-end; gap: 2px; height: 80px; padding: 4px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+      .vec-bar {
+        flex: 1; min-width: 3px; background: linear-gradient(180deg, #60a5fa, #2563eb);
+        border-radius: 1px;
+      }
+
+      .search-input {
+        width: 100%; padding: 0.6rem 0.8rem; font: inherit;
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 6px; color: inherit;
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      }
+
+      .results { margin-top: 0.75rem; }
+      .result-row {
+        display: flex; align-items: center; gap: 0.75rem;
+        padding: 0.4rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      .result-row .rank { width: 1.5rem; opacity: 0.5; }
+      .result-row .text { flex: 1; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.9rem; }
+      .result-row .score { width: 4.5rem; text-align: right; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+      .result-row .bar-track { width: 6rem; height: 6px; background: rgba(255, 255, 255, 0.08); border-radius: 3px; overflow: hidden; }
+      .result-row .bar-fill { height: 100%; background: #22c55e; }
+
+      .observe-area {
+        width: 100%; min-height: 5rem;
+        padding: 0.6rem 0.8rem; font: inherit;
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 6px; color: inherit; resize: vertical;
+      }
+      .word-count { font-size: 0.75rem; color: rgba(255, 255, 255, 0.55); margin-top: 0.25rem; }
+      .word-count.good { color: #22c55e; }
+
+      .cosine-svg { display: block; margin: 1rem auto; max-width: 360px; }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <h1>L03 — Embeddings + similarity</h1>
+        <div class="nav">
+          <button id="prevBtn">◀ Back</button>
+          <div class="chip" id="slideLabel">Slide 1 / 8</div>
+          <button id="nextBtn">Next ▶</button>
+          <button id="notesToggle" title="Show / hide speaker notes">Notes</button>
+        </div>
+      </header>
+
+      <main>
+        <!-- ===== TELL ===== -->
+
+        <section class="slide" id="welcome">
+          <h2>What you'll be able to do in 45 minutes</h2>
+          <ol>
+            <li>Encode a phrase into a numeric vector and read off its dimension.</li>
+            <li>Query a 10-phrase store with a typed query and get the top-3 by cosine similarity.</li>
+            <li>Find a case where the similarity is wrong, and write down why — that's the lesson L04+ builds on.</li>
+          </ol>
+          <p>This lesson is short on theory and long on poking at the machine. The honest part is at the end: today's similarity is <em>character-level</em>, not <em>semantic</em>. We name that out loud and don't pretend otherwise.</p>
+        </section>
+
+        <section class="slide" id="text-as-numbers">
+          <h2>Why text has to become a vector</h2>
+          <p>Models do math. Math wants numbers, not strings. So before any classifier or store can compare two phrases, the phrases have to become <em>vectors of numbers</em> — same length, every time.</p>
+          <pre><code>"hello"  → [0.12, 0.04, 0.00, 0.31, ..., 0.07]   (length: 30)
+"bonjour" → [0.00, 0.18, 0.22, 0.00, ..., 0.03]   (length: 30)</code></pre>
+          <p>Same length is critical: that's how you can compare them. The encoder is the function that turns string → fixed-length vector.</p>
+          <p>Today's encoder counts character occurrences. <code>"hello"</code> has lots of L's; the L slot in the output gets a high number. That's the whole idea. Crude, but it works.</p>
+        </section>
+
+        <section class="slide" id="cosine-intuition">
+          <h2>Cosine: how aligned are two arrows?</h2>
+          <p>Once you have two vectors, the simplest measure of "how similar" is the angle between them — how much they point in the same direction.</p>
+
+          <svg class="cosine-svg" viewBox="0 0 360 240" xmlns="http://www.w3.org/2000/svg" aria-label="Cosine similarity diagram">
+            <!-- axes -->
+            <line x1="40" y1="200" x2="320" y2="200" stroke="rgba(255,255,255,0.2)" />
+            <line x1="40" y1="200" x2="40" y2="20" stroke="rgba(255,255,255,0.2)" />
+            <!-- arrow A -->
+            <line x1="40" y1="200" x2="280" y2="60" stroke="#60a5fa" stroke-width="3" marker-end="url(#arrA)" />
+            <text x="285" y="55" fill="#60a5fa" font-family="ui-monospace, monospace" font-size="14">A</text>
+            <!-- arrow B -->
+            <line x1="40" y1="200" x2="240" y2="100" stroke="#22c55e" stroke-width="3" marker-end="url(#arrB)" />
+            <text x="245" y="95" fill="#22c55e" font-family="ui-monospace, monospace" font-size="14">B</text>
+            <!-- angle arc -->
+            <path d="M 100 200 A 60 60 0 0 0 92 165" fill="none" stroke="#fbbf24" stroke-width="2" />
+            <text x="105" y="180" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="14">θ</text>
+            <!-- arrowheads -->
+            <defs>
+              <marker id="arrA" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+                <path d="M0,0 L10,5 L0,10 z" fill="#60a5fa" />
+              </marker>
+              <marker id="arrB" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+                <path d="M0,0 L10,5 L0,10 z" fill="#22c55e" />
+              </marker>
+            </defs>
+          </svg>
+
+          <p>The <strong>cosine of θ</strong> is what we use:</p>
+          <ul>
+            <li><code>cos(0°)  = 1.00</code> — same direction (very similar)</li>
+            <li><code>cos(90°) = 0.00</code> — perpendicular (unrelated)</li>
+            <li><code>cos(180°) = -1.0</code> — opposite (very dissimilar)</li>
+          </ul>
+          <p>For text vectors with non-negative entries (like character counts), the score is bounded between 0 and 1 — never negative.</p>
+        </section>
+
+        <!-- ===== SHOW ===== -->
+
+        <section class="slide" id="the-encoder">
+          <h2><code>UniversalEncoder</code> — string → vector</h2>
+          <pre><code>const { UniversalEncoder } = window.astermind;
+
+const encoder = new UniversalEncoder({
+  mode: 'char',     // character mode (the simplest)
+  charSet: 'abcdefghijklmnopqrstuvwxyz ',
+  maxLen: 30,
+});
+
+const v = encoder.encode("hello");
+// v === [0.0, 0.0, ..., 0.5, 0.0, 0.5, ...]  (length: encoder.getVectorSize())</code></pre>
+          <p>The output length is fixed (it depends on the config), independent of the input string's length. Long strings get truncated; short strings get padded.</p>
+          <p>The encoder also has a <code>mode: 'token'</code> option that splits on whitespace instead of characters. We'll stay in character mode today — it's robust to typos and unseen words.</p>
+        </section>
+
+        <section class="slide" id="the-store">
+          <h2><code>EmbeddingStore</code> — keep them, query them</h2>
+          <pre><code>const { EmbeddingStore } = window.astermind;
+
+const store = new EmbeddingStore(encoder.getVectorSize());
+
+store.add({ id: 'g1', vec: encoder.encode("hello there"),    meta: { lang: 'en' } });
+store.add({ id: 'g2', vec: encoder.encode("good morning"),   meta: { lang: 'en' } });
+store.add({ id: 'g3', vec: encoder.encode("bonjour mon ami"), meta: { lang: 'fr' } });
+// ... 7 more
+
+const queryVec = encoder.encode("hi");
+const top3 = store.query(queryVec, 3, { metric: 'cosine' });
+// top3 === [
+//   { id: 'g1', score: 0.61, ... },
+//   { id: 'g2', score: 0.52, ... },
+//   { id: 'g4', score: 0.41, ... },
+// ]</code></pre>
+          <p>That's all the API you need today: <code>add</code>, <code>query</code>. The store handles the cosine math; you just give it the vectors.</p>
+        </section>
+
+        <!-- ===== DO ===== -->
+
+        <section class="slide" id="live-similarity">
+          <h2>You-Try — encode, query, find the limit</h2>
+
+          <div class="demo">
+            <div class="panel">
+              <h4>Step 1 — Encode a phrase</h4>
+              <p>Click any chip below to encode it. The vector is shown as a bar chart of the first 16 dimensions.</p>
+              <div class="phrase-grid" id="phraseChips"></div>
+              <div class="vec-display">
+                <div class="dim-label" id="vecDimLabel">(click a phrase)</div>
+                <div class="vec-bars" id="vecBars"></div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <h4>Step 2 — Query the store</h4>
+              <p>Type a query. Top-3 results from the corpus appear below.</p>
+              <input type="text" class="search-input" id="searchInput"
+                placeholder="try: hi  /  bonjour  /  good evening" />
+              <div class="results" id="searchResults"></div>
+            </div>
+
+            <div class="panel">
+              <h4>Step 3 — Find the failure mode</h4>
+              <p>Type "hi" and read the results. Then type "salut" — same meaning, different language. Notice the result lists barely overlap.</p>
+              <p>Write what you observed and what it implies. Aim for a concrete sentence about character-level vs semantic similarity.</p>
+              <textarea class="observe-area" id="observeArea"
+                placeholder="One sentence: what did you see, and what does it mean for real apps?"></textarea>
+              <div class="word-count" id="wordCount">0 words (need ≥15)</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== REVIEW ===== -->
+
+        <section class="slide" id="caveat-lexical-vs-semantic">
+          <h2>Two kinds of similarity</h2>
+          <p>What you built today: <strong>lexical similarity</strong>. Strings that share characters get high scores. Useful for fuzzy matching, typo tolerance, autocomplete.</p>
+          <p>What you didn't build: <strong>semantic similarity</strong>. Phrases that mean the same thing get high scores even if they share no characters. <code>"hi"</code> ≈ <code>"salut"</code> ≈ <code>"hola"</code>. That requires a different kind of encoder — typically one trained on huge text corpora.</p>
+          <p>Both have legitimate uses. Don't reach for the heavier semantic version when lexical is enough.</p>
+          <p class="subtle">In later lessons you'll see <code>EncoderELM</code> — a small trainable encoder that learns task-specific similarity. It's not a substitute for big models, but it's a real step beyond pure character counts.</p>
+        </section>
+
+        <section class="slide" id="next-steps">
+          <h2>What's next</h2>
+          <p>You've trained a classifier (L02) and built a similarity store (L03). One pattern keeps coming back: <em>train, observe, retrain, observe</em>.</p>
+          <p>Real systems often can't retrain from scratch every time new data arrives — there isn't time, or the data is streaming. <strong>L04 — Online learning with <code>OnlineELM</code></strong> is how to update a model continuously, one example at a time. It's also the engine behind Thomas's capstone.</p>
+          <p>If you're on Jarrett's lane, you'll skip L04 (optional) and head to <strong>L05 — Classification with confidence</strong> when you reach Phase 4.</p>
+        </section>
+      </main>
+
+      <div class="footerBar">
+        <div class="progress"><div class="bar" id="progressBar"></div></div>
+      </div>
+    </div>
+
+    <script src="/astermind.umd.js"></script>
+    <script src="../_shared/lesson-deck.js"></script>
+    <script src="speaker-notes.js"></script>
+    <script src="live-demo.js"></script>
+  </body>
+</html>

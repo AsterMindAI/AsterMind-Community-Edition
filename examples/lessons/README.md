@@ -4,6 +4,8 @@ The intern (and self-taught learner) curriculum for AsterMind. Each lesson is a 
 
 > **New here?** Start with [Lesson L00 — ELM Primer](./L00-elm-primer/). Run `npm run dev:elm` from the repo root and click through.
 
+> **Curriculum scope.** This is the **summer 2026 cohort curriculum** (L00–L06 + per-intern capstones), as defined in [ADR-0003](../../claude-markdown-documents/ADRs/ADR-0003-summer-2026-curriculum-structure.md). Lessons L07–L09 from the original IMPL-0002 hypothesis are deferred to a future cohort.
+
 ## Curriculum
 
 > Status legend: ✅ shipped · 🚧 in progress · 🟡 planned
@@ -11,16 +13,20 @@ The intern (and self-taught learner) curriculum for AsterMind. Each lesson is a 
 | # | Title | Status | Time | Concept |
 |---|-------|--------|------|---------|
 | [L00](./L00-elm-primer/) | ELM Primer | ✅ shipped | 45 min | What an ELM is and why it's clever |
-| L01 | JavaScript & TypeScript for ML newcomers | 🟡 | 30 min | Just enough TS to read this codebase |
-| L02 | Your first classifier | 🟡 | 45 min | Train, predict, evaluate |
-| L03 | Embeddings — turning words into vectors | 🟡 | 45 min | What an embedding is, intuitively |
-| L04 | Search with embeddings | 🟡 | 45 min | Cosine similarity, retrieval |
-| L05 | When data keeps coming — Online ELM | 🟡 | 45 min | Streaming updates without retraining |
-| L06 | The kernel trick — KernelELM | 🟡 | 60 min | Why kernels matter, Nyström intuition |
-| L07 | Going deeper — DeepELM | 🟡 | 60 min | Stacking encoders |
-| L08 | TF-IDF and hybrid retrieval | 🟡 | 45 min | Lexical + semantic search |
-| L09 | Off the main thread — Web Workers | 🟡 | 45 min | Why training blocks the UI; how workers help |
-| L10 | Build something real (capstone) | 🟡 | 1–3 hrs | Pick a template and ship |
+| [L01](./L01-js-ts-in-this-repo/) | JavaScript & TypeScript in this repo | ✅ shipped | 45 min | Run tests, edit a line, ship a one-line PR |
+| [L02](./L02-first-classifier/) | Your first classifier | ✅ shipped | 45 min | Train an `IntentClassifier`; reach ≥80% on a held-out set; export a snapshot |
+| [L03](./L03-embeddings-similarity/) | Embeddings + similarity | ✅ shipped | 45 min | Encode text to vectors; query an `EmbeddingStore` by cosine; spot the lexical-vs-semantic limit |
+| L04 | Online learning with `OnlineELM` | 🟡 (Phase 1) | 45 min | RLS + forgetting; updating without retraining (Thomas-lane primary) |
+| L05 | Classification with confidence | 🟡 (Phase 1) | 45 min | Thresholds, ROC, precision/recall (Jarrett-lane primary) |
+| L06 | Kernels and the Nyström approximation | 🟡 (Phase 1) | 60 min | RBF, Nyström, when kernels help (Nolan-lane primary) |
+
+### Capstones (per-intern lanes)
+
+| Lane | Owner | Library surface | Bar |
+|------|-------|------------------|-----|
+| [Adaptive Rock-Paper-Scissors](../capstones/thomas-adaptive-game/STARTER.md) | Thomas Addison | `OnlineELM` | ≥10 pp win-rate gain rounds 1–10 vs 21–30 |
+| [LOTL command classifier](../capstones/jarrett-lotl-classifier/STARTER.md) | Jarrett Hartsoe | `FeatureCombinerELM` | ≥85% held-out accuracy on ≥30 commands |
+| [Community infrastructure + RFF notebook](../capstones/nolan-infrastructure/STARTER.md) | Nolan Moore | tooling + writing | Three artifacts shipped (Discussions, PUBLISHING.md, NB-005) |
 
 ## How to run a lesson
 
@@ -28,13 +34,16 @@ Run a shipped lesson with its per-lesson script:
 
 ```bash
 npm run dev:lesson:00       # L00 — ELM Primer (also: npm run dev:elm)
+npm run dev:lesson:01       # L01 — JS/TS in this repo
+npm run dev:lesson:02       # L02 — Your first classifier
+npm run dev:lesson:03       # L03 — Embeddings + similarity
 npm run dev:lesson:template # the empty template (verify the deck infra)
 ```
 
 Or use the generic script with a lesson directory:
 
 ```bash
-LESSON_DIR=L00-elm-primer npm run dev:lesson
+LESSON_DIR=L02-first-classifier npm run dev:lesson
 ```
 
 The deck opens at `http://localhost:5173`. Use the **Next / Back** buttons or arrow keys to navigate. Toggle **Notes** to see speaker notes alongside each slide.
@@ -53,6 +62,8 @@ If that works, the deck infrastructure is healthy. If it doesn't, something in [
 
 See the meta-instructions in [`_template/README.md`](./_template/README.md).
 
-## Why these lessons exist
+## Why these lessons exist (and how they're written)
 
-See [ADR-0002 — elm-explination as the canonical lesson model](../../claude-markdown-documents/ADRs/ADR-0002-elm-explination-as-canonical-lesson-model.md).
+- [ADR-0002 — elm-explination as the canonical lesson model](../../claude-markdown-documents/ADRs/ADR-0002-elm-explination-as-canonical-lesson-model.md) — lesson format and pedagogy (A-SMART + TSDR + Backward Design).
+- [ADR-0003 — Summer 2026 curriculum structure](../../claude-markdown-documents/ADRs/ADR-0003-summer-2026-curriculum-structure.md) — why 7 lessons + 3 capstones (and not 10 sequential lessons).
+- [IMPL-0003 — Execution plan](../../claude-markdown-documents/implementation-plans/IMPL-0003-summer-2026-curriculum-execution.md) — the 8-week calendar.

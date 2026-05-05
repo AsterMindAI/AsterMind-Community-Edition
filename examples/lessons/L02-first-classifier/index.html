@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>L02 — Your first classifier — AsterMind</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="../_shared/lesson.css" />
+    <style>
+      .data-table {
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-size: 0.88rem;
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1rem 0;
+      }
+      .data-table th,
+      .data-table td {
+        padding: 0.4rem 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .data-table th { color: #ffd86b; font-weight: 600; }
+
+      .panel {
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        margin: 0.75rem 0;
+      }
+      .panel h4 {
+        margin: 0 0 0.5rem 0;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: rgba(255, 255, 255, 0.65);
+      }
+
+      .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0.5rem 0; }
+      .btn-row button {
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: #2563eb;
+        color: white;
+        cursor: pointer;
+        font: inherit;
+      }
+      .btn-row button:hover { background: #1d4ed8; }
+      .btn-row button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+      .acc-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+        margin: 0.5rem 0;
+      }
+      .acc-cell {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+      }
+      .acc-cell .num {
+        font-size: 1.6rem;
+        font-weight: 600;
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      }
+      .acc-cell .num.good { color: #22c55e; }
+      .acc-cell .num.warn { color: #f59e0b; }
+      .acc-cell .label {
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        color: rgba(255, 255, 255, 0.55);
+      }
+
+      .predict-input {
+        width: 100%;
+        padding: 0.6rem 0.8rem;
+        font: inherit;
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 6px;
+        color: inherit;
+      }
+      .pred-bars { margin-top: 0.5rem; }
+      .pred-bar {
+        display: flex; align-items: center; gap: 0.5rem;
+        margin: 0.25rem 0;
+      }
+      .pred-bar .name { width: 5rem; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+      .pred-bar .track { flex: 1; height: 8px; background: rgba(255, 255, 255, 0.08); border-radius: 4px; overflow: hidden; }
+      .pred-bar .fill { height: 100%; background: #22c55e; transition: width 0.15s; }
+      .pred-bar .pct { width: 4rem; text-align: right; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.85rem; }
+
+      textarea.json-out {
+        width: 100%;
+        height: 12rem;
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 6px;
+        padding: 0.6rem 0.8rem;
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-size: 0.82rem;
+        color: inherit;
+        resize: vertical;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <h1>L02 — Your first classifier</h1>
+        <div class="nav">
+          <button id="prevBtn">◀ Back</button>
+          <div class="chip" id="slideLabel">Slide 1 / 9</div>
+          <button id="nextBtn">Next ▶</button>
+          <button id="notesToggle" title="Show / hide speaker notes">Notes</button>
+        </div>
+      </header>
+
+      <main>
+        <!-- ===== TELL ===== -->
+
+        <section class="slide" id="welcome">
+          <h2>What you'll be able to do in 45 minutes</h2>
+          <ol>
+            <li>Train a classifier in the page and see ≥80% accuracy on examples it didn't see during training.</li>
+            <li>Add a third class to the same model with one click and observe what changes.</li>
+            <li>Export the trained model's snapshot as JSON and read what's in it.</li>
+          </ol>
+          <p>One classifier. One dataset. Three things you'll do to it. By the end you'll have a mental model for "train, evaluate, extend, export" that every later lesson builds on.</p>
+        </section>
+
+        <section class="slide" id="what-is-classification">
+          <h2>Classification, plain</h2>
+          <p>You give the model labelled examples:</p>
+          <pre><code>"hello"      → english
+"bonjour"    → french
+"good morning" → english
+"salut"      → french
+... </code></pre>
+          <p>It learns. Then you give it a new string it has never seen, and it tells you which label probably fits — with a confidence number.</p>
+          <pre><code>predict("hi friend") → [{ label: "english", prob: 0.91 }, ...]</code></pre>
+          <p>That's it. That's classification. Everything else this lesson covers is the wiring around that core idea.</p>
+        </section>
+
+        <section class="slide" id="meet-intent-classifier">
+          <h2>Meet <code>IntentClassifier</code></h2>
+          <p>It's the simplest text classifier in the library. Three lines to build one:</p>
+          <pre><code>const { IntentClassifier } = window.astermind;
+
+const clf = new IntentClassifier({
+  categories: ['english', 'french'],
+  hiddenUnits: 32,
+  useTokenizer: true,
+  activation: 'relu',
+});</code></pre>
+          <p>Underneath it's an Extreme Learning Machine — what L00 covered. You don't need to remember how it works to use it. You'll be able to swap models in later lessons; the API is the same.</p>
+        </section>
+
+        <!-- ===== SHOW ===== -->
+
+        <section class="slide" id="the-data">
+          <h2>The dataset (20 training + 6 held-out)</h2>
+          <p>10 examples of each language, plus 6 it won't see during training:</p>
+          <table class="data-table">
+            <tr><th>Training (English)</th><th>Training (French)</th><th>Held-out</th></tr>
+            <tr><td>hello</td><td>bonjour</td><td>good night → english</td></tr>
+            <tr><td>hi there</td><td>salut</td><td>hi friend → english</td></tr>
+            <tr><td>good morning</td><td>bonne matinée</td><td>hey there → english</td></tr>
+            <tr><td>hey friend</td><td>comment ça va</td><td>bonne nuit → french</td></tr>
+            <tr><td>what's up</td><td>coucou</td><td>salut ami → french</td></tr>
+            <tr><td>good evening</td><td>bonsoir mon ami</td><td>bonjour ami → french</td></tr>
+            <tr><td>morning</td><td>ça va</td><td></td></tr>
+            <tr><td>howdy</td><td>bonne journée</td><td></td></tr>
+            <tr><td>good day</td><td>allô</td><td></td></tr>
+            <tr><td>hiya</td><td>comment vas tu</td><td></td></tr>
+          </table>
+          <p>Tiny by ML standards — production datasets are millions of examples. Tiny is fine for learning the shape.</p>
+        </section>
+
+        <section class="slide" id="the-api">
+          <h2>Train + predict in code</h2>
+          <pre><code>// Build it (already shown).
+const clf = new IntentClassifier({ /* ... */ });
+
+// Train it.
+clf.train([
+  { text: 'hello',     label: 'english' },
+  { text: 'bonjour',   label: 'french'  },
+  // ... 18 more
+]);
+
+// Predict.
+const result = clf.predict('hi friend', /* topK = */ 2);
+// result === [
+//   { label: 'english', prob: 0.91 },
+//   { label: 'french',  prob: 0.09 },
+// ]</code></pre>
+          <p>That's the whole API for today. <code>predict</code> returns a sorted list (most-likely first); <code>topK</code> controls how many you get back.</p>
+        </section>
+
+        <section class="slide" id="accuracy-explained">
+          <h2>Two accuracies, only one matters</h2>
+          <ul>
+            <li><strong>Training accuracy</strong> — how the model does on examples <em>it has seen</em>. Should be high. If it isn't, something's broken.</li>
+            <li><strong>Held-out accuracy</strong> — how the model does on examples it has <em>never seen during training</em>. <strong>This is the number that matters.</strong></li>
+          </ul>
+          <p>If training accuracy is 100% but held-out accuracy is 50%, the model has memorized the training set and learned nothing transferable. That's called <em>overfitting</em>, and you'll see lots of it as you experiment.</p>
+          <p>For our 20-example greeting dataset, ≥80% held-out accuracy is the bar.</p>
+        </section>
+
+        <!-- ===== DO ===== -->
+
+        <section class="slide" id="live-classifier">
+          <h2>You-Try — train, add a class, export</h2>
+          <p>Three actions. All in the panel below.</p>
+
+          <div class="demo">
+            <div class="panel">
+              <h4>Step 1 — Train</h4>
+              <p>Click <strong>Train</strong>. Watch held-out accuracy. Aim ≥80%.</p>
+              <div class="btn-row">
+                <button id="trainBtn">Train</button>
+                <span id="trainStatus" class="subtle"></span>
+              </div>
+              <div class="acc-grid">
+                <div class="acc-cell">
+                  <div class="num" id="trainAcc">—</div>
+                  <div class="label">Training accuracy</div>
+                </div>
+                <div class="acc-cell">
+                  <div class="num" id="holdoutAcc">—</div>
+                  <div class="label">Held-out accuracy (the one that counts)</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <h4>Step 2 — Add Spanish</h4>
+              <p>Click below to add 10 Spanish greetings + 3 held-out and retrain.</p>
+              <div class="btn-row">
+                <button id="addSpanishBtn" disabled>Add Spanish & retrain</button>
+                <span id="spanishStatus" class="subtle"></span>
+              </div>
+            </div>
+
+            <div class="panel">
+              <h4>Step 3 — Predict live</h4>
+              <p>Type any phrase. Predictions update as you type.</p>
+              <input type="text" class="predict-input" id="predictInput"
+                placeholder="e.g. 'hola amigo' (after step 2)" disabled />
+              <div class="pred-bars" id="predBars"></div>
+            </div>
+
+            <div class="panel">
+              <h4>Step 4 — Export snapshot</h4>
+              <p>Copy the JSON below into a notes file. That's your trained-model record.</p>
+              <div class="btn-row">
+                <button id="exportBtn" disabled>Export JSON</button>
+              </div>
+              <textarea class="json-out" id="jsonOut" readonly placeholder="(empty until you click Export)"></textarea>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== REVIEW ===== -->
+
+        <section class="slide" id="things-to-notice">
+          <h2>Things to notice</h2>
+          <ul>
+            <li>How long did training actually take? (It's milliseconds. ELMs solve in closed form — no gradient descent.)</li>
+            <li>Re-click Train without changing anything. Does the held-out accuracy match the previous run? Why might it not?</li>
+            <li>After adding Spanish, is held-out accuracy higher, lower, or the same? Was that what you expected?</li>
+            <li>What happens when you type a word that's in <em>none</em> of the languages the model knows? (Try "おはよう".)</li>
+          </ul>
+          <p>No right answers. Bring observations to your next standup.</p>
+        </section>
+
+        <section class="slide" id="next-steps">
+          <h2>What's next</h2>
+          <p>You can train classifiers. Next question: <strong>how does the model see text in the first place?</strong> What is "hello" to the math under the hood?</p>
+          <p>That's <a href="../L03-embeddings-similarity/">L03 — Embeddings + similarity</a>. Words become vectors; vectors have geometry; geometry has meaning. See you there.</p>
+        </section>
+      </main>
+
+      <div class="footerBar">
+        <div class="progress"><div class="bar" id="progressBar"></div></div>
+      </div>
+    </div>
+
+    <script src="/astermind.umd.js"></script>
+    <script src="../_shared/lesson-deck.js"></script>
+    <script src="speaker-notes.js"></script>
+    <script src="live-demo.js"></script>
+  </body>
+</html>
