@@ -249,9 +249,15 @@ yarn add @astermind/astermind-community
 - NPM: https://www.npmjs.com/package/@astermind/astermind-community
 
 **Migration from old packages:**
-- See [Migration Guide](./docs/MIGRATION-FROM-ELM.md) for details
-- All old packages (`@astermind/astermind-elm`, `@astermind/astermind-pro`, `@astermind/astermind-premium`, `@astermind/astermind-synthetic-data`) are deprecated
-- Simply install `@astermind/astermind-community` and update your imports - no license required!  
+
+The previous packages are deprecated and consolidated here:
+
+- `@astermind/astermind-elm` → `@astermind/astermind-community`
+- `@astermind/astermind-pro` → `@astermind/astermind-community`
+- `@astermind/astermind-premium` → `@astermind/astermind-community`
+- `@astermind/astermind-synthetic-data` → `@astermind/astermind-community`
+
+Install `@astermind/astermind-community` and update your imports — no license token required.
 
 ---
 
@@ -525,7 +531,7 @@ AsterMind ELM includes comprehensive documentation to help you get started and m
 
 ### Getting Started
 
-- **[Quick Start Tutorial](./QUICK-START-TUTORIAL.md)** — Complete step-by-step guide covering all major features with practical examples
+- **[Quick Start Tutorial](./docs/QUICK-START-TUTORIAL.md)** — Complete step-by-step guide covering all major features with practical examples
   - Basic ELM, Kernel ELM, Online ELM, DeepELM
   - Embeddings, ELM Chains, Web Workers
   - Pre-built modules, model persistence
@@ -559,7 +565,7 @@ AsterMind ELM includes comprehensive documentation to help you get started and m
   - Training and prediction flows
   - Key code snippets with line numbers
 
-- **[Data Requirements](./DATA-REQUIREMENTS.md)** — Guide to data requirements for training models
+- **[Data Requirements](./docs/DATA-REQUIREMENTS.md)** — Guide to data requirements for training models
   - Minimum viable data sizes
   - Recommendations for better generalization
   - Data collection strategies
@@ -580,18 +586,18 @@ AsterMind ELM includes comprehensive documentation to help you get started and m
   - DeepELM + KernelELM retrieval
   - Experimental architectures
 
-- **[Legal Information](./LEGAL.md)** — Licensing, patents, and legal notices
+- **[Legal Information](./docs/LEGAL.md)** — Licensing, patents, and legal notices
 
 ### Documentation Quick Links
 
 | Document | Purpose | Audience |
 |----------|---------|----------|
-| [Quick Start Tutorial](./QUICK-START-TUTORIAL.md) | Learn how to use all features | Beginners |
+| [Quick Start Tutorial](./docs/QUICK-START-TUTORIAL.md) | Learn how to use all features | Beginners |
 | [Overview](./docs/ASTERMIND-ELM-OVERVIEW.md) | Understand what AsterMind is | Everyone |
 | [Implementation Models](./docs/IMPLEMENTATION-MODELS.md) | Choose integration approach | Decision makers, developers |
 | [Technical Requirements](./docs/TECHNICAL-REQUIREMENTS.md) | System setup and requirements | DevOps, developers |
 | [Code Walkthrough](./docs/CODE-WALKTHROUGH.md) | Deep dive into code structure | Developers, presenters |
-| [Data Requirements](./DATA-REQUIREMENTS.md) | Training data guidelines | ML practitioners |
+| [Data Requirements](./docs/DATA-REQUIREMENTS.md) | Training data guidelines | ML practitioners |
 
 ---
 
