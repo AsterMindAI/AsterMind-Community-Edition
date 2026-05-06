@@ -134,6 +134,9 @@ ai-plans/
 # Claude Code agent harness (per-checkout, not part of the repo)
 .claude/
 
+# Cohort onboarding emails (personal correspondence drafts, not for the public repo)
+docs/cohort-onboarding/
+
 # macOS finder noise
 .DS_Store
 **/.DS_Store
