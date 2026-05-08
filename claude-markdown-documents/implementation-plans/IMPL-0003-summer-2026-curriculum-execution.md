@@ -4,7 +4,7 @@
 - **Depends on:** [IMPL-0001](./IMPL-0001-consolidate-repo-and-prepare-for-interns.md) ✅ complete; [IMPL-0002 Phase 0–1](./IMPL-0002-canonical-lesson-series.md) ✅ complete (template scaffold + L00 shipped)
 - **Supersedes:** [IMPL-0002 Phases 2–5](./IMPL-0002-canonical-lesson-series.md) — different curriculum shape, fixed calendar.
 - **Status:** Proposed
-- **Owner:** Julian Wilkison-Duran (CTO); Nolan Moore as cohort lead.
+- **Owner:** Julian Wilkison-Duran (Chief Scientist); Nolan Moore as cohort lead.
 - **Total elapsed:** 2026-05-05 → 2026-07-28 (12 weeks; 8-week program window + 4 weeks of pre/post).
 
 ## Goals

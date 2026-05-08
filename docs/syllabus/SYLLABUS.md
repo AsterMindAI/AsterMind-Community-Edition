@@ -2,7 +2,7 @@
 title: "AsterMind Summer 2026 Internship — Syllabus"
 subtitle: "Browser-First Machine Learning with Extreme Learning Machines"
 author:
-  - Julian Wilkison-Duran, CTO — AsterMind AI Co.
+  - Julian Wilkison-Duran, Chief Scientist — AsterMind AI Co.
 date: "Prepared 2026-05-05"
 documentclass: article
 geometry: margin=1in
@@ -16,7 +16,7 @@ urlcolor: blue
 **Employer:** AsterMind AI Co.
 **Site / Mode:** Remote (with on-site final presentation in Richmond, VA)
 **Program window:** **June 1, 2026 – July 24, 2026** (8 weeks)
-**Industry mentor / Author:** Julian Wilkison-Duran, CTO
+**Industry mentor / Author:** Julian Wilkison-Duran, Chief Scientist
 **Academic advisor (RMC):** Sam Henry, Asst. Prof., Computer Science, Randolph-Macon College
 **Document version:** 2026-05-05 (rev 1) — for Prof. Henry's review prior to the program start.
 
@@ -299,6 +299,6 @@ We invite Prof. Henry's review and feedback before the program start on June 1, 
 - **Final-presentation rubric.** Does the 5-minute / 10-minute time budget give a fair assessment surface?
 - **Anything else** that would help the program serve RMC's CS students better.
 
-— *Julian Wilkison-Duran, CTO, AsterMind AI Co.*
+— *Julian Wilkison-Duran, Chief Scientist, AsterMind AI Co.*
 *julian@astermind.ai*
 *Document version: 2026-05-05 rev 1*
