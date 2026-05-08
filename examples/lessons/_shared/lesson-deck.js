@@ -36,6 +36,18 @@
     const notesToggle = $("#notesToggle");
     const progressBar = $("#progressBar");
 
+    /* ---- Auto-inject "back to lessons" home link --------------------- */
+    // Idempotent: only inserts if not already present in the markup.
+    const navEl = $(".nav");
+    if (navEl && !$(".home-link", navEl)) {
+      const home = document.createElement("a");
+      home.className = "home-link";
+      home.href = "../";
+      home.title = "Back to all lessons";
+      home.textContent = "↩ Lessons";
+      navEl.insertBefore(home, navEl.firstChild);
+    }
+
     let SLIDE_META = [];
     try {
       const r = await fetch("./slides.json");
