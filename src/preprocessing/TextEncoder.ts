@@ -1,5 +1,5 @@
-// © 2026 AsterMind AI Co. – All Rights Reserved.
-// Patent Pending US 63/897,713
+// SPDX-License-Identifier: MIT
+// © 2026 AsterMind AI Co. — Patent Pending US 63/897,713
 // TextEncoder.ts - Text preprocessing and one-hot encoding for ELM
 
 import { Tokenizer } from './Tokenizer';

@@ -1,5 +1,5 @@
-// © 2026 AsterMind AI Co. – All Rights Reserved.
-// Patent Pending US 63/897,713
+// SPDX-License-Identifier: MIT
+// © 2026 AsterMind AI Co. — Patent Pending US 63/897,713
 // ELM.ts - Core ELM logic with TypeScript types (numeric & text modes)
 
 import { Matrix, ensureRectNumber2D } from './Matrix';

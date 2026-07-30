@@ -1,5 +1,5 @@
-// © 2026 AsterMind AI Co. – All Rights Reserved.
-// Patent Pending US 63/897,713
+// SPDX-License-Identifier: MIT
+// © 2026 AsterMind AI Co. — Patent Pending US 63/897,713
 // FeatureCombinerELM.ts — combine encoder vectors + metadata, train numeric ELM
 
 import { ELM } from '../core/ELM';

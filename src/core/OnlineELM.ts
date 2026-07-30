@@ -1,5 +1,5 @@
-// © 2026 AsterMind AI Co. – All Rights Reserved.
-// Patent Pending US 63/897,713
+// SPDX-License-Identifier: MIT
+// © 2026 AsterMind AI Co. — Patent Pending US 63/897,713
 // OnlineELM.ts — Online / OS-ELM with RLS updates
 
 import { Matrix } from './Matrix';

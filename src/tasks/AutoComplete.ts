@@ -1,5 +1,5 @@
-// © 2026 AsterMind AI Co. – All Rights Reserved.
-// Patent Pending US 63/897,713
+// SPDX-License-Identifier: MIT
+// © 2026 AsterMind AI Co. — Patent Pending US 63/897,713
 // ✅ AutoComplete.ts — ELM | KernelELM (Nyström+whiten) | OnlineELM
 // Fixes:
 //  • Avoids union narrowing on EnglishTokenPreset by shimming preset fields (no ExtendedELMConfig maxLen error)

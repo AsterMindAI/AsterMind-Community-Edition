@@ -1,5 +1,5 @@
-// © 2026 AsterMind AI Co. – All Rights Reserved.
-// Patent Pending US 63/897,713
+// SPDX-License-Identifier: MIT
+// © 2026 AsterMind AI Co. — Patent Pending US 63/897,713
 // LanguageClassifier.ts — upgraded for new ELM/OnlineELM APIs (with requireEncoder guard)
 
 import { ELM } from '../core/ELM';

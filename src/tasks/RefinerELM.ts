@@ -1,5 +1,5 @@
-// © 2026 AsterMind AI Co. – All Rights Reserved.
-// Patent Pending US 63/897,713
+// SPDX-License-Identifier: MIT
+// © 2026 AsterMind AI Co. — Patent Pending US 63/897,713
 // RefinerELM.ts — numeric “refinement” classifier on top of arbitrary feature vectors
 
 import { ELM } from '../core/ELM';

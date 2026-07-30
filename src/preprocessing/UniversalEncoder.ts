@@ -1,5 +1,5 @@
-// © 2026 AsterMind AI Co. – All Rights Reserved.
-// Patent Pending US 63/897,713
+// SPDX-License-Identifier: MIT
+// © 2026 AsterMind AI Co. — Patent Pending US 63/897,713
 // UniversalEncoder.ts - Automatically selects appropriate encoder (char or token based)
 
 import { TextEncoder, TextEncoderConfig } from './TextEncoder';

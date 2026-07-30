@@ -1,0 +1,17 @@
+# =============================================================================
+# docs/.npmignore — excludes sub-paths of docs/ from the npm tarball.
+#
+# Top-level .npmignore does NOT override the files[] array in package.json,
+# but a .npmignore inside a listed folder DOES. That's why this lives here
+# rather than at the repo root.
+# =============================================================================
+
+# Personal correspondence drafts (interns, prof, follow-ups). Also in the
+# repo-root .gitignore, but that has no effect on npm — this line is what
+# actually prevents publication.
+cohort-onboarding/
+
+# Cohort-specific syllabus. Intern names, contact info, per-lane assessment
+# criteria — designed for the academic advisor's private review, not public
+# distribution.
+syllabus/

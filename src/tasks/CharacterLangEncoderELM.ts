@@ -1,5 +1,5 @@
-// © 2026 AsterMind AI Co. – All Rights Reserved.
-// Patent Pending US 63/897,713
+// SPDX-License-Identifier: MIT
+// © 2026 AsterMind AI Co. — Patent Pending US 63/897,713
 // CharacterLangEncoderELM.ts — robust char/token text encoder on top of ELM
 // Upgrades:
 //  • Safe preset extraction (no union-type errors on maxLen/charSet)
