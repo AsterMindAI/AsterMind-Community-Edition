@@ -34,6 +34,15 @@ export interface HybridRetrievalOptions {
   expandQuery: boolean;
   topK: number;
   prefilter?: number;
+  /**
+   * Score fusion strategy:
+   *  - "normalized" (default): min-max normalize the dense and sparse score
+   *    columns across candidates, then convex blend (alpha) plus the keyword
+   *    bonus. Strong matches are rewarded, not damped.
+   *  - "damped" (legacy): the original ridge-damped tanh formula, which shrinks
+   *    a component precisely when it is large (penalizing the best matches).
+   */
+  fusion?: "normalized" | "damped";
 }
 
 export interface HybridRetrievalResult {
@@ -104,6 +113,7 @@ export function hybridRetrieve(opts: HybridRetrievalOptions): HybridRetrievalRes
     expandQuery: shouldExpand,
     topK: k,
     prefilter,
+    fusion = "normalized",
   } = opts;
 
   // Expand query if needed
@@ -121,21 +131,35 @@ export function hybridRetrieve(opts: HybridRetrievalOptions): HybridRetrievalRes
   // Compute keyword bonus
   const bonus = keywordBonus(chunks, query);
 
-  // Hybrid scoring with ridge regularization
+  // Hybrid scoring
   const alphaClamped = clamp(alpha, 0, 1);
   const lambda = ridge ?? 0.08;
 
-  const scores = denseScores.map((d, i) => {
-    const t = tfidfScores[i];
-    const b = beta * bonus[i];
-
-    // Ridge damping on ALL components (dense, tfidf, and keyword bonus)
-    const reg = 1 / (1 + lambda * (d * d + t * t + 0.5 * b * b));
-
-    const s = reg * (alphaClamped * d + (1 - alphaClamped) * t + b);
-    // soft clip extremes; helps prevent a single noisy dimension from dominating
-    return Math.tanh(s);
-  });
+  let scores: number[];
+  if (fusion === "damped") {
+    // Legacy path: ridge damping shrinks a component when it is large, which
+    // penalizes the strongest matches. Kept for comparison / backward compat.
+    scores = denseScores.map((d, i) => {
+      const t = tfidfScores[i];
+      const b = beta * bonus[i];
+      const reg = 1 / (1 + lambda * (d * d + t * t + 0.5 * b * b));
+      const s = reg * (alphaClamped * d + (1 - alphaClamped) * t + b);
+      return Math.tanh(s);
+    });
+  } else {
+    // Normalized fusion: put dense and sparse on the same 0-1 scale across the
+    // candidate set, blend by alpha, then add the (already bounded) keyword bonus.
+    const norm = (xs: number[]): number[] => {
+      let lo = Infinity, hi = -Infinity;
+      for (const x of xs) { if (x < lo) lo = x; if (x > hi) hi = x; }
+      const range = hi - lo;
+      if (!isFinite(range) || range < 1e-12) return xs.map(() => 0);
+      return xs.map(x => (x - lo) / range);
+    };
+    const dN = norm(denseScores);
+    const tN = norm(tfidfScores);
+    scores = dN.map((d, i) => alphaClamped * d + (1 - alphaClamped) * tN[i] + beta * bonus[i]);
+  }
 
   // Pre-filter then final topK (retrieval stage)
   const pre = Math.max(k, prefilter ?? 0);
