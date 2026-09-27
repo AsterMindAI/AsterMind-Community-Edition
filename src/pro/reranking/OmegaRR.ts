@@ -41,6 +41,21 @@ export type RerankOptions = {
     exposeFeatures?: boolean;
     /** NEW: also attach _feature_names (default false) */
     attachFeatureNames?: boolean;
+
+    /**
+     * Scoring backend.
+     *  - "fusion" (default): dependency-free, domain-agnostic normalized multi-signal
+     *    rank fusion (BM25 + TF-IDF cosine + query-term coverage + heading + proximity).
+     *    Fixes the two defects of the legacy path: (1) training a ridge model per query
+     *    on its OWN heuristic weak-labels (a model cannot exceed the rules that taught it)
+     *    and (2) Go-language-specific weak supervision that misranks other domains.
+     *  - "legacy": the original per-query self-trained ridge model (kept for comparison).
+     */
+    scoringMode?: "legacy" | "fusion";
+    /** Optional override of fusion signal weights (must be >=0; auto-normalized). */
+    fusionWeights?: Partial<{
+        bm25: number; cosine: number; coverage: number; heading: number; proximity: number;
+    }>;
 };
 
 /* ====================== Tokenization ======================= */
@@ -351,6 +366,49 @@ function sigmoid(x: number): number {
     else { const z = Math.exp(x); return z / (1 + z); }
 }
 
+/* ================= Fusion scoring (domain-agnostic) ================= */
+
+function minmaxNormalize(xs: number[]): number[] {
+    let lo = Infinity, hi = -Infinity;
+    for (const x of xs) { if (x < lo) lo = x; if (x > hi) hi = x; }
+    const range = hi - lo;
+    if (!isFinite(range) || range < 1e-12) return xs.map(() => 0);
+    return xs.map(x => (x - lo) / range);
+}
+
+/** Fraction of distinct query content-terms that appear in the document. */
+function coverageScore(qToks: string[], dToks: string[]): number {
+    const q = unique(qToks);
+    if (q.length === 0) return 0;
+    const dset = new Set(dToks);
+    let hit = 0;
+    for (const t of q) if (dset.has(t)) hit++;
+    return hit / q.length;
+}
+
+/**
+ * Term-proximity: rewards documents where the matched query terms occur close
+ * together (a real IR signal BM25/cosine ignore). Returns [0,1].
+ */
+function proximityScore(qToks: string[], dToks: string[]): number {
+    const q = unique(qToks);
+    if (q.length < 2 || dToks.length === 0) return 0;
+    // first position of each matched query term
+    const firstPos = new Map<string, number>();
+    for (let i = 0; i < dToks.length; i++) {
+        const t = dToks[i];
+        if (!firstPos.has(t) && q.includes(t)) firstPos.set(t, i);
+    }
+    const matched = firstPos.size;
+    if (matched < 2) return matched / q.length * 0.5;
+    const positions = Array.from(firstPos.values()).sort((a, b) => a - b);
+    const span = positions[positions.length - 1] - positions[0]; // window covering first hits
+    const matchFrac = matched / q.length;
+    // tighter span -> higher score; normalize span by number of matched terms
+    const tightness = 1 / (1 + Math.log(1 + Math.max(0, span - (matched - 1))));
+    return matchFrac * tightness;
+}
+
 /* ========================= MMR Filter ========================= */
 
 function mmrFilter(
@@ -406,6 +464,8 @@ export function rerank(
         randomProjDim = 32,
         exposeFeatures = true,
         attachFeatureNames = false,
+        scoringMode = "fusion",
+        fusionWeights,
     } = opts;
 
     const docs = [query, ...chunks.map(c => c.content || "")];
@@ -448,11 +508,52 @@ export function rerank(
         }
     }
 
-    const rr = new Ridge();
-    rr.fit(X, y, lambdaRidge);
+    let rawScores: number[];
+
+    if (scoringMode === "fusion") {
+        // Domain-agnostic normalized rank fusion. No per-query self-training,
+        // no Go-specific weak labels. Uses the real IR signals directly.
+        const w = {
+            bm25: fusionWeights?.bm25 ?? 0.35,
+            cosine: fusionWeights?.cosine ?? 0.30,
+            coverage: fusionWeights?.coverage ?? 0.20,
+            heading: fusionWeights?.heading ?? 0.10,
+            proximity: fusionWeights?.proximity ?? 0.05,
+        };
+        const wSum = (w.bm25 + w.cosine + w.coverage + w.heading + w.proximity) || 1;
+
+        const qToks = tokenize(query);
+        const cosIdx = featPacks[0].names.indexOf("cosine_tfidf");
+        const bmIdx = featPacks[0].names.indexOf("bm25");
+        const headIdx = featPacks[0].names.indexOf("heading_match_frac");
+
+        const cosArr = featPacks.map(fp => fp.values[cosIdx] ?? 0);
+        const bmArr = featPacks.map(fp => fp.values[bmIdx] ?? 0);
+        const headArr = featPacks.map(fp => fp.values[headIdx] ?? 0);
+        const covArr = chunks.map(c => coverageScore(qToks, tokenize(c.content || "")));
+        const proxArr = chunks.map(c => proximityScore(qToks, tokenize(c.content || "")));
+
+        // Min-max normalize the unbounded signals across candidates.
+        const cosN = minmaxNormalize(cosArr);
+        const bmN = minmaxNormalize(bmArr);
+        const proxN = minmaxNormalize(proxArr);
+        // coverage and heading are already in [0,1].
+
+        rawScores = chunks.map((_, i) =>
+            (w.bm25 * bmN[i] +
+             w.cosine * cosN[i] +
+             w.coverage * covArr[i] +
+             w.heading * headArr[i] +
+             w.proximity * proxN[i]) / wSum
+        );
+    } else {
+        // Legacy: per-query ridge trained on self-generated weak labels.
+        const rr = new Ridge();
+        rr.fit(X, y, lambdaRidge);
+        rawScores = X.map(x => rr.predict(x));
+    }
 
     let minS = Infinity, maxS = -Infinity;
-    const rawScores = X.map(x => rr.predict(x));
     for (const s of rawScores) { if (s < minS) minS = s; if (s > maxS) maxS = s; }
     const range = Math.max(1e-9, maxS - minS);
 
